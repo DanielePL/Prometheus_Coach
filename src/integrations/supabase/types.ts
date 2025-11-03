@@ -71,6 +71,53 @@ export type Database = {
         }
         Relationships: []
       }
+      exercises: {
+        Row: {
+          category: Database["public"]["Enums"]["exercise_category"]
+          cloudfront_url: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration: number | null
+          id: string
+          thumbnail_url: string | null
+          title: string
+          video_filename: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["exercise_category"]
+          cloudfront_url: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration?: number | null
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          video_filename: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["exercise_category"]
+          cloudfront_url?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration?: number | null
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          video_filename?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercises_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -143,6 +190,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_favorite_exercises: {
+        Row: {
+          created_at: string
+          exercise_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorite_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_favorite_exercises_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -180,6 +263,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "coach" | "client"
+      exercise_category:
+        | "bodybuilding"
+        | "crossfit"
+        | "powerlifting"
+        | "weightlifting"
+        | "functional"
+        | "plyometrics"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -308,6 +398,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "coach", "client"],
+      exercise_category: [
+        "bodybuilding",
+        "crossfit",
+        "powerlifting",
+        "weightlifting",
+        "functional",
+        "plyometrics",
+      ],
     },
   },
 } as const
