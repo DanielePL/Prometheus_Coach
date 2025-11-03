@@ -1,6 +1,6 @@
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Moon, Sun, Search, Send, Loader2, MessageSquarePlus } from "lucide-react";
+import { Moon, Sun, Search, Send, Loader2, MessageSquarePlus, Pencil, Trash2, Check, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
@@ -15,6 +15,16 @@ import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { NewMessageDialog } from "@/components/Messaging/NewMessageDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Inbox = () => {
   const { theme, setTheme } = useTheme();
@@ -23,10 +33,15 @@ const Inbox = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [newMessageDialogOpen, setNewMessageDialogOpen] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { conversations, loading: conversationsLoading, error: conversationsError, refetch: refetchConversations } = useConversations();
-  const { messages, loading: messagesLoading, sendMessage } = useMessages(selectedConversationId);
+  const { messages, loading: messagesLoading, sendMessage, editMessage, deleteMessage } = useMessages(selectedConversationId);
 
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
@@ -71,6 +86,48 @@ const Inbox = () => {
       return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     } catch {
       return '';
+    }
+  };
+
+  const handleEditMessage = (messageId: string, currentContent: string) => {
+    setEditingMessageId(messageId);
+    setEditContent(currentContent);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingMessageId || !editContent.trim()) return;
+
+    try {
+      await editMessage(editingMessageId, editContent);
+      setEditingMessageId(null);
+      setEditContent("");
+      toast.success("Message updated");
+    } catch (error) {
+      toast.error("Failed to update message");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditContent("");
+  };
+
+  const handleDeleteClick = (messageId: string) => {
+    setMessageToDelete(messageId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!messageToDelete) return;
+
+    try {
+      await deleteMessage(messageToDelete);
+      toast.success("Message deleted");
+    } catch (error) {
+      toast.error("Failed to delete message");
+    } finally {
+      setDeleteDialogOpen(false);
+      setMessageToDelete(null);
     }
   };
 
@@ -235,14 +292,77 @@ const Inbox = () => {
                     ) : (
                       messages.map((message) => {
                         const isOwnMessage = message.sender_id === user?.id;
+                        const isEditing = editingMessageId === message.id;
+                        const isHovered = hoveredMessageId === message.id;
                         
                         return isOwnMessage ? (
-                          <div key={message.id} className="flex items-start gap-2 justify-end">
+                          <div 
+                            key={message.id} 
+                            className="flex items-start gap-2 justify-end group"
+                            onMouseEnter={() => setHoveredMessageId(message.id)}
+                            onMouseLeave={() => setHoveredMessageId(null)}
+                          >
+                            {/* Edit/Delete Icons */}
+                            {isHovered && !isEditing && (
+                              <div className="flex items-center gap-1 mt-2">
+                                <button
+                                  onClick={() => handleEditMessage(message.id, message.content)}
+                                  className="p-1 hover:bg-white/10 rounded transition-colors"
+                                  title="Edit message"
+                                >
+                                  <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(message.id)}
+                                  className="p-1 hover:bg-white/10 rounded transition-colors"
+                                  title="Delete message"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                                </button>
+                              </div>
+                            )}
+
                             <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2 max-w-[70%]">
-                              <p className="text-sm break-words">{message.content}</p>
-                              <span className="text-xs opacity-80 mt-1 block text-right">
-                                {formatMessageTime(message.created_at)}
-                              </span>
+                              {isEditing ? (
+                                <div className="space-y-2">
+                                  <Input
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                    className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                                    autoFocus
+                                  />
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <button
+                                      onClick={handleCancelEdit}
+                                      className="p-1 hover:bg-primary-foreground/10 rounded transition-colors"
+                                      title="Cancel"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={handleSaveEdit}
+                                      className="p-1 hover:bg-primary-foreground/10 rounded transition-colors"
+                                      title="Save"
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <p className="text-sm break-words">{message.content}</p>
+                                  <div className="flex items-center justify-end gap-2 mt-1">
+                                    <span className="text-xs opacity-80">
+                                      {formatMessageTime(message.created_at)}
+                                    </span>
+                                    {message.edited_at && (
+                                      <span className="text-xs opacity-70 italic" title={`Edited ${formatMessageTime(message.edited_at)}`}>
+                                        (edited)
+                                      </span>
+                                    )}
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
                         ) : (
@@ -253,9 +373,16 @@ const Inbox = () => {
                             </Avatar>
                             <div className="glass rounded-2xl rounded-tl-sm px-4 py-2 max-w-[70%]">
                               <p className="text-sm break-words">{message.content}</p>
-                              <span className="text-xs text-muted-foreground mt-1 block">
-                                {formatMessageTime(message.created_at)}
-                              </span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-muted-foreground">
+                                  {formatMessageTime(message.created_at)}
+                                </span>
+                                {message.edited_at && (
+                                  <span className="text-xs text-muted-foreground italic" title={`Edited ${formatMessageTime(message.edited_at)}`}>
+                                    (edited)
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
@@ -312,6 +439,27 @@ const Inbox = () => {
           refetchConversations();
         }}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The message will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

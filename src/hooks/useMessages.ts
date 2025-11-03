@@ -10,6 +10,7 @@ export interface Message {
   sender_id: string;
   content: string;
   created_at: string;
+  edited_at: string | null;
   sender: {
     id: string;
     full_name: string;
@@ -46,6 +47,7 @@ export const useMessages = (conversationId: string | null) => {
         sender_id: msg.sender_id,
         content: msg.content,
         created_at: msg.created_at,
+        edited_at: msg.edited_at,
         sender: {
           id: msg.profiles?.id || '',
           full_name: msg.profiles?.full_name || 'Unknown User',
@@ -75,6 +77,47 @@ export const useMessages = (conversationId: string | null) => {
       if (error) throw error;
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error;
+    }
+  };
+
+  const editMessage = async (messageId: string, newContent: string) => {
+    if (!user || !newContent.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({
+          content: newContent.trim(),
+          edited_at: new Date().toISOString(),
+        })
+        .eq('id', messageId)
+        .eq('sender_id', user.id);
+
+      if (error) throw error;
+      
+      await fetchMessages();
+    } catch (error) {
+      console.error('Error editing message:', error);
+      throw error;
+    }
+  };
+
+  const deleteMessage = async (messageId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', user.id);
+
+      if (error) throw error;
+      
+      await fetchMessages();
+    } catch (error) {
+      console.error('Error deleting message:', error);
       throw error;
     }
   };
@@ -126,5 +169,5 @@ export const useMessages = (conversationId: string | null) => {
     };
   }, [conversationId, user]);
 
-  return { messages, loading, sendMessage, refetch: fetchMessages };
+  return { messages, loading, sendMessage, editMessage, deleteMessage, refetch: fetchMessages };
 };
