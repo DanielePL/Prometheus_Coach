@@ -84,15 +84,20 @@ const Explore = () => {
 
             <div className="flex gap-2 flex-wrap">
               {categories.map((category) => (
-                <Button
+                <button
                   key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
                   onClick={() => setSelectedCategory(category)}
-                  className="capitalize"
+                  className={`
+                    capitalize px-4 py-2 rounded-full text-sm font-semibold
+                    transition-smooth
+                    ${selectedCategory === category 
+                      ? 'bg-gradient-to-r from-primary to-orange-500 text-white shadow-[0_0_20px_rgba(251,146,60,0.4)]' 
+                      : 'glass hover:bg-white/20 dark:hover:bg-black/30 border border-white/20'
+                    }
+                  `}
                 >
                   {category}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
@@ -107,7 +112,7 @@ const Explore = () => {
               <p className="text-muted-foreground">No exercises found. Try a different search or filter.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6 mt-8">
               {exercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}

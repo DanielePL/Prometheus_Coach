@@ -15,7 +15,7 @@ export const ExerciseCard = ({
   onClick,
 }: ExerciseCardProps) => {
   return (
-    <div className="glass rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_rgba(251,146,60,0.4)] hover:bg-white/20 dark:hover:bg-black/30">
+    <div className="glass rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_rgba(251,146,60,0.4)] hover:bg-white/20 dark:hover:bg-black/30 p-0">
       <div className="relative h-48 overflow-hidden" onClick={onClick}>
         <video
           src={exercise.cloudfront_url}
@@ -45,7 +45,7 @@ export const ExerciseCard = ({
           />
         </button>
       </div>
-      <div className="p-4" onClick={onClick}>
+      <div className="p-4 px-5" onClick={onClick}>
         <h3 className="font-bold text-lg">{exercise.title}</h3>
         {exercise.duration && (
           <p className="text-sm text-muted-foreground mt-1">

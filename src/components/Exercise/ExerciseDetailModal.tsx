@@ -28,16 +28,19 @@ export const ExerciseDetailModal = ({
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Video Player */}
-          <div className="relative rounded-xl overflow-hidden bg-black">
-            <video
-              controls
-              className="w-full"
-              src={exercise.cloudfront_url}
-              playsInline
-            >
-              Your browser doesn't support video playback.
-            </video>
+          {/* Video Player - Optimized for vertical format */}
+          <div className="flex justify-center px-6">
+            <div className="relative rounded-xl overflow-hidden bg-black w-full max-w-[400px] max-h-[700px] lg:max-w-[400px]">
+              <video
+                controls
+                className="w-full h-auto"
+                src={exercise.cloudfront_url}
+                playsInline
+                style={{ maxHeight: '700px' }}
+              >
+                Your browser doesn't support video playback.
+              </video>
+            </div>
           </div>
 
           {/* Category Badge */}
