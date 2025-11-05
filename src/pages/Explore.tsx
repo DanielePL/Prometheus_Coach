@@ -4,7 +4,7 @@ import { Moon, Sun, Search } from "lucide-react";
 import { useTheme } from "next-themes";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
-import bannerImg from "@/assets/motion.png";
+import bannerImg from "@/assets/gym-banner.jpg";
 import { useExercises, ExerciseCategory } from "@/hooks/useExercises";
 import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { ExerciseCard } from "@/components/Exercise/ExerciseCard";
