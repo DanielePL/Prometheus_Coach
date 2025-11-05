@@ -1,29 +1,39 @@
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Link } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Search } from "lucide-react";
 import { useTheme } from "next-themes";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import bannerImg from "@/assets/motion.png";
-import legcurlImg from "@/assets/legcurl.jpg";
-import highkneesImg from "@/assets/highknees.jpg";
-import barbellBackImg from "@/assets/barbell-back.jpg";
-import frontSquatImg from "@/assets/front.jpg";
-import gobletSquatImg from "@/assets/goblet.jpg";
-import andersonSquatImg from "@/assets/anderson.jpg";
+import { useExercises, ExerciseCategory } from "@/hooks/useExercises";
+import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
+import { ExerciseCard } from "@/components/Exercise/ExerciseCard";
+import { ExerciseDetailModal } from "@/components/Exercise/ExerciseDetailModal";
+import { useState } from "react";
+import { Exercise } from "@/hooks/useExercises";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-const exercises = [
-  { name: "Leg Curl Machine - Lying", category: "bodybuilding", image: legcurlImg },
-  { name: "Walking High Knees", category: "crossfit", image: highkneesImg },
-  { name: "Barbell Back Squat", category: "powerlifting", image: barbellBackImg },
-  { name: "Front Squat", category: "weightlifting", image: frontSquatImg },
-  { name: "Goblet Squat", category: "functional", image: gobletSquatImg },
-  { name: "Anderson Squat", category: "powerlifting", image: andersonSquatImg },
-];
+const categories = ["all", "bodybuilding", "crossfit", "powerlifting", "weightlifting", "functional", "plyometrics"] as const;
 
 const Explore = () => {
   const { theme, setTheme } = useTheme();
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const { data: exercises = [], isLoading } = useExercises({
+    category: selectedCategory === "all" ? undefined : (selectedCategory as ExerciseCategory),
+    searchQuery: searchQuery || undefined,
+  });
+
+  const { isFavorite, toggleFavorite } = useFavoriteExercises();
+
+  const handleExerciseClick = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+    setModalOpen(true);
+  };
 
   return (
     <div 
@@ -59,36 +69,68 @@ const Explore = () => {
             </button>
           </div>
 
-          {/* Exercise Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            {exercises.map((exercise, index) => (
-              <Link
-                key={index}
-                to="/barbell-back-squat"
-                className="glass rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_rgba(251,146,60,0.4)] hover:bg-white/20 dark:hover:bg-black/30"
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img 
-                    src={exercise.image}
-                    alt={exercise.name}
-                    className="w-full h-full object-cover transition-all duration-500 group-hover:grayscale group-hover:scale-125"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
-                      {exercise.category}
-                    </span>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-lg">{exercise.name}</h3>
-                </div>
-              </Link>
-            ))}
+          {/* Search and Filters */}
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Input
+                type="text"
+                placeholder="Search exercises..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 glass"
+              />
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              {categories.map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category)}
+                  className="capitalize"
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
           </div>
+
+          {/* Exercise Grid */}
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading exercises...</p>
+            </div>
+          ) : exercises.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No exercises found. Try a different search or filter.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+              {exercises.map((exercise) => (
+                <ExerciseCard
+                  key={exercise.id}
+                  exercise={exercise}
+                  isFavorite={isFavorite(exercise.id)}
+                  onToggleFavorite={toggleFavorite}
+                  onClick={() => handleExerciseClick(exercise)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
       <BottomNav />
+
+      <ExerciseDetailModal
+        exercise={selectedExercise}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        isFavorite={selectedExercise ? isFavorite(selectedExercise.id) : false}
+        onToggleFavorite={toggleFavorite}
+      />
     </div>
   );
 };
