@@ -38,10 +38,18 @@ export const Sidebar = () => {
   // Get user role from metadata
   const userRole = user?.user_metadata?.role;
   
+  // Debug logging
+  console.log('Sidebar - User role:', userRole);
+  console.log('Sidebar - User metadata:', user?.user_metadata);
+  
   // Filter nav items based on role
   const navItems = baseNavItems.filter(item => {
     if (!item.roleRequired) return true;
-    return item.roleRequired.includes(userRole);
+    const hasRole = item.roleRequired.includes(userRole);
+    if (item.label === 'Uploads') {
+      console.log('Uploads visibility check:', { userRole, roleRequired: item.roleRequired, hasRole });
+    }
+    return hasRole;
   });
 
   const getInitials = (name: string) => {
