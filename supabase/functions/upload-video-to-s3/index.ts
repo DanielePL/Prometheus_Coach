@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
     
     const canonicalUri = `/${filename}`
     const canonicalQueryString = ''
-    const canonicalHeaders = `host:${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com\nx-amz-acl:public-read\nx-amz-content-sha256:UNSIGNED-PAYLOAD\nx-amz-date:${amzDate}\n`
-    const signedHeaders = 'host;x-amz-acl;x-amz-content-sha256;x-amz-date'
+    const canonicalHeaders = `host:${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com\nx-amz-content-sha256:UNSIGNED-PAYLOAD\nx-amz-date:${amzDate}\n`
+    const signedHeaders = 'host;x-amz-content-sha256;x-amz-date'
     
     const canonicalRequest = `PUT\n${canonicalUri}\n${canonicalQueryString}\n${canonicalHeaders}\n${signedHeaders}\nUNSIGNED-PAYLOAD`
     
@@ -148,7 +148,6 @@ Deno.serve(async (req) => {
       headers: {
         'Authorization': authorizationHeader,
         'x-amz-date': amzDate,
-        'x-amz-acl': 'public-read',
         'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
         'Content-Type': contentType,
       },
