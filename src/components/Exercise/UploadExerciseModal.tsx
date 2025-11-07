@@ -148,7 +148,7 @@ export const UploadExerciseModal = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-none">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Upload New Exercise</DialogTitle>
         </DialogHeader>
