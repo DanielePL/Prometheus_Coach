@@ -24,6 +24,7 @@ export const UploadExerciseModal = ({
 }: UploadExerciseModalProps) => {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
@@ -80,19 +81,43 @@ export const UploadExerciseModal = ({
     }
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
-      // Generate filename
-      const timestamp = Date.now();
-      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const filename = `${timestamp}-${slug}.mp4`;
+      // Step 1: Upload video to S3 (30% of progress)
+      setUploadProgress(10);
+      const formData = new FormData();
+      formData.append('video', videoFile);
+      formData.append('exerciseName', title);
 
-      // For now, we'll use the cloudfront URL pattern
-      // In production, you'd upload to S3 and get the CloudFront URL
-      const cloudfrontUrl = `https://d2ymeuuhxjxg6g.cloudfront.net/${filename}`;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
 
-      // Insert exercise into database
-      const { error } = await supabase.from("exercises").insert({
+      setUploadProgress(20);
+      
+      const uploadResponse = await supabase.functions.invoke('upload-video-to-s3', {
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (uploadResponse.error) {
+        throw new Error(uploadResponse.error.message || "Failed to upload video");
+      }
+
+      const { success, cloudfrontUrl, filename, error: uploadError } = uploadResponse.data;
+      
+      if (!success || !cloudfrontUrl || !filename) {
+        throw new Error(uploadError || "Failed to upload video to S3");
+      }
+
+      setUploadProgress(60);
+
+      // Step 2: Insert exercise into database (remaining 40%)
+      const { error: dbError } = await supabase.from("exercises").insert({
         title,
         category,
         description: description || null,
@@ -110,16 +135,18 @@ export const UploadExerciseModal = ({
         created_by: user.id,
       });
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
+      setUploadProgress(100);
       toast.success("Exercise uploaded successfully!");
       resetForm();
       onSuccess();
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload exercise");
+      toast.error(error instanceof Error ? error.message : "Failed to upload exercise");
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -327,6 +354,22 @@ export const UploadExerciseModal = ({
               </div>
             </div>
           </div>
+
+          {/* Upload Progress */}
+          {uploading && uploadProgress > 0 && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Upload Progress</span>
+                <span className="font-medium">{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-primary h-full transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
