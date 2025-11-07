@@ -28,6 +28,9 @@ const Explore = () => {
     searchQuery: searchQuery || undefined,
   });
 
+  // Filter to show only public exercises
+  const publicExercises = exercises.filter((ex) => ex.visibility === "public");
+
   const { isFavorite, toggleFavorite } = useFavoriteExercises();
 
   const handleExerciseClick = (exercise: Exercise) => {
@@ -107,13 +110,13 @@ const Explore = () => {
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading exercises...</p>
             </div>
-          ) : exercises.length === 0 ? (
+          ) : publicExercises.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No exercises found. Try a different search or filter.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6 mt-8">
-              {exercises.map((exercise) => (
+              {publicExercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}

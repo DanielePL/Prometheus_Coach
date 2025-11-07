@@ -13,6 +13,7 @@ import Calendar from "./pages/Calendar";
 import Inbox from "./pages/Inbox";
 import CopyInbox from "./pages/CopyInbox";
 import Requests from "./pages/Requests";
+import Uploads from "./pages/Uploads";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
             <Route path="/saved" element={<ProtectedRoute><Saved /></ProtectedRoute>} />
+            <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
             <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
             <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
             <Route path="/copy-inbox" element={<ProtectedRoute><CopyInbox /></ProtectedRoute>} />

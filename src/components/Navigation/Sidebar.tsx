@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Compass, Bookmark, Users, UserPlus, Calendar, Mail, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Compass, Bookmark, Users, UserPlus, Calendar, Mail, Settings, LogOut, Upload } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { Link, useLocation } from "react-router-dom";
@@ -14,12 +14,14 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   path: string;
+  roleRequired?: string[];
 }
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Compass, label: "Explore", path: "/explore" },
   { icon: Bookmark, label: "Saved", path: "/saved" },
+  { icon: Upload, label: "Uploads", path: "/uploads", roleRequired: ["coach", "admin"] },
   { icon: Users, label: "Clients", path: "/clients" },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
   { icon: UserPlus, label: "Requests", path: "/requests" },
@@ -31,7 +33,16 @@ export const Sidebar = () => {
   const [open, setOpen] = useState(false);
   const { theme } = useTheme();
   const location = useLocation();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user } = useAuth();
+  
+  // Get user role from metadata
+  const userRole = user?.user_metadata?.role;
+  
+  // Filter nav items based on role
+  const navItems = baseNavItems.filter(item => {
+    if (!item.roleRequired) return true;
+    return item.roleRequired.includes(userRole);
+  });
 
   const getInitials = (name: string) => {
     return name

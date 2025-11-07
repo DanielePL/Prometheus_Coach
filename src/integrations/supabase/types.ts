@@ -75,38 +75,62 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["exercise_category"]
           cloudfront_url: string
+          common_mistakes: string | null
           created_at: string
           created_by: string | null
           description: string | null
           duration: number | null
+          equipment: string | null
           id: string
+          key_aspects: string | null
+          primary_muscles: string | null
+          suggested_reps: string | null
+          suggested_sets: number | null
+          suggested_weight: string | null
           thumbnail_url: string | null
           title: string
           video_filename: string
+          visibility: string | null
         }
         Insert: {
           category: Database["public"]["Enums"]["exercise_category"]
           cloudfront_url: string
+          common_mistakes?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           duration?: number | null
+          equipment?: string | null
           id?: string
+          key_aspects?: string | null
+          primary_muscles?: string | null
+          suggested_reps?: string | null
+          suggested_sets?: number | null
+          suggested_weight?: string | null
           thumbnail_url?: string | null
           title: string
           video_filename: string
+          visibility?: string | null
         }
         Update: {
           category?: Database["public"]["Enums"]["exercise_category"]
           cloudfront_url?: string
+          common_mistakes?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           duration?: number | null
+          equipment?: string | null
           id?: string
+          key_aspects?: string | null
+          primary_muscles?: string | null
+          suggested_reps?: string | null
+          suggested_sets?: number | null
+          suggested_weight?: string | null
           thumbnail_url?: string | null
           title?: string
           video_filename?: string
+          visibility?: string | null
         }
         Relationships: [
           {

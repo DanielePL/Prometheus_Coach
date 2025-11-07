@@ -55,13 +55,74 @@ export const ExerciseDetailModal = ({
             )}
           </div>
 
+          {/* Equipment & Muscles */}
+          <div className="flex flex-wrap gap-2">
+            {exercise.equipment && (
+              <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm">
+                Equipment: {exercise.equipment}
+              </span>
+            )}
+            {exercise.primary_muscles && (
+              <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm">
+                Muscles: {exercise.primary_muscles}
+              </span>
+            )}
+          </div>
+
           {/* Description */}
           {exercise.description && (
             <div>
-              <h3 className="font-semibold text-lg mb-2">Instructions</h3>
+              <h3 className="font-semibold text-lg mb-2">Description</h3>
               <p className="text-muted-foreground whitespace-pre-wrap">
                 {exercise.description}
               </p>
+            </div>
+          )}
+
+          {/* Suggested Program */}
+          {(exercise.suggested_sets || exercise.suggested_reps || exercise.suggested_weight) && (
+            <div className="glass rounded-xl p-4">
+              <h3 className="font-semibold text-lg mb-3">Suggested Program</h3>
+              <div className="grid grid-cols-3 gap-4">
+                {exercise.suggested_sets && (
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{exercise.suggested_sets}</p>
+                    <p className="text-sm text-muted-foreground">Sets</p>
+                  </div>
+                )}
+                {exercise.suggested_reps && (
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{exercise.suggested_reps}</p>
+                    <p className="text-sm text-muted-foreground">Reps</p>
+                  </div>
+                )}
+                {exercise.suggested_weight && (
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{exercise.suggested_weight}</p>
+                    <p className="text-sm text-muted-foreground">Weight</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Key Aspects */}
+          {exercise.key_aspects && (
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Key Aspects</h3>
+              <div className="text-muted-foreground whitespace-pre-wrap">
+                {exercise.key_aspects}
+              </div>
+            </div>
+          )}
+
+          {/* Common Mistakes */}
+          {exercise.common_mistakes && (
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Common Mistakes</h3>
+              <div className="text-muted-foreground whitespace-pre-wrap">
+                {exercise.common_mistakes}
+              </div>
             </div>
           )}
 
