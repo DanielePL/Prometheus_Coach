@@ -75,7 +75,7 @@ const Uploads = () => {
               alt="My uploads"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-orange-500/60" />
+            <div className={`absolute inset-0 ${theme === "dark" ? "bg-black/50" : "bg-gradient-to-r from-primary/80 to-orange-500/60"}`} />
             
             {/* Content Overlay */}
             <div className="absolute inset-0 flex items-center justify-between px-6 lg:px-8">

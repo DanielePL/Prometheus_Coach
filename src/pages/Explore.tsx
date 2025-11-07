@@ -59,6 +59,8 @@ const Explore = () => {
               alt="Explore exercises"
               className="w-full h-full object-cover"
             />
+            <div className={`absolute inset-0 ${theme === "dark" ? "bg-black/50" : "bg-gradient-to-r from-primary/80 to-orange-500/60"}`} />
+            
             {/* Theme Toggle - Overlapping Image */}
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
