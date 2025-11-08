@@ -10,6 +10,7 @@ import { useEvents } from "@/hooks/useEvents";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useClients } from "@/hooks/useClients";
 import { supabase } from "@/integrations/supabase/client";
+import { NotificationBell } from "@/components/Notifications/NotificationBell";
 
 const Calendar = () => {
   const { theme, setTheme } = useTheme();
@@ -57,16 +58,19 @@ const Calendar = () => {
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl lg:text-4xl font-bold">Calendar</h1>
             
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="glass w-10 h-10 rounded-xl flex items-center justify-center transition-smooth hover:bg-primary hover:text-primary-foreground"
-            >
-              {theme === "dark" ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="glass w-10 h-10 rounded-xl flex items-center justify-center transition-smooth hover:bg-primary hover:text-primary-foreground"
+              >
+                {theme === "dark" ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Calendar Content - EventManager */}
