@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.delete-video-from-s3]
 verify_jwt = true
+
+[functions.send-event-reminders]
+verify_jwt = false

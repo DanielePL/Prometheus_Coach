@@ -85,7 +85,42 @@ export function useWorldClockTimezones() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const maxOrder = Math.max(...timezones.map(tz => tz.display_order), -1);
+      // Get current time offsets for all timezones to sort chronologically
+      const now = new Date();
+      
+      // Calculate offset for the new timezone
+      const newTimezoneOffset = getTimezoneOffset(timezone, now);
+      
+      // Calculate display order based on chronological ordering
+      let displayOrder = 0;
+      
+      if (timezones.length > 0) {
+        // Find the position where this timezone should be inserted chronologically
+        const timezonesWithOffsets = timezones.map(tz => ({
+          ...tz,
+          offset: getTimezoneOffset(tz.timezone, now)
+        }));
+        
+        // Find where to insert the new timezone
+        const insertIndex = timezonesWithOffsets.findIndex(tz => tz.offset > newTimezoneOffset);
+        
+        if (insertIndex === -1) {
+          // New timezone should be at the end
+          displayOrder = Math.max(...timezones.map(tz => tz.display_order)) + 1;
+        } else {
+          // New timezone should be inserted at insertIndex
+          displayOrder = insertIndex;
+          
+          // Update display order for all timezones at or after this position
+          for (let i = insertIndex; i < timezones.length; i++) {
+            await supabase
+              .from("user_world_clock_timezones")
+              .update({ display_order: i + 1 })
+              .eq("id", timezones[i].id)
+              .eq("user_id", user.id);
+          }
+        }
+      }
 
       const { data, error } = await supabase
         .from("user_world_clock_timezones")
@@ -94,14 +129,13 @@ export function useWorldClockTimezones() {
           timezone,
           city_name: cityName,
           flag,
-          display_order: maxOrder + 1,
+          display_order: displayOrder,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setTimezones([...timezones, data]);
       toast({
         title: "Timezone added",
         description: `${cityName} has been added to your world clock`,
@@ -189,4 +223,11 @@ export function useWorldClockTimezones() {
     reorderTimezones,
     refetch: fetchTimezones,
   };
+}
+
+// Helper function to get timezone offset in minutes
+function getTimezoneOffset(timezone: string, date: Date): number {
+  const localDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+  const tzDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
+  return (tzDate.getTime() - localDate.getTime()) / (1000 * 60);
 }

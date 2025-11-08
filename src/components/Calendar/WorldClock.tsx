@@ -1,4 +1,4 @@
-import { Clock, Globe, Plus, X, Settings } from "lucide-react";
+import { Clock, Globe, Plus, X, Settings, GripVertical } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,24 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { cn } from "@/lib/utils";
 
 const availableTimezones = [
   { timezone: "America/New_York", city: "New York", flag: "🇺🇸" },
@@ -48,11 +66,18 @@ const availableTimezones = [
 ];
 
 export function WorldClock() {
-  const { timezones, isLoading, addTimezone, removeTimezone } = useWorldClockTimezones();
+  const { timezones, isLoading, addTimezone, removeTimezone, reorderTimezones } = useWorldClockTimezones();
   const [times, setTimes] = useState<Record<string, string>>({});
   const [dates, setDates] = useState<Record<string, string>>({});
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedTimezone, setSelectedTimezone] = useState("");
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     const updateTimes = () => {
@@ -94,6 +119,18 @@ export function WorldClock() {
       addTimezone(selected.timezone, selected.city, selected.flag);
       setIsAddDialogOpen(false);
       setSelectedTimezone("");
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = timezones.findIndex((tz) => tz.id === active.id);
+      const newIndex = timezones.findIndex((tz) => tz.id === over.id);
+
+      const newOrder = arrayMove(timezones, oldIndex, newIndex);
+      reorderTimezones(newOrder);
     }
   };
 
@@ -165,38 +202,99 @@ export function WorldClock() {
             No timezones added yet. Click + to add one.
           </div>
         ) : (
-          timezones.map((tz) => (
-            <div
-              key={tz.id}
-              className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={timezones.map(tz => tz.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <div className="flex items-center gap-2 flex-1">
-                {tz.flag && <span className="text-lg">{tz.flag}</span>}
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{tz.city_name}</p>
-                  <p className="text-xs text-muted-foreground">{dates[tz.timezone]}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-muted-foreground" />
-                  <Badge variant="secondary" className="font-mono text-xs">
-                    {times[tz.timezone] || "Loading..."}
-                  </Badge>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => removeTimezone(tz.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          ))
+              {timezones.map((tz) => (
+                <SortableTimezoneItem
+                  key={tz.id}
+                  tz={tz}
+                  time={times[tz.timezone]}
+                  date={dates[tz.timezone]}
+                  onRemove={removeTimezone}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </Card>
+  );
+}
+
+// Sortable timezone item component
+interface SortableTimezoneItemProps {
+  tz: {
+    id: string;
+    timezone: string;
+    city_name: string;
+    flag?: string;
+  };
+  time: string;
+  date: string;
+  onRemove: (id: string) => void;
+}
+
+function SortableTimezoneItem({ tz, time, date, onRemove }: SortableTimezoneItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: tz.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group",
+        isDragging && "opacity-50 bg-muted/50"
+      )}
+    >
+      <div className="flex items-center gap-2 flex-1">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+        {tz.flag && <span className="text-lg">{tz.flag}</span>}
+        <div className="flex-1">
+          <p className="text-sm font-medium">{tz.city_name}</p>
+          <p className="text-xs text-muted-foreground">{date}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Clock className="h-3 w-3 text-muted-foreground" />
+          <Badge variant="secondary" className="font-mono text-xs">
+            {time || "Loading..."}
+          </Badge>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={() => onRemove(tz.id)}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
   );
 }
