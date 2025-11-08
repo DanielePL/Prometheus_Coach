@@ -68,7 +68,7 @@ export function useWorldClockTimezones() {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // Initialize defaults in database for logged-in users
+        // Initialize defaults in database for logged-in users (or re-insert if user deleted all)
         const defaultsToInsert = defaultTimezones.map(tz => ({
           user_id: user.id,
           timezone: tz.timezone,
