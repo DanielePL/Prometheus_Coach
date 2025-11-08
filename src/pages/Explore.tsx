@@ -8,11 +8,8 @@ import bannerImg from "@/assets/gym-banner.jpg";
 import { useExercises, ExerciseCategory } from "@/hooks/useExercises";
 import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { ExerciseCard } from "@/components/Exercise/ExerciseCard";
-import { ExerciseDetailModal } from "@/components/Exercise/ExerciseDetailModal";
 import { useState } from "react";
-import { Exercise } from "@/hooks/useExercises";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 const categories = ["all", "bodybuilding", "crossfit", "powerlifting", "weightlifting", "functional", "plyometrics"] as const;
 
@@ -20,8 +17,6 @@ const Explore = () => {
   const { theme, setTheme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
 
   const { data: exercises = [], isLoading } = useExercises({
     category: selectedCategory === "all" ? undefined : (selectedCategory as ExerciseCategory),
@@ -32,11 +27,6 @@ const Explore = () => {
   const publicExercises = exercises.filter((ex) => ex.visibility === "public");
 
   const { isFavorite, toggleFavorite } = useFavoriteExercises();
-
-  const handleExerciseClick = (exercise: Exercise) => {
-    setSelectedExercise(exercise);
-    setModalOpen(true);
-  };
 
   return (
     <div 
@@ -124,7 +114,6 @@ const Explore = () => {
                   exercise={exercise}
                   isFavorite={isFavorite(exercise.id)}
                   onToggleFavorite={toggleFavorite}
-                  onClick={() => handleExerciseClick(exercise)}
                 />
               ))}
             </div>
@@ -133,14 +122,6 @@ const Explore = () => {
       </main>
 
       <BottomNav />
-
-      <ExerciseDetailModal
-        exercise={selectedExercise}
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        isFavorite={selectedExercise ? isFavorite(selectedExercise.id) : false}
-        onToggleFavorite={toggleFavorite}
-      />
     </div>
   );
 };

@@ -1,22 +1,27 @@
 import { Heart } from "lucide-react";
 import { Exercise } from "@/hooks/useExercises";
+import { useNavigate } from "react-router-dom";
 
 interface ExerciseCardProps {
   exercise: Exercise;
   isFavorite: boolean;
   onToggleFavorite: (exerciseId: string) => void;
-  onClick: () => void;
 }
 
 export const ExerciseCard = ({
   exercise,
   isFavorite,
   onToggleFavorite,
-  onClick,
 }: ExerciseCardProps) => {
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/exercise/${exercise.id}`);
+  };
+
   return (
     <div className="glass rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_rgba(251,146,60,0.4)] hover:bg-white/20 dark:hover:bg-black/30 p-0">
-      <div className="relative h-48 overflow-hidden" onClick={onClick}>
+      <div className="relative h-48 overflow-hidden" onClick={handleCardClick}>
         <video
           src={exercise.cloudfront_url}
           className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
@@ -45,7 +50,7 @@ export const ExerciseCard = ({
           />
         </button>
       </div>
-      <div className="p-4 px-5" onClick={onClick}>
+      <div className="p-4 px-5" onClick={handleCardClick}>
         <h3 className="font-bold text-lg">{exercise.title}</h3>
         {exercise.duration && (
           <p className="text-sm text-muted-foreground mt-1">

@@ -6,21 +6,12 @@ import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { ExerciseCard } from "@/components/Exercise/ExerciseCard";
-import { ExerciseDetailModal } from "@/components/Exercise/ExerciseDetailModal";
-import { useState } from "react";
 import { Exercise } from "@/hooks/useExercises";
 
 const Saved = () => {
   const { theme, setTheme } = useTheme();
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
 
-  const { favorites, isLoading, toggleFavorite, isFavorite } = useFavoriteExercises();
-
-  const handleExerciseClick = (exercise: Exercise) => {
-    setSelectedExercise(exercise);
-    setModalOpen(true);
-  };
+  const { favorites, isLoading, toggleFavorite } = useFavoriteExercises();
 
   return (
     <div 
@@ -71,7 +62,6 @@ const Saved = () => {
                   exercise={favorite.exercises as Exercise}
                   isFavorite={true}
                   onToggleFavorite={toggleFavorite}
-                  onClick={() => handleExerciseClick(favorite.exercises as Exercise)}
                 />
               ))}
             </div>
@@ -80,14 +70,6 @@ const Saved = () => {
       </main>
 
       <BottomNav />
-
-      <ExerciseDetailModal
-        exercise={selectedExercise}
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        isFavorite={selectedExercise ? isFavorite(selectedExercise.id) : false}
-        onToggleFavorite={toggleFavorite}
-      />
     </div>
   );
 };

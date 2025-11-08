@@ -5,12 +5,11 @@ import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { ExerciseCard } from "@/components/Exercise/ExerciseCard";
-import { ExerciseDetailModal } from "@/components/Exercise/ExerciseDetailModal";
 import { UploadExerciseModal } from "@/components/Exercise/UploadExerciseModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, Search, Moon, Sun } from "lucide-react";
-import { Exercise, ExerciseCategory } from "@/hooks/useExercises";
+import { ExerciseCategory } from "@/hooks/useExercises";
 import { useTheme } from "next-themes";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
@@ -30,8 +29,6 @@ const Uploads = () => {
   const { theme, setTheme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const { data: exercises = [], isLoading, refetch } = useExercises({
@@ -43,11 +40,6 @@ const Uploads = () => {
   const myExercises = exercises.filter((ex) => ex.created_by === user?.id);
 
   const { isFavorite, toggleFavorite } = useFavoriteExercises();
-
-  const handleExerciseClick = (exercise: Exercise) => {
-    setSelectedExercise(exercise);
-    setIsDetailModalOpen(true);
-  };
 
   const handleUploadSuccess = () => {
     refetch();
@@ -181,7 +173,6 @@ const Uploads = () => {
                     exercise={exercise}
                     isFavorite={isFavorite(exercise.id)}
                     onToggleFavorite={toggleFavorite}
-                    onClick={() => handleExerciseClick(exercise)}
                   />
                 ))}
               </div>
@@ -191,14 +182,6 @@ const Uploads = () => {
       </main>
 
       <BottomNav />
-
-      <ExerciseDetailModal
-        exercise={selectedExercise}
-        open={isDetailModalOpen}
-        onOpenChange={setIsDetailModalOpen}
-        isFavorite={selectedExercise ? isFavorite(selectedExercise.id) : false}
-        onToggleFavorite={toggleFavorite}
-      />
 
       <UploadExerciseModal
         open={isUploadModalOpen}

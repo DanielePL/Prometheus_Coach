@@ -16,6 +16,7 @@ import Requests from "./pages/Requests";
 import Uploads from "./pages/Uploads";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import ExerciseDetail from "./pages/ExerciseDetail";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/copy-inbox" element={<ProtectedRoute><CopyInbox /></ProtectedRoute>} />
             <Route path="/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
             <Route path="/barbell-back-squat" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/exercise/:id" element={<ProtectedRoute><ExerciseDetail /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
