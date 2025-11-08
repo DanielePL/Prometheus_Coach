@@ -13,8 +13,9 @@ export interface WorldClockTimezone {
 const defaultTimezones = [
   { timezone: "America/New_York", city_name: "New York", flag: "🇺🇸", display_order: 0 },
   { timezone: "Europe/London", city_name: "London", flag: "🇬🇧", display_order: 1 },
-  { timezone: "Asia/Tokyo", city_name: "Tokyo", flag: "🇯🇵", display_order: 2 },
-  { timezone: "Australia/Sydney", city_name: "Sydney", flag: "🇦🇺", display_order: 3 },
+  { timezone: "Asia/Bangkok", city_name: "Bangkok", flag: "🇹🇭", display_order: 2 },
+  { timezone: "Asia/Tokyo", city_name: "Tokyo", flag: "🇯🇵", display_order: 3 },
+  { timezone: "Australia/Sydney", city_name: "Sydney", flag: "🇦🇺", display_order: 4 },
 ];
 
 export function useWorldClockTimezones() {
