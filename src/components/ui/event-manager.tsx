@@ -48,6 +48,7 @@ export interface Event {
   recurrence_end_date?: Date
   parent_event_id?: string | null
   timezone?: string
+  reminders?: number[]
 }
 
 export interface EventManagerProps {
@@ -105,6 +106,7 @@ export function EventManager({
     color: colors[0].value,
     category: categories[0],
     tags: [],
+    reminders: [],
     is_recurring: false,
     recurrence_pattern: 'weekly',
     recurrence_interval: 1,
@@ -198,6 +200,7 @@ export function EventManager({
       attendees: newEvent.attendees,
       tags: newEvent.tags || [],
       assigned_to: newEvent.assigned_to || null,
+      reminders: newEvent.reminders || [],
       is_recurring: newEvent.is_recurring,
       recurrence_pattern: newEvent.recurrence_pattern,
       recurrence_interval: newEvent.recurrence_interval,
@@ -216,6 +219,7 @@ export function EventManager({
       color: colors[0].value,
       category: categories[0],
       tags: [],
+      reminders: [],
       is_recurring: false,
       recurrence_pattern: 'weekly',
       recurrence_interval: 1,
@@ -1127,6 +1131,65 @@ export function EventManager({
                   )
                 })}
               </div>
+            </div>
+
+            {/* Reminders Section */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-semibold">Reminders</Label>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: '15 minutes before', value: 15 },
+                  { label: '1 hour before', value: 60 },
+                  { label: '1 day before', value: 1440 },
+                ].map((reminder) => {
+                  const reminders = isCreating ? newEvent.reminders : selectedEvent?.reminders;
+                  const isSelected = reminders?.includes(reminder.value);
+                  const isReadOnly = !isCreating && selectedEvent?.created_by !== currentUserId;
+                  return (
+                    <Badge
+                      key={reminder.value}
+                      variant={isSelected ? "default" : "outline"}
+                      className={cn(
+                        !isReadOnly && "cursor-pointer transition-all hover:scale-105",
+                        isReadOnly && "opacity-70"
+                      )}
+                      onClick={() => {
+                        if (isReadOnly) return;
+                        const currentReminders = reminders || [];
+                        const newReminders = currentReminders.includes(reminder.value)
+                          ? currentReminders.filter((r) => r !== reminder.value)
+                          : [...currentReminders, reminder.value].sort((a, b) => a - b);
+                        
+                        if (isCreating) {
+                          setNewEvent((prev) => ({ ...prev, reminders: newReminders }));
+                        } else {
+                          setSelectedEvent((prev) => (prev ? { ...prev, reminders: newReminders } : null));
+                        }
+                      }}
+                    >
+                      {reminder.label}
+                    </Badge>
+                  );
+                })}
+              </div>
+              {(() => {
+                const reminders = isCreating ? newEvent.reminders : selectedEvent?.reminders;
+                if (reminders && reminders.length > 0) {
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      You'll be notified {reminders.length} time{reminders.length !== 1 ? 's' : ''} before this event
+                    </p>
+                  );
+                }
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    No reminders set
+                  </p>
+                );
+              })()}
             </div>
 
             {isCreating && isCoach && clients.length > 0 && (

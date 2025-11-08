@@ -24,6 +24,28 @@ export function useWorldClockTimezones() {
 
   useEffect(() => {
     fetchTimezones();
+
+    // Set up real-time subscription for timezone changes
+    const channel = supabase
+      .channel('world-clock-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_world_clock_timezones',
+        },
+        (payload) => {
+          console.log('World clock change:', payload);
+          // Refetch timezones when changes occur
+          fetchTimezones();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchTimezones = async () => {

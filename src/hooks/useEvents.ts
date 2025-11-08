@@ -17,6 +17,7 @@ interface DatabaseEvent {
   updated_at: string;
   is_recurring?: boolean;
   parent_event_id?: string | null;
+  reminders?: number[];
   creator?: {
     full_name: string;
   };
@@ -36,6 +37,7 @@ const mapDatabaseEventToEvent = (dbEvent: DatabaseEvent): Event => ({
   created_by: dbEvent.created_by,
   is_recurring: dbEvent.is_recurring,
   parent_event_id: dbEvent.parent_event_id,
+  reminders: dbEvent.reminders || [],
 });
 
 export const useEvents = () => {
@@ -71,6 +73,7 @@ export const useEvents = () => {
         color: event.color || "gray",
         created_by: user.id,
         assigned_to: event.assigned_to || null,
+        reminders: event.reminders || [],
       };
 
       // Add recurring fields if applicable
@@ -115,6 +118,7 @@ export const useEvents = () => {
       if (updates.category) updateData.event_type = updates.category;
       if (updates.color) updateData.color = updates.color;
       if (updates.assigned_to !== undefined) updateData.assigned_to = updates.assigned_to;
+      if (updates.reminders !== undefined) updateData.reminders = updates.reminders;
 
       const { data, error } = await supabase
         .from("events")
