@@ -731,6 +731,7 @@ export function EventManager({
           onDragEnd={handleDragEnd}
           onDrop={handleDrop}
           getColorClasses={getColorClasses}
+          highlightedEventId={highlightedEventId}
         />
       )}
 
@@ -746,6 +747,7 @@ export function EventManager({
           onDragEnd={handleDragEnd}
           onDrop={handleDrop}
           getColorClasses={getColorClasses}
+          highlightedEventId={highlightedEventId}
         />
       )}
 
@@ -761,6 +763,7 @@ export function EventManager({
           onDragEnd={handleDragEnd}
           onDrop={handleDrop}
           getColorClasses={getColorClasses}
+          highlightedEventId={highlightedEventId}
         />
       )}
 
@@ -1131,6 +1134,7 @@ function EventCard({
   onDragEnd,
   getColorClasses,
   variant = "default",
+  highlightedEventId = null,
 }: {
   event: Event
   onEventClick: (event: Event) => void
@@ -1138,6 +1142,7 @@ function EventCard({
   onDragEnd: () => void
   getColorClasses: (color: string) => { bg: string; text: string }
   variant?: "default" | "compact" | "detailed"
+  highlightedEventId?: string | null
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const colorClasses = getColorClasses(event.color)
@@ -1159,6 +1164,8 @@ function EventCard({
     return `${minutes}m`
   }
 
+  const isHighlighted = event.id === highlightedEventId;
+
   if (variant === "compact") {
     return (
       <div
@@ -1176,6 +1183,7 @@ function EventCard({
             colorClasses.bg,
             "text-white truncate animate-in fade-in slide-in-from-top-1",
             isHovered && "scale-105 shadow-lg z-10",
+            isHighlighted && "animate-pulse ring-2 ring-primary shadow-lg shadow-primary/50",
           )}
         >
           <div className="flex items-center gap-1">
@@ -1245,6 +1253,7 @@ function EventCard({
           colorClasses.bg,
           "text-white animate-in fade-in slide-in-from-left-2",
           isHovered && "scale-[1.03] shadow-2xl ring-2 ring-white/50",
+          isHighlighted && "animate-pulse ring-2 ring-primary shadow-lg shadow-primary/50",
         )}
       >
         <div className="flex items-start justify-between gap-2">
@@ -1299,6 +1308,7 @@ function EventCard({
           colorClasses.bg,
           "text-white animate-in fade-in slide-in-from-left-1",
           isHovered && "scale-105 shadow-lg z-10",
+          isHighlighted && "animate-pulse ring-2 ring-primary shadow-lg shadow-primary/50",
         )}
       >
         <div className="flex items-center gap-1 truncate">
@@ -1365,6 +1375,7 @@ function MonthView({
   onDragEnd,
   onDrop,
   getColorClasses,
+  highlightedEventId = null,
 }: {
   currentDate: Date
   events: Event[]
@@ -1373,6 +1384,7 @@ function MonthView({
   onDragEnd: () => void
   onDrop: (date: Date) => void
   getColorClasses: (color: string) => { bg: string; text: string }
+  highlightedEventId?: string | null
 }) {
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
@@ -1443,6 +1455,7 @@ function MonthView({
                     onDragEnd={onDragEnd}
                     getColorClasses={getColorClasses}
                     variant="compact"
+                    highlightedEventId={highlightedEventId}
                   />
                 ))}
                 {dayEvents.length > 3 && (
@@ -1466,6 +1479,7 @@ function WeekView({
   onDragEnd,
   onDrop,
   getColorClasses,
+  highlightedEventId = null,
 }: {
   currentDate: Date
   events: Event[]
@@ -1474,6 +1488,7 @@ function WeekView({
   onDragEnd: () => void
   onDrop: (date: Date, hour: number) => void
   getColorClasses: (color: string) => { bg: string; text: string }
+  highlightedEventId?: string | null
 }) {
   const startOfWeek = new Date(currentDate)
   startOfWeek.setDate(currentDate.getDay())
@@ -1544,6 +1559,7 @@ function WeekView({
                         onDragEnd={onDragEnd}
                         getColorClasses={getColorClasses}
                         variant="default"
+                        highlightedEventId={highlightedEventId}
                       />
                     ))}
                   </div>
@@ -1566,6 +1582,7 @@ function DayView({
   onDragEnd,
   onDrop,
   getColorClasses,
+  highlightedEventId = null,
 }: {
   currentDate: Date
   events: Event[]
@@ -1574,6 +1591,7 @@ function DayView({
   onDragEnd: () => void
   onDrop: (date: Date, hour: number) => void
   getColorClasses: (color: string) => { bg: string; text: string }
+  highlightedEventId?: string | null
 }) {
   const hours = Array.from({ length: 24 }, (_, i) => i)
 
@@ -1616,6 +1634,7 @@ function DayView({
                       onDragEnd={onDragEnd}
                       getColorClasses={getColorClasses}
                       variant="detailed"
+                      highlightedEventId={highlightedEventId}
                     />
                   ))}
                 </div>
