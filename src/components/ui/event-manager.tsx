@@ -39,6 +39,7 @@ export interface Event {
   tags?: string[]
   assigned_to?: string | null
   created_by_name?: string
+  created_by?: string
 }
 
 export interface EventManagerProps {
@@ -53,6 +54,7 @@ export interface EventManagerProps {
   availableTags?: string[]
   clients?: { id: string; full_name: string }[]
   isCoach?: boolean
+  currentUserId?: string | null
 }
 
 const defaultColors = [
@@ -76,6 +78,7 @@ export function EventManager({
   availableTags = ["Important", "Urgent", "Work", "Personal", "Team", "Client"],
   clients = [],
   isCoach = false,
+  currentUserId = null,
 }: EventManagerProps) {
   const [events, setEvents] = useState<Event[]>(initialEvents)
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -739,7 +742,11 @@ export function EventManager({
           <DialogHeader>
             <DialogTitle>{isCreating ? "Create Event" : "Event Details"}</DialogTitle>
             <DialogDescription>
-              {isCreating ? "Add a new event to your calendar" : "View and edit event details"}
+              {isCreating 
+                ? "Add a new event to your calendar" 
+                : !isCreating && selectedEvent?.created_by && selectedEvent.created_by !== currentUserId
+                ? "View event details (read-only)"
+                : "View and edit event details"}
             </DialogDescription>
           </DialogHeader>
 
@@ -755,8 +762,9 @@ export function EventManager({
                     : setSelectedEvent((prev) => (prev ? { ...prev, title: e.target.value } : null))
                 }
                 placeholder="Event title"
+                disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
               />
-              {!isCreating && selectedEvent?.created_by_name && (
+              {!isCreating && selectedEvent?.created_by_name && selectedEvent.created_by !== currentUserId && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Badge variant="outline" className="text-xs">
                     Created by: {selectedEvent.created_by_name}
@@ -780,6 +788,7 @@ export function EventManager({
                 }
                 placeholder="Event description"
                 rows={3}
+                disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
               />
             </div>
 
@@ -810,6 +819,7 @@ export function EventManager({
                       ? setNewEvent((prev) => ({ ...prev, startTime: date }))
                       : setSelectedEvent((prev) => (prev ? { ...prev, startTime: date } : null))
                   }}
+                  disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
                 />
               </div>
 
@@ -837,6 +847,7 @@ export function EventManager({
                       ? setNewEvent((prev) => ({ ...prev, endTime: date }))
                       : setSelectedEvent((prev) => (prev ? { ...prev, endTime: date } : null))
                   }}
+                  disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
                 />
               </div>
             </div>
@@ -851,6 +862,7 @@ export function EventManager({
                       ? setNewEvent((prev) => ({ ...prev, category: value }))
                       : setSelectedEvent((prev) => (prev ? { ...prev, category: value } : null))
                   }
+                  disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
                 >
                   <SelectTrigger id="category">
                     <SelectValue placeholder="Select category" />
@@ -874,6 +886,7 @@ export function EventManager({
                       ? setNewEvent((prev) => ({ ...prev, color: value }))
                       : setSelectedEvent((prev) => (prev ? { ...prev, color: value } : null))
                   }
+                  disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
                 >
                   <SelectTrigger id="color">
                     <SelectValue placeholder="Select color" />
@@ -897,12 +910,16 @@ export function EventManager({
               <div className="flex flex-wrap gap-2">
                 {availableTags.map((tag) => {
                   const isSelected = isCreating ? newEvent.tags?.includes(tag) : selectedEvent?.tags?.includes(tag)
+                  const isReadOnly = !isCreating && selectedEvent?.created_by !== currentUserId
                   return (
                     <Badge
                       key={tag}
                       variant={isSelected ? "default" : "outline"}
-                      className="cursor-pointer transition-all hover:scale-105"
-                      onClick={() => toggleTag(tag, isCreating)}
+                      className={cn(
+                        !isReadOnly && "cursor-pointer transition-all hover:scale-105",
+                        isReadOnly && "opacity-70"
+                      )}
+                      onClick={() => !isReadOnly && toggleTag(tag, isCreating)}
                     >
                       {tag}
                     </Badge>
@@ -937,7 +954,7 @@ export function EventManager({
           </div>
 
           <DialogFooter>
-            {!isCreating && (
+            {!isCreating && selectedEvent?.created_by === currentUserId && (
               <Button variant="destructive" onClick={() => selectedEvent && handleDeleteEvent(selectedEvent.id)}>
                 Delete
               </Button>
@@ -950,11 +967,13 @@ export function EventManager({
                 setSelectedEvent(null)
               }}
             >
-              Cancel
+              {!isCreating && selectedEvent?.created_by !== currentUserId ? "Close" : "Cancel"}
             </Button>
-            <Button onClick={isCreating ? handleCreateEvent : handleUpdateEvent}>
-              {isCreating ? "Create" : "Save"}
-            </Button>
+            {(isCreating || selectedEvent?.created_by === currentUserId) && (
+              <Button onClick={isCreating ? handleCreateEvent : handleUpdateEvent}>
+                {isCreating ? "Create" : "Save"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

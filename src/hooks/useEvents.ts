@@ -31,6 +31,7 @@ const mapDatabaseEventToEvent = (dbEvent: DatabaseEvent): Event => ({
   tags: [],
   assigned_to: dbEvent.assigned_to,
   created_by_name: dbEvent.creator?.full_name,
+  created_by: dbEvent.created_by,
 });
 
 export const useEvents = () => {

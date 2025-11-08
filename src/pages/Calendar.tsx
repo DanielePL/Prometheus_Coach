@@ -2,18 +2,30 @@ import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import { EventManager, type Event } from "@/components/ui/event-manager";
 import { useEvents } from "@/hooks/useEvents";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useClients } from "@/hooks/useClients";
+import { supabase } from "@/integrations/supabase/client";
 
 const Calendar = () => {
   const { theme, setTheme } = useTheme();
   const { events, isLoading, createEvent, updateEvent, deleteEvent } = useEvents();
   const { isCoach } = useUserRole();
   const { clients } = useClients();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   const handleEventCreate = async (event: Event) => {
     await createEvent(event);
@@ -76,6 +88,7 @@ const Calendar = () => {
               defaultView="month"
               clients={clients}
               isCoach={isCoach}
+              currentUserId={currentUserId}
             />
           )}
         </div>
