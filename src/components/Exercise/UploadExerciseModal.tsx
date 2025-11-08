@@ -7,9 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Upload, Video, Loader2 } from "lucide-react";
+import { Upload, Video, Loader2, FileVideo } from "lucide-react";
 import { ExerciseCategory } from "@/hooks/useExercises";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 interface UploadExerciseModalProps {
   open: boolean;
@@ -25,9 +28,14 @@ export const UploadExerciseModal = ({
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [compressing, setCompressing] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [compressedFile, setCompressedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
+  const [originalSize, setOriginalSize] = useState<number>(0);
+  const [compressedSize, setCompressedSize] = useState<number>(0);
 
   // Form fields
   const [title, setTitle] = useState("");
@@ -41,7 +49,7 @@ export const UploadExerciseModal = ({
   const [suggestedReps, setSuggestedReps] = useState("");
   const [suggestedWeight, setSuggestedWeight] = useState("");
 
-  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -57,7 +65,7 @@ export const UploadExerciseModal = ({
     const video = document.createElement("video");
     video.src = url;
     
-    video.onloadedmetadata = () => {
+    video.onloadedmetadata = async () => {
       if (video.duration > 10) {
         toast.error("Video must be 10 seconds or less");
         URL.revokeObjectURL(url);
@@ -66,7 +74,77 @@ export const UploadExerciseModal = ({
       setVideoDuration(video.duration);
       setVideoFile(file);
       setVideoPreview(url);
+      setOriginalSize(file.size);
+      
+      // Automatically compress video after selection
+      await compressVideo(file);
     };
+  };
+
+  const compressVideo = async (file: File) => {
+    setCompressing(true);
+    setCompressionProgress(0);
+    
+    try {
+      const ffmpeg = new FFmpeg();
+      
+      // Load FFmpeg
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+
+      // Track progress
+      ffmpeg.on('progress', ({ progress }) => {
+        setCompressionProgress(Math.round(progress * 100));
+      });
+
+      // Write input file
+      await ffmpeg.writeFile('input.mp4', await fetchFile(file));
+
+      // Compress video with optimal settings
+      // Target: 1.5 Mbps, max 1080p, H.264, 30fps, audio at 128kbps
+      await ffmpeg.exec([
+        '-i', 'input.mp4',
+        '-c:v', 'libx264',           // H.264 codec
+        '-preset', 'medium',          // Balance between speed and compression
+        '-b:v', '1500k',              // Video bitrate: 1.5 Mbps
+        '-maxrate', '2000k',          // Max bitrate: 2 Mbps
+        '-bufsize', '3000k',          // Buffer size
+        '-vf', 'scale=min(iw\\,1920):min(ih\\,1080):force_original_aspect_ratio=decrease', // Max 1080p
+        '-r', '30',                   // 30 fps
+        '-c:a', 'aac',                // AAC audio codec
+        '-b:a', '128k',               // Audio bitrate: 128 kbps
+        '-movflags', '+faststart',    // Enable streaming
+        'output.mp4'
+      ]);
+
+      // Read output file
+      const data = await ffmpeg.readFile('output.mp4');
+      // Convert FileData to a proper Uint8Array for Blob
+      const uint8Data = new Uint8Array(data as Uint8Array);
+      const compressedBlob = new Blob([uint8Data.buffer], { type: 'video/mp4' });
+      const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, '.mp4'), {
+        type: 'video/mp4',
+      });
+
+      setCompressedFile(compressedFile);
+      setCompressedSize(compressedFile.size);
+      setCompressionProgress(100);
+      
+      const sizeSavedMB = ((file.size - compressedFile.size) / (1024 * 1024)).toFixed(2);
+      const compressionRatio = ((1 - compressedFile.size / file.size) * 100).toFixed(0);
+      
+      toast.success(`Video compressed! Saved ${sizeSavedMB}MB (${compressionRatio}% reduction)`);
+    } catch (error) {
+      console.error("Compression error:", error);
+      toast.error("Failed to compress video. Will upload original.");
+      setCompressedFile(file); // Fallback to original
+      setCompressedSize(file.size);
+    } finally {
+      setCompressing(false);
+    }
   };
 
   const handleUpload = async () => {
@@ -80,14 +158,19 @@ export const UploadExerciseModal = ({
       return;
     }
 
+    if (!compressedFile) {
+      toast.error("Please wait for video compression to complete");
+      return;
+    }
+
     setUploading(true);
     setUploadProgress(0);
 
     try {
-      // Step 1: Upload video to S3 (30% of progress)
+      // Step 1: Upload compressed video to S3
       setUploadProgress(10);
       const formData = new FormData();
-      formData.append('video', videoFile);
+      formData.append('video', compressedFile); // Use compressed file
       formData.append('exerciseName', title);
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -152,8 +235,12 @@ export const UploadExerciseModal = ({
 
   const resetForm = () => {
     setVideoFile(null);
+    setCompressedFile(null);
     setVideoPreview(null);
     setVideoDuration(null);
+    setOriginalSize(0);
+    setCompressedSize(0);
+    setCompressionProgress(0);
     setTitle("");
     setCategory("");
     setDescription("");
@@ -167,10 +254,14 @@ export const UploadExerciseModal = ({
   };
 
   const handleClose = () => {
-    if (!uploading) {
+    if (!uploading && !compressing) {
       resetForm();
       onOpenChange(false);
     }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
   return (
@@ -192,15 +283,45 @@ export const UploadExerciseModal = ({
                     controls
                     className="w-full max-h-64 rounded-lg bg-black"
                   />
+                  
+                  {/* File Size Info */}
+                  {originalSize > 0 && (
+                    <div className="mt-3 p-3 bg-secondary/50 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Original Size:</span>
+                        <span className="font-medium">{formatFileSize(originalSize)}</span>
+                      </div>
+                      {compressedSize > 0 && (
+                        <>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Compressed Size:</span>
+                            <span className="font-medium text-green-600">{formatFileSize(compressedSize)}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Space Saved:</span>
+                            <span className="font-medium text-green-600">
+                              {formatFileSize(originalSize - compressedSize)} 
+                              ({((1 - compressedSize / originalSize) * 100).toFixed(0)}%)
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   <Button
                     variant="destructive"
                     size="sm"
                     className="mt-2"
                     onClick={() => {
                       setVideoFile(null);
+                      setCompressedFile(null);
                       setVideoPreview(null);
                       setVideoDuration(null);
+                      setOriginalSize(0);
+                      setCompressedSize(0);
                     }}
+                    disabled={compressing}
                   >
                     Remove Video
                   </Button>
@@ -219,11 +340,26 @@ export const UploadExerciseModal = ({
                     accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
                     onChange={handleVideoSelect}
                     className="hidden"
+                    disabled={compressing || uploading}
                   />
                 </label>
               )}
             </div>
           </div>
+
+          {/* Compression Progress */}
+          {compressing && (
+            <div className="space-y-2 p-4 bg-secondary/30 rounded-lg border border-border">
+              <div className="flex items-center gap-2">
+                <FileVideo className="w-5 h-5 text-primary animate-pulse" />
+                <span className="text-sm font-medium">Compressing video...</span>
+              </div>
+              <Progress value={compressionProgress} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                Optimizing video for faster upload and playback ({compressionProgress}%)
+              </p>
+            </div>
+          )}
 
           {/* Basic Info */}
           <div className="space-y-4">
@@ -357,17 +493,12 @@ export const UploadExerciseModal = ({
 
           {/* Upload Progress */}
           {uploading && uploadProgress > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Upload Progress</span>
-                <span className="font-medium">{uploadProgress}%</span>
+            <div className="space-y-2 p-4 bg-secondary/30 rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Uploading to cloud...</span>
+                <span className="text-sm font-medium">{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
-                <div 
-                  className="bg-primary h-full transition-all duration-300 ease-out"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
+              <Progress value={uploadProgress} className="h-2" />
             </div>
           )}
 
@@ -376,20 +507,25 @@ export const UploadExerciseModal = ({
             <Button
               variant="outline"
               onClick={handleClose}
-              disabled={uploading}
+              disabled={uploading || compressing}
               className="flex-1"
             >
               Cancel
             </Button>
             <Button
               onClick={handleUpload}
-              disabled={uploading || !videoFile || !title || !category}
+              disabled={uploading || compressing || !compressedFile || !title || !category}
               className="flex-1"
             >
               {uploading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Uploading...
+                </>
+              ) : compressing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Compressing...
                 </>
               ) : (
                 <>
