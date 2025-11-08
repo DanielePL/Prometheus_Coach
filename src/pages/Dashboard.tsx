@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Calendar, Users, Bell, TrendingUp, Mail, Target, Search, Moon, Sun, Plus } from "lucide-react";
+import { Calendar, Users, Bell, TrendingUp, Mail, Target, Search, Moon, Sun, Plus, Trash2 } from "lucide-react";
 import { InfoCard } from "@/components/Exercise/InfoCard";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +47,8 @@ const Dashboard = () => {
     { id: 3, text: "Follow up with new client onboarding", completed: false },
     { id: 4, text: "Record new exercise demonstration video", completed: false },
   ]);
+  const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
+  const [editingGoalText, setEditingGoalText] = useState("");
 
   const toggleGoal = (goalId: number) => {
     setGoals(goals.map(goal => 
@@ -61,6 +63,32 @@ const Dashboard = () => {
       completed: false
     };
     setGoals([...goals, newGoal]);
+    setEditingGoalId(newGoal.id);
+    setEditingGoalText(newGoal.text);
+  };
+
+  const deleteGoal = (goalId: number) => {
+    setGoals(goals.filter(goal => goal.id !== goalId));
+  };
+
+  const startEditingGoal = (goalId: number, currentText: string) => {
+    setEditingGoalId(goalId);
+    setEditingGoalText(currentText);
+  };
+
+  const saveGoalEdit = (goalId: number) => {
+    if (editingGoalText.trim()) {
+      setGoals(goals.map(goal => 
+        goal.id === goalId ? { ...goal, text: editingGoalText } : goal
+      ));
+    }
+    setEditingGoalId(null);
+    setEditingGoalText("");
+  };
+
+  const cancelGoalEdit = () => {
+    setEditingGoalId(null);
+    setEditingGoalText("");
   };
 
   const formatTime = (date: Date) => {
@@ -290,25 +318,58 @@ const Dashboard = () => {
               {goals.map((goal) => (
                 <div 
                   key={goal.id} 
-                  onClick={() => toggleGoal(goal.id)}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-background/50 cursor-pointer hover:bg-background/70 transition-smooth"
+                  className="group flex items-start gap-3 p-3 rounded-xl bg-background/50 hover:bg-background/70 transition-smooth"
                 >
-                  <div className={`
-                    w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5
-                    ${goal.completed 
-                      ? 'bg-primary border-primary' 
-                      : 'border-muted-foreground'
-                    }
-                  `}>
+                  <div 
+                    onClick={() => toggleGoal(goal.id)}
+                    className={`
+                      w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer
+                      ${goal.completed 
+                        ? 'bg-primary border-primary' 
+                        : 'border-muted-foreground'
+                      }
+                    `}>
                     {goal.completed && (
                       <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
                   </div>
-                  <span className={`text-sm ${goal.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                    {goal.text}
-                  </span>
+                  
+                  {editingGoalId === goal.id ? (
+                    <input
+                      type="text"
+                      value={editingGoalText}
+                      onChange={(e) => setEditingGoalText(e.target.value)}
+                      onBlur={() => saveGoalEdit(goal.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveGoalEdit(goal.id);
+                        if (e.key === 'Escape') cancelGoalEdit();
+                      }}
+                      autoFocus
+                      className="flex-1 text-sm bg-transparent border-b border-primary focus:outline-none text-foreground"
+                    />
+                  ) : (
+                    <>
+                      <span 
+                        onClick={() => startEditingGoal(goal.id, goal.text)}
+                        className={`flex-1 text-sm cursor-pointer ${goal.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+                      >
+                        {goal.text}
+                      </span>
+                      
+                      {goal.completed && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteGoal(goal.id)}
+                          className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </>
+                  )}
                 </div>
               ))}
             </div>
