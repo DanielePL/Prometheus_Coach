@@ -418,6 +418,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_world_clock_timezones: {
+        Row: {
+          city_name: string
+          created_at: string | null
+          display_order: number | null
+          flag: string | null
+          id: string
+          timezone: string
+          user_id: string
+        }
+        Insert: {
+          city_name: string
+          created_at?: string | null
+          display_order?: number | null
+          flag?: string | null
+          id?: string
+          timezone: string
+          user_id: string
+        }
+        Update: {
+          city_name?: string
+          created_at?: string | null
+          display_order?: number | null
+          flag?: string | null
+          id?: string
+          timezone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

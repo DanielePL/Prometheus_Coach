@@ -1,22 +1,58 @@
-import { Clock, Globe } from "lucide-react";
+import { Clock, Globe, Plus, X, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useWorldClockTimezones } from "@/hooks/useWorldClockTimezones";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-interface WorldClockProps {
-  timezones?: { name: string; timezone: string; flag?: string }[];
-}
-
-const defaultTimezones = [
-  { name: "New York", timezone: "America/New_York", flag: "🇺🇸" },
-  { name: "London", timezone: "Europe/London", flag: "🇬🇧" },
-  { name: "Tokyo", timezone: "Asia/Tokyo", flag: "🇯🇵" },
-  { name: "Sydney", timezone: "Australia/Sydney", flag: "🇦🇺" },
+const availableTimezones = [
+  { timezone: "America/New_York", city: "New York", flag: "🇺🇸" },
+  { timezone: "America/Los_Angeles", city: "Los Angeles", flag: "🇺🇸" },
+  { timezone: "America/Chicago", city: "Chicago", flag: "🇺🇸" },
+  { timezone: "America/Denver", city: "Denver", flag: "🇺🇸" },
+  { timezone: "America/Toronto", city: "Toronto", flag: "🇨🇦" },
+  { timezone: "America/Mexico_City", city: "Mexico City", flag: "🇲🇽" },
+  { timezone: "America/Sao_Paulo", city: "São Paulo", flag: "🇧🇷" },
+  { timezone: "Europe/London", city: "London", flag: "🇬🇧" },
+  { timezone: "Europe/Paris", city: "Paris", flag: "🇫🇷" },
+  { timezone: "Europe/Berlin", city: "Berlin", flag: "🇩🇪" },
+  { timezone: "Europe/Rome", city: "Rome", flag: "🇮🇹" },
+  { timezone: "Europe/Madrid", city: "Madrid", flag: "🇪🇸" },
+  { timezone: "Europe/Amsterdam", city: "Amsterdam", flag: "🇳🇱" },
+  { timezone: "Europe/Stockholm", city: "Stockholm", flag: "🇸🇪" },
+  { timezone: "Europe/Moscow", city: "Moscow", flag: "🇷🇺" },
+  { timezone: "Africa/Cairo", city: "Cairo", flag: "🇪🇬" },
+  { timezone: "Africa/Johannesburg", city: "Johannesburg", flag: "🇿🇦" },
+  { timezone: "Asia/Dubai", city: "Dubai", flag: "🇦🇪" },
+  { timezone: "Asia/Tokyo", city: "Tokyo", flag: "🇯🇵" },
+  { timezone: "Asia/Seoul", city: "Seoul", flag: "🇰🇷" },
+  { timezone: "Asia/Shanghai", city: "Shanghai", flag: "🇨🇳" },
+  { timezone: "Asia/Hong_Kong", city: "Hong Kong", flag: "🇭🇰" },
+  { timezone: "Asia/Singapore", city: "Singapore", flag: "🇸🇬" },
+  { timezone: "Asia/Kolkata", city: "Mumbai", flag: "🇮🇳" },
+  { timezone: "Asia/Bangkok", city: "Bangkok", flag: "🇹🇭" },
+  { timezone: "Australia/Sydney", city: "Sydney", flag: "🇦🇺" },
+  { timezone: "Australia/Melbourne", city: "Melbourne", flag: "🇦🇺" },
+  { timezone: "Pacific/Auckland", city: "Auckland", flag: "🇳🇿" },
 ];
 
-export function WorldClock({ timezones = defaultTimezones }: WorldClockProps) {
+export function WorldClock() {
+  const { timezones, isLoading, addTimezone, removeTimezone } = useWorldClockTimezones();
   const [times, setTimes] = useState<Record<string, string>>({});
   const [dates, setDates] = useState<Record<string, string>>({});
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedTimezone, setSelectedTimezone] = useState("");
 
   useEffect(() => {
     const updateTimes = () => {
@@ -52,34 +88,114 @@ export function WorldClock({ timezones = defaultTimezones }: WorldClockProps) {
     return () => clearInterval(interval);
   }, [timezones]);
 
+  const handleAddTimezone = () => {
+    const selected = availableTimezones.find(tz => tz.timezone === selectedTimezone);
+    if (selected) {
+      addTimezone(selected.timezone, selected.city, selected.flag);
+      setIsAddDialogOpen(false);
+      setSelectedTimezone("");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="p-4 glass">
+        <div className="flex items-center justify-center h-32">
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-4 glass">
-      <div className="flex items-center gap-2 mb-4">
-        <Globe className="h-4 w-4 text-primary" />
-        <h3 className="font-semibold text-sm">World Clock</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Globe className="h-4 w-4 text-primary" />
+          <h3 className="font-semibold text-sm">World Clock</h3>
+        </div>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Timezone</DialogTitle>
+              <DialogDescription>
+                Select a timezone to add to your world clock
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select value={selectedTimezone} onValueChange={setSelectedTimezone}>
+                  <SelectTrigger id="timezone">
+                    <SelectValue placeholder="Select a timezone" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {availableTimezones.map((tz) => (
+                      <SelectItem key={tz.timezone} value={tz.timezone}>
+                        <div className="flex items-center gap-2">
+                          <span>{tz.flag}</span>
+                          <span>{tz.city}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddTimezone} disabled={!selectedTimezone}>
+                  Add
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="space-y-3">
-        {timezones.map((tz) => (
-          <div
-            key={tz.timezone}
-            className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              {tz.flag && <span className="text-lg">{tz.flag}</span>}
-              <div>
-                <p className="text-sm font-medium">{tz.name}</p>
-                <p className="text-xs text-muted-foreground">{dates[tz.timezone]}</p>
+        {timezones.length === 0 ? (
+          <div className="text-center py-6 text-sm text-muted-foreground">
+            No timezones added yet. Click + to add one.
+          </div>
+        ) : (
+          timezones.map((tz) => (
+            <div
+              key={tz.id}
+              className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+            >
+              <div className="flex items-center gap-2 flex-1">
+                {tz.flag && <span className="text-lg">{tz.flag}</span>}
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{tz.city_name}</p>
+                  <p className="text-xs text-muted-foreground">{dates[tz.timezone]}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <Badge variant="secondary" className="font-mono text-xs">
+                    {times[tz.timezone] || "Loading..."}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => removeTimezone(tz.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-muted-foreground" />
-              <Badge variant="secondary" className="font-mono text-xs">
-                {times[tz.timezone] || "Loading..."}
-              </Badge>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </Card>
   );
