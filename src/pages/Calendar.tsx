@@ -120,7 +120,7 @@ const Calendar = () => {
           {/* Layout with Calendar and World Clock */}
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6">
             {/* Calendar Content - EventManager */}
-            <div>
+            <div className="space-y-6">
               {isLoading ? (
                 <div className="flex items-center justify-center h-96">
                   <div className="text-center">
@@ -143,9 +143,14 @@ const Calendar = () => {
                   highlightedEventId={highlightedEventId}
                 />
               )}
+              
+              {/* World Clock - Mobile/Tablet Only */}
+              <div className="xl:hidden">
+                <WorldClock />
+              </div>
             </div>
 
-            {/* World Clock Sidebar - Hidden on mobile and tablet, visible on xl+ screens */}
+            {/* World Clock Sidebar - Desktop Only (xl+ screens) */}
             <div className="hidden xl:block">
               <div className="sticky top-6 space-y-6">
                 {/* Current Time and Date Display */}
