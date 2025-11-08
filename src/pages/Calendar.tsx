@@ -74,6 +74,8 @@ const Calendar = () => {
               categories={["session", "check-in", "personal", "other"]}
               availableTags={["Important", "Urgent", "Session", "Check-in"]}
               defaultView="month"
+              clients={clients}
+              isCoach={isCoach}
             />
           )}
         </div>

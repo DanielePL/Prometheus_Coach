@@ -37,6 +37,7 @@ export interface Event {
   category?: string
   attendees?: string[]
   tags?: string[]
+  assigned_to?: string | null
 }
 
 export interface EventManagerProps {
@@ -49,6 +50,8 @@ export interface EventManagerProps {
   defaultView?: "month" | "week" | "day" | "list"
   className?: string
   availableTags?: string[]
+  clients?: { id: string; full_name: string }[]
+  isCoach?: boolean
 }
 
 const defaultColors = [
@@ -70,6 +73,8 @@ export function EventManager({
   defaultView = "month",
   className,
   availableTags = ["Important", "Urgent", "Work", "Personal", "Team", "Client"],
+  clients = [],
+  isCoach = false,
 }: EventManagerProps) {
   const [events, setEvents] = useState<Event[]>(initialEvents)
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -147,6 +152,7 @@ export function EventManager({
       category: newEvent.category,
       attendees: newEvent.attendees,
       tags: newEvent.tags || [],
+      assigned_to: newEvent.assigned_to || null,
     }
 
     setEvents((prev) => [...prev, event])
@@ -896,6 +902,30 @@ export function EventManager({
                 })}
               </div>
             </div>
+
+            {isCreating && isCoach && clients.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="assignedTo">Assign to Client (Optional)</Label>
+                <Select
+                  value={newEvent.assigned_to || "none"}
+                  onValueChange={(value) =>
+                    setNewEvent((prev) => ({ ...prev, assigned_to: value === "none" ? null : value }))
+                  }
+                >
+                  <SelectTrigger id="assignedTo">
+                    <SelectValue placeholder="Select client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (Personal Event)</SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
