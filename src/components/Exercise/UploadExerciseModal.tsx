@@ -27,15 +27,11 @@ export const UploadExerciseModal = ({
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [compressing, setCompressing] = useState(false);
-  const [compressionProgress, setCompressionProgress] = useState(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [compressedFile, setCompressedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
-  const [originalSize, setOriginalSize] = useState<number>(0);
-  const [compressedSize, setCompressedSize] = useState<number>(0);
-  const [showUploadOriginalDialog, setShowUploadOriginalDialog] = useState(false);
+  const [fileSize, setFileSize] = useState<number>(0);
+  const [showLargeFileDialog, setShowLargeFileDialog] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   // Form fields
@@ -54,6 +50,10 @@ export const UploadExerciseModal = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    processVideoFile(file);
+  };
+
+  const processVideoFile = (file: File) => {
     // Check file type
     const validTypes = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"];
     if (!validTypes.includes(file.type)) {
@@ -66,7 +66,7 @@ export const UploadExerciseModal = ({
     const video = document.createElement("video");
     video.src = url;
     
-    video.onloadedmetadata = async () => {
+    video.onloadedmetadata = () => {
       if (video.duration > 10) {
         toast.error("Video must be 10 seconds or less");
         URL.revokeObjectURL(url);
@@ -75,196 +75,27 @@ export const UploadExerciseModal = ({
       setVideoDuration(video.duration);
       setVideoFile(file);
       setVideoPreview(url);
-      setOriginalSize(file.size);
-      
-      // Automatically compress video after selection
-      await compressVideo(file);
+      setFileSize(file.size);
+
+      // Show warning for large files (> 10MB)
+      const TEN_MB = 10 * 1024 * 1024;
+      if (file.size > TEN_MB) {
+        setShowLargeFileDialog(true);
+      }
     };
   };
 
-  const compressVideo = async (file: File) => {
-    setCompressing(true);
-    setCompressionProgress(0);
-    
-    // 30 second timeout
-    const COMPRESSION_TIMEOUT = 30000;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Compression timeout after 30 seconds')), COMPRESSION_TIMEOUT);
-    });
-    
-    try {
-      console.log('[Compression] Starting compression for:', file.name, file.size, 'bytes');
-      
-      // Create video element to get dimensions
-      const videoElement = document.createElement('video');
-      videoElement.src = URL.createObjectURL(file);
-      
-      await Promise.race([
-        new Promise<void>((resolve, reject) => {
-          videoElement.onloadedmetadata = () => resolve();
-          videoElement.onerror = () => reject(new Error('Failed to load video'));
-        }),
-        timeoutPromise
-      ]);
-
-      const { videoWidth, videoHeight } = videoElement;
-      console.log('[Compression] Video dimensions:', videoWidth, 'x', videoHeight);
-      
-      // Calculate target dimensions (max 720p)
-      const MAX_WIDTH = 1280;
-      const MAX_HEIGHT = 720;
-      let targetWidth = videoWidth;
-      let targetHeight = videoHeight;
-      
-      if (videoWidth > MAX_WIDTH || videoHeight > MAX_HEIGHT) {
-        const aspectRatio = videoWidth / videoHeight;
-        if (aspectRatio > MAX_WIDTH / MAX_HEIGHT) {
-          targetWidth = MAX_WIDTH;
-          targetHeight = Math.round(MAX_WIDTH / aspectRatio);
-        } else {
-          targetHeight = MAX_HEIGHT;
-          targetWidth = Math.round(MAX_HEIGHT * aspectRatio);
-        }
-      }
-
-      console.log('[Compression] Target dimensions:', targetWidth, 'x', targetHeight);
-      setCompressionProgress(10);
-
-      // Create canvas for drawing frames
-      const canvas = document.createElement('canvas');
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) throw new Error('Failed to get canvas context');
-
-      setCompressionProgress(20);
-
-      // Set up MediaRecorder - prioritize MP4 for S3 compatibility
-      const stream = canvas.captureStream(30); // 30fps
-      
-      // Try MP4 first for best S3 compatibility, then webm fallback
-      const mimeTypes = [
-        'video/mp4',
-        'video/webm;codecs=vp9',
-        'video/webm;codecs=vp8',
-        'video/webm'
-      ];
-      
-      let selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
-      
-      if (!selectedMimeType) {
-        throw new Error('No supported video encoding format found');
-      }
-
-      console.log('[Compression] Using MIME type:', selectedMimeType);
-
-      const chunks: Blob[] = [];
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: selectedMimeType,
-        videoBitsPerSecond: 1500000, // 1.5 Mbps
-      });
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunks.push(e.data);
-          console.log('[Compression] Chunk received:', e.data.size, 'bytes');
-        }
-      };
-
-      setCompressionProgress(30);
-
-      // Record video frames with timeout
-      const recordingPromise = Promise.race([
-        new Promise<Blob>((resolve, reject) => {
-          mediaRecorder.onstop = () => {
-            // Force MP4 type if using webm for better S3 compatibility
-            const finalMimeType = selectedMimeType!.includes('webm') ? 'video/mp4' : selectedMimeType!.split(';')[0];
-            const blob = new Blob(chunks, { type: finalMimeType });
-            console.log('[Compression] Recording complete. Blob size:', blob.size, 'Type:', blob.type);
-            resolve(blob);
-          };
-          mediaRecorder.onerror = (e) => {
-            console.error('[Compression] MediaRecorder error:', e);
-            reject(e);
-          };
-        }),
-        timeoutPromise
-      ]);
-
-      mediaRecorder.start();
-      videoElement.play();
-
-      // Draw frames to canvas
-      const drawFrame = () => {
-        if (videoElement.ended) {
-          mediaRecorder.stop();
-          URL.revokeObjectURL(videoElement.src);
-          return;
-        }
-        
-        ctx.drawImage(videoElement, 0, 0, targetWidth, targetHeight);
-        
-        // Update progress based on video playback
-        const progress = 30 + (videoElement.currentTime / videoElement.duration) * 60;
-        setCompressionProgress(Math.round(progress));
-        
-        requestAnimationFrame(drawFrame);
-      };
-
-      drawFrame();
-
-      const compressedBlob = await recordingPromise;
-      setCompressionProgress(100);
-
-      // Create file from blob - always use .mp4 extension for S3
-      const compressedFile = new File(
-        [compressedBlob], 
-        file.name.replace(/\.[^/.]+$/, '.mp4'), 
-        { type: 'video/mp4' }
-      );
-
-      console.log('[Compression] Final compressed file:', compressedFile.name, compressedFile.size, 'bytes', compressedFile.type);
-
-      setCompressedFile(compressedFile);
-      setCompressedSize(compressedFile.size);
-      
-      if (compressedFile.size < file.size) {
-        const sizeSavedMB = ((file.size - compressedFile.size) / (1024 * 1024)).toFixed(2);
-        const compressionRatio = ((1 - compressedFile.size / file.size) * 100).toFixed(0);
-        toast.success(`Video compressed! Saved ${sizeSavedMB}MB (${compressionRatio}% reduction)`);
-      } else {
-        toast.info("Video already optimized, using original");
-        setCompressedFile(file);
-        setCompressedSize(file.size);
-      }
-    } catch (error) {
-      console.error("[Compression] Error:", error);
-      if (error instanceof Error) {
-        console.error("[Compression] Error message:", error.message);
-        console.error("[Compression] Error stack:", error.stack);
-      }
-      toast.error("Compression failed. You can upload the original file.");
-      setShowUploadOriginalDialog(true);
-    } finally {
-      setCompressing(false);
-    }
+  const handleConfirmLargeFile = () => {
+    setShowLargeFileDialog(false);
+    toast.info("Uploading original video file");
   };
 
-  const handleUploadOriginal = () => {
-    setCompressedFile(videoFile);
-    setCompressedSize(videoFile?.size || 0);
-    setShowUploadOriginalDialog(false);
-    toast.info("Using original video file");
-  };
-
-  const handleCancelUploadOriginal = () => {
-    setShowUploadOriginalDialog(false);
+  const handleCancelLargeFile = () => {
+    setShowLargeFileDialog(false);
     setVideoFile(null);
     setVideoPreview(null);
     setVideoDuration(null);
-    setOriginalSize(0);
-    setCompressedSize(0);
+    setFileSize(0);
     toast.info("Video upload cancelled");
   };
 
@@ -279,19 +110,14 @@ export const UploadExerciseModal = ({
       return;
     }
 
-    if (!compressedFile) {
-      toast.error("Please wait for video compression to complete");
-      return;
-    }
-
     setUploading(true);
     setUploadProgress(0);
 
     try {
-      // Step 1: Upload compressed video to S3
+      // Step 1: Upload video to S3
       setUploadProgress(10);
       const formData = new FormData();
-      formData.append('video', compressedFile); // Use compressed file
+      formData.append('video', videoFile);
       formData.append('exerciseName', title);
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -320,7 +146,7 @@ export const UploadExerciseModal = ({
 
       setUploadProgress(60);
 
-      // Step 2: Insert exercise into database (remaining 40%)
+      // Step 2: Insert exercise into database
       const { error: dbError } = await supabase.from("exercises").insert({
         title,
         category,
@@ -356,12 +182,9 @@ export const UploadExerciseModal = ({
 
   const resetForm = () => {
     setVideoFile(null);
-    setCompressedFile(null);
     setVideoPreview(null);
     setVideoDuration(null);
-    setOriginalSize(0);
-    setCompressedSize(0);
-    setCompressionProgress(0);
+    setFileSize(0);
     setTitle("");
     setCategory("");
     setDescription("");
@@ -375,7 +198,7 @@ export const UploadExerciseModal = ({
   };
 
   const handleClose = () => {
-    if (!uploading && !compressing) {
+    if (!uploading) {
       resetForm();
       onOpenChange(false);
     }
@@ -408,39 +231,13 @@ export const UploadExerciseModal = ({
     e.stopPropagation();
     setIsDragging(false);
 
-    if (compressing || uploading) return;
+    if (uploading) return;
 
     const files = e.dataTransfer.files;
     if (files.length === 0) return;
 
     const file = files[0];
-
-    // Check file type
-    const validTypes = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"];
-    if (!validTypes.includes(file.type)) {
-      toast.error("Invalid file type. Please upload .mov, .mp4, .avi, or .webm");
-      return;
-    }
-
-    // Create preview and check duration
-    const url = URL.createObjectURL(file);
-    const video = document.createElement("video");
-    video.src = url;
-    
-    video.onloadedmetadata = async () => {
-      if (video.duration > 10) {
-        toast.error("Video must be 10 seconds or less");
-        URL.revokeObjectURL(url);
-        return;
-      }
-      setVideoDuration(video.duration);
-      setVideoFile(file);
-      setVideoPreview(url);
-      setOriginalSize(file.size);
-      
-      // Automatically compress video after selection
-      await compressVideo(file);
-    };
+    processVideoFile(file);
   };
 
   return (
@@ -465,27 +262,12 @@ export const UploadExerciseModal = ({
                   />
                   
                   {/* File Size Info */}
-                  {originalSize > 0 && (
-                    <div className="mt-3 p-3 bg-secondary/50 rounded-lg space-y-2">
+                  {fileSize > 0 && (
+                    <div className="mt-3 p-3 bg-secondary/50 rounded-lg">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Original Size:</span>
-                        <span className="font-medium">{formatFileSize(originalSize)}</span>
+                        <span className="text-muted-foreground">File Size:</span>
+                        <span className="font-medium">{formatFileSize(fileSize)}</span>
                       </div>
-                      {compressedSize > 0 && (
-                        <>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Compressed Size:</span>
-                            <span className="font-medium text-green-600">{formatFileSize(compressedSize)}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Space Saved:</span>
-                            <span className="font-medium text-green-600">
-                              {formatFileSize(originalSize - compressedSize)} 
-                              ({((1 - compressedSize / originalSize) * 100).toFixed(0)}%)
-                            </span>
-                          </div>
-                        </>
-                      )}
                     </div>
                   )}
 
@@ -495,13 +277,11 @@ export const UploadExerciseModal = ({
                     className="mt-2"
                     onClick={() => {
                       setVideoFile(null);
-                      setCompressedFile(null);
                       setVideoPreview(null);
                       setVideoDuration(null);
-                      setOriginalSize(0);
-                      setCompressedSize(0);
+                      setFileSize(0);
                     }}
-                    disabled={compressing}
+                    disabled={uploading}
                   >
                     Remove Video
                   </Button>
@@ -530,26 +310,13 @@ export const UploadExerciseModal = ({
                     accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
                     onChange={handleVideoSelect}
                     className="hidden"
-                    disabled={compressing || uploading}
+                    disabled={uploading}
                   />
                 </label>
               )}
             </div>
           </div>
 
-          {/* Compression Progress */}
-          {compressing && (
-            <div className="space-y-2 p-4 bg-secondary/30 rounded-lg border border-border">
-              <div className="flex items-center gap-2">
-                <FileVideo className="w-5 h-5 text-primary animate-pulse" />
-                <span className="text-sm font-medium">Compressing video...</span>
-              </div>
-              <Progress value={compressionProgress} className="h-2" />
-              <p className="text-xs text-muted-foreground">
-                Optimizing video for faster upload and playback ({compressionProgress}%)
-              </p>
-            </div>
-          )}
 
           {/* Basic Info */}
           <div className="space-y-4">
@@ -697,25 +464,20 @@ export const UploadExerciseModal = ({
             <Button
               variant="outline"
               onClick={handleClose}
-              disabled={uploading || compressing}
+              disabled={uploading}
               className="flex-1"
             >
               Cancel
             </Button>
             <Button
               onClick={handleUpload}
-              disabled={uploading || compressing || !compressedFile || !title || !category}
+              disabled={uploading || !videoFile || !title || !category}
               className="flex-1"
             >
               {uploading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Uploading...
-                </>
-              ) : compressing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Compressing...
                 </>
               ) : (
                 <>
@@ -729,21 +491,20 @@ export const UploadExerciseModal = ({
       </DialogContent>
     </Dialog>
 
-    {/* Upload Original Confirmation Dialog */}
-    <AlertDialog open={showUploadOriginalDialog} onOpenChange={setShowUploadOriginalDialog}>
+    {/* Large File Warning Dialog */}
+    <AlertDialog open={showLargeFileDialog} onOpenChange={setShowLargeFileDialog}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Video Compression Unavailable</AlertDialogTitle>
+          <AlertDialogTitle>Large File Detected</AlertDialogTitle>
           <AlertDialogDescription>
-            Video compression failed. The original file is {formatFileSize(originalSize)}. 
-            Would you like to upload the original video anyway?
+            This video is larger than 10MB ({formatFileSize(fileSize)}). Consider compressing it before upload for better performance.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancelUploadOriginal}>
+          <AlertDialogCancel onClick={handleCancelLargeFile}>
             Cancel
           </AlertDialogCancel>
-          <AlertDialogAction onClick={handleUploadOriginal}>
+          <AlertDialogAction onClick={handleConfirmLargeFile}>
             Upload Anyway
           </AlertDialogAction>
         </AlertDialogFooter>
