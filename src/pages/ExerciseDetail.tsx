@@ -6,6 +6,7 @@ import { InfoCard } from "@/components/Exercise/InfoCard";
 import { ProgramTile } from "@/components/Exercise/ProgramTile";
 import { RelatedWorkouts } from "@/components/Exercise/RelatedWorkouts";
 import { EditExerciseModal } from "@/components/Exercise/EditExerciseModal";
+import { VideoPlayerModal } from "@/components/Exercise/VideoPlayerModal";
 import { Bookmark, Share2, Moon, Sun, Flame, Weight, Clock, Heart, Activity, TrendingUp, AlertTriangle, Target, Zap, Trash2, Edit, ArrowLeft } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useParams, useNavigate } from "react-router-dom";
@@ -39,6 +40,7 @@ const ExerciseDetail = () => {
   const { deleteExercise, isDeleting } = useDeleteExercise();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
 
   const { data: exercise, isLoading, refetch } = useQuery({
     queryKey: ["exercise", id],
@@ -136,6 +138,7 @@ const ExerciseDetail = () => {
                   image={exercise.thumbnail_url || exercise.cloudfront_url}
                   alt={exercise.title}
                   title={exercise.title}
+                  onPlayClick={() => setShowVideoPlayer(true)}
                 />
               </div>
               
@@ -465,6 +468,16 @@ const ExerciseDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Video Player Modal */}
+      {exercise && (
+        <VideoPlayerModal
+          isOpen={showVideoPlayer}
+          onClose={() => setShowVideoPlayer(false)}
+          videoUrl={exercise.cloudfront_url}
+          title={exercise.title}
+        />
+      )}
     </div>
   );
 };

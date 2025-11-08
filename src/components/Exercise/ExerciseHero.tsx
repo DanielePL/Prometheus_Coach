@@ -4,9 +4,10 @@ interface ExerciseHeroProps {
   image: string;
   alt: string;
   title?: string;
+  onPlayClick?: () => void;
 }
 
-export const ExerciseHero = ({ image, alt, title }: ExerciseHeroProps) => {
+export const ExerciseHero = ({ image, alt, title, onPlayClick }: ExerciseHeroProps) => {
   return (
     <div className="relative w-full aspect-video lg:aspect-[16/10] rounded-3xl overflow-hidden group">
       <img 
@@ -23,6 +24,7 @@ export const ExerciseHero = ({ image, alt, title }: ExerciseHeroProps) => {
         </div>
       )}
       <button 
+        onClick={onPlayClick}
         className="absolute bottom-6 right-6 glass glass-hover px-4 py-3 rounded-xl flex items-center gap-2 text-white transition-smooth hover:scale-105 hover:glow-orange"
         aria-label="Play video"
       >
