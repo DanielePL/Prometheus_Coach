@@ -36,6 +36,7 @@ export const UploadExerciseModal = ({
   const [originalSize, setOriginalSize] = useState<number>(0);
   const [compressedSize, setCompressedSize] = useState<number>(0);
   const [showUploadOriginalDialog, setShowUploadOriginalDialog] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Form fields
   const [title, setTitle] = useState("");
@@ -85,17 +86,29 @@ export const UploadExerciseModal = ({
     setCompressing(true);
     setCompressionProgress(0);
     
+    // 30 second timeout
+    const COMPRESSION_TIMEOUT = 30000;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Compression timeout after 30 seconds')), COMPRESSION_TIMEOUT);
+    });
+    
     try {
+      console.log('[Compression] Starting compression for:', file.name, file.size, 'bytes');
+      
       // Create video element to get dimensions
       const videoElement = document.createElement('video');
       videoElement.src = URL.createObjectURL(file);
       
-      await new Promise<void>((resolve, reject) => {
-        videoElement.onloadedmetadata = () => resolve();
-        videoElement.onerror = () => reject(new Error('Failed to load video'));
-      });
+      await Promise.race([
+        new Promise<void>((resolve, reject) => {
+          videoElement.onloadedmetadata = () => resolve();
+          videoElement.onerror = () => reject(new Error('Failed to load video'));
+        }),
+        timeoutPromise
+      ]);
 
       const { videoWidth, videoHeight } = videoElement;
+      console.log('[Compression] Video dimensions:', videoWidth, 'x', videoHeight);
       
       // Calculate target dimensions (max 720p)
       const MAX_WIDTH = 1280;
@@ -114,6 +127,7 @@ export const UploadExerciseModal = ({
         }
       }
 
+      console.log('[Compression] Target dimensions:', targetWidth, 'x', targetHeight);
       setCompressionProgress(10);
 
       // Create canvas for drawing frames
@@ -126,15 +140,15 @@ export const UploadExerciseModal = ({
 
       setCompressionProgress(20);
 
-      // Set up MediaRecorder
+      // Set up MediaRecorder - prioritize MP4 for S3 compatibility
       const stream = canvas.captureStream(30); // 30fps
       
-      // Try different MIME types for best compatibility
+      // Try MP4 first for best S3 compatibility, then webm fallback
       const mimeTypes = [
+        'video/mp4',
         'video/webm;codecs=vp9',
         'video/webm;codecs=vp8',
-        'video/webm',
-        'video/mp4'
+        'video/webm'
       ];
       
       let selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
@@ -142,6 +156,8 @@ export const UploadExerciseModal = ({
       if (!selectedMimeType) {
         throw new Error('No supported video encoding format found');
       }
+
+      console.log('[Compression] Using MIME type:', selectedMimeType);
 
       const chunks: Blob[] = [];
       const mediaRecorder = new MediaRecorder(stream, {
@@ -152,20 +168,29 @@ export const UploadExerciseModal = ({
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunks.push(e.data);
+          console.log('[Compression] Chunk received:', e.data.size, 'bytes');
         }
       };
 
       setCompressionProgress(30);
 
-      // Record video frames
-      const recordingPromise = new Promise<Blob>((resolve, reject) => {
-        mediaRecorder.onstop = () => {
-          const finalMimeType = selectedMimeType!.split(';')[0];
-          const blob = new Blob(chunks, { type: finalMimeType });
-          resolve(blob);
-        };
-        mediaRecorder.onerror = (e) => reject(e);
-      });
+      // Record video frames with timeout
+      const recordingPromise = Promise.race([
+        new Promise<Blob>((resolve, reject) => {
+          mediaRecorder.onstop = () => {
+            // Force MP4 type if using webm for better S3 compatibility
+            const finalMimeType = selectedMimeType!.includes('webm') ? 'video/mp4' : selectedMimeType!.split(';')[0];
+            const blob = new Blob(chunks, { type: finalMimeType });
+            console.log('[Compression] Recording complete. Blob size:', blob.size, 'Type:', blob.type);
+            resolve(blob);
+          };
+          mediaRecorder.onerror = (e) => {
+            console.error('[Compression] MediaRecorder error:', e);
+            reject(e);
+          };
+        }),
+        timeoutPromise
+      ]);
 
       mediaRecorder.start();
       videoElement.play();
@@ -192,13 +217,14 @@ export const UploadExerciseModal = ({
       const compressedBlob = await recordingPromise;
       setCompressionProgress(100);
 
-      // Create file from blob
-      const extension = selectedMimeType.includes('webm') ? 'webm' : 'mp4';
+      // Create file from blob - always use .mp4 extension for S3
       const compressedFile = new File(
         [compressedBlob], 
-        file.name.replace(/\.[^/.]+$/, `.${extension}`), 
-        { type: compressedBlob.type }
+        file.name.replace(/\.[^/.]+$/, '.mp4'), 
+        { type: 'video/mp4' }
       );
+
+      console.log('[Compression] Final compressed file:', compressedFile.name, compressedFile.size, 'bytes', compressedFile.type);
 
       setCompressedFile(compressedFile);
       setCompressedSize(compressedFile.size);
@@ -213,7 +239,12 @@ export const UploadExerciseModal = ({
         setCompressedSize(file.size);
       }
     } catch (error) {
-      console.error("Compression error:", error);
+      console.error("[Compression] Error:", error);
+      if (error instanceof Error) {
+        console.error("[Compression] Error message:", error.message);
+        console.error("[Compression] Error stack:", error.stack);
+      }
+      toast.error("Compression failed. You can upload the original file.");
       setShowUploadOriginalDialog(true);
     } finally {
       setCompressing(false);
@@ -354,6 +385,64 @@ export const UploadExerciseModal = ({
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (compressing || uploading) return;
+
+    const files = e.dataTransfer.files;
+    if (files.length === 0) return;
+
+    const file = files[0];
+
+    // Check file type
+    const validTypes = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Invalid file type. Please upload .mov, .mp4, .avi, or .webm");
+      return;
+    }
+
+    // Create preview and check duration
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.src = url;
+    
+    video.onloadedmetadata = async () => {
+      if (video.duration > 10) {
+        toast.error("Video must be 10 seconds or less");
+        URL.revokeObjectURL(url);
+        return;
+      }
+      setVideoDuration(video.duration);
+      setVideoFile(file);
+      setVideoPreview(url);
+      setOriginalSize(file.size);
+      
+      // Automatically compress video after selection
+      await compressVideo(file);
+    };
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
@@ -418,10 +507,20 @@ export const UploadExerciseModal = ({
                   </Button>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-12 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
-                  <Upload className="w-12 h-12 text-muted-foreground mb-4" />
+                <label 
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                    isDragging 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-muted-foreground/25 hover:border-primary'
+                  }`}
+                >
+                  <Upload className={`w-12 h-12 mb-4 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
                   <p className="text-sm text-muted-foreground mb-2">
-                    Drag and drop or click to upload
+                    {isDragging ? 'Drop video here' : 'Drag and drop or click to upload'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     .mov, .mp4, .avi, .webm (max 10 seconds)
