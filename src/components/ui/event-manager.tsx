@@ -857,9 +857,10 @@ export function EventManager({
                   }
                   onChange={(e) => {
                     const date = new Date(e.target.value)
+                    const oneHourLater = new Date(date.getTime() + 60 * 60 * 1000)
                     isCreating
-                      ? setNewEvent((prev) => ({ ...prev, startTime: date }))
-                      : setSelectedEvent((prev) => (prev ? { ...prev, startTime: date } : null))
+                      ? setNewEvent((prev) => ({ ...prev, startTime: date, endTime: oneHourLater }))
+                      : setSelectedEvent((prev) => (prev ? { ...prev, startTime: date, endTime: oneHourLater } : null))
                   }}
                   disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
                 />
