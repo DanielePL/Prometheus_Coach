@@ -40,6 +40,12 @@ export interface Event {
   assigned_to?: string | null
   created_by_name?: string
   created_by?: string
+  is_recurring?: boolean
+  recurrence_pattern?: 'daily' | 'weekly' | 'monthly'
+  recurrence_interval?: number
+  recurrence_days?: string[]
+  recurrence_end_date?: Date
+  parent_event_id?: string | null
 }
 
 export interface EventManagerProps {
@@ -93,6 +99,10 @@ export function EventManager({
     color: colors[0].value,
     category: categories[0],
     tags: [],
+    is_recurring: false,
+    recurrence_pattern: 'weekly',
+    recurrence_interval: 1,
+    recurrence_days: [],
   })
 
   const [searchQuery, setSearchQuery] = useState("")
@@ -146,6 +156,14 @@ export function EventManager({
   const handleCreateEvent = useCallback(() => {
     if (!newEvent.title || !newEvent.startTime || !newEvent.endTime) return
 
+    // Validate recurring event requirements
+    if (newEvent.is_recurring) {
+      if (newEvent.recurrence_pattern === 'weekly' && (!newEvent.recurrence_days || newEvent.recurrence_days.length === 0)) {
+        alert("Please select at least one day for weekly recurring events");
+        return;
+      }
+    }
+
     const event: Event = {
       id: Math.random().toString(36).substr(2, 9),
       title: newEvent.title,
@@ -157,6 +175,11 @@ export function EventManager({
       attendees: newEvent.attendees,
       tags: newEvent.tags || [],
       assigned_to: newEvent.assigned_to || null,
+      is_recurring: newEvent.is_recurring,
+      recurrence_pattern: newEvent.recurrence_pattern,
+      recurrence_interval: newEvent.recurrence_interval,
+      recurrence_days: newEvent.recurrence_days,
+      recurrence_end_date: newEvent.recurrence_end_date,
     }
 
     setEvents((prev) => [...prev, event])
@@ -169,6 +192,10 @@ export function EventManager({
       color: colors[0].value,
       category: categories[0],
       tags: [],
+      is_recurring: false,
+      recurrence_pattern: 'weekly',
+      recurrence_interval: 1,
+      recurrence_days: [],
     })
   }, [newEvent, colors, categories, onEventCreate])
 
@@ -949,6 +976,109 @@ export function EventManager({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {isCreating && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="recurring"
+                    checked={newEvent.is_recurring || false}
+                    onChange={(e) =>
+                      setNewEvent((prev) => ({ ...prev, is_recurring: e.target.checked }))
+                    }
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="recurring" className="cursor-pointer">
+                    Make this a recurring event
+                  </Label>
+                </div>
+
+                {newEvent.is_recurring && (
+                  <div className="space-y-4 pl-6 border-l-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="recurrence_pattern">Repeat</Label>
+                        <Select
+                          value={newEvent.recurrence_pattern || 'weekly'}
+                          onValueChange={(value: 'daily' | 'weekly' | 'monthly') =>
+                            setNewEvent((prev) => ({ ...prev, recurrence_pattern: value }))
+                          }
+                        >
+                          <SelectTrigger id="recurrence_pattern">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="recurrence_interval">Every</Label>
+                        <Input
+                          id="recurrence_interval"
+                          type="number"
+                          min="1"
+                          value={newEvent.recurrence_interval || 1}
+                          onChange={(e) =>
+                            setNewEvent((prev) => ({ ...prev, recurrence_interval: parseInt(e.target.value) }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {newEvent.recurrence_pattern === 'weekly' && (
+                      <div className="space-y-2">
+                        <Label>Repeat on</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day) => (
+                            <Badge
+                              key={day}
+                              variant={newEvent.recurrence_days?.includes(day) ? "default" : "outline"}
+                              className="cursor-pointer transition-all hover:scale-105"
+                              onClick={() => {
+                                const days = newEvent.recurrence_days || [];
+                                const newDays = days.includes(day)
+                                  ? days.filter((d) => d !== day)
+                                  : [...days, day];
+                                setNewEvent((prev) => ({ ...prev, recurrence_days: newDays }));
+                              }}
+                            >
+                              {day.charAt(0).toUpperCase() + day.slice(1)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="recurrence_end_date">End Date (Optional)</Label>
+                      <Input
+                        id="recurrence_end_date"
+                        type="date"
+                        value={
+                          newEvent.recurrence_end_date
+                            ? new Date(newEvent.recurrence_end_date.getTime() - newEvent.recurrence_end_date.getTimezoneOffset() * 60000)
+                                .toISOString()
+                                .slice(0, 10)
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const date = e.target.value ? new Date(e.target.value) : undefined;
+                          setNewEvent((prev) => ({ ...prev, recurrence_end_date: date }));
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Leave blank to repeat for 3 months
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

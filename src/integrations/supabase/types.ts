@@ -81,6 +81,12 @@ export type Database = {
           end_time: string
           event_type: string
           id: string
+          is_recurring: boolean
+          parent_event_id: string | null
+          recurrence_days: string[] | null
+          recurrence_end_date: string | null
+          recurrence_interval: number | null
+          recurrence_pattern: string | null
           start_time: string
           title: string
           updated_at: string
@@ -94,6 +100,12 @@ export type Database = {
           end_time: string
           event_type?: string
           id?: string
+          is_recurring?: boolean
+          parent_event_id?: string | null
+          recurrence_days?: string[] | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           start_time: string
           title: string
           updated_at?: string
@@ -107,6 +119,12 @@ export type Database = {
           end_time?: string
           event_type?: string
           id?: string
+          is_recurring?: boolean
+          parent_event_id?: string | null
+          recurrence_days?: string[] | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           start_time?: string
           title?: string
           updated_at?: string
@@ -124,6 +142,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_parent_event_id_fkey"
+            columns: ["parent_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -395,6 +420,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_recurring_events: {
+        Args: {
+          p_end_date: string
+          p_event_id: string
+          p_recurrence_days: string[]
+          p_recurrence_interval: number
+          p_recurrence_pattern: string
+          p_start_date: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

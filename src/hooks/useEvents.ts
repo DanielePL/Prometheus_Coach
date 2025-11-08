@@ -58,27 +58,42 @@ export const useEvents = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      const insertData: any = {
+        title: event.title!,
+        description: event.description || null,
+        start_time: event.startTime!.toISOString(),
+        end_time: event.endTime!.toISOString(),
+        event_type: event.category || "other",
+        color: event.color || "gray",
+        created_by: user.id,
+        assigned_to: event.assigned_to || null,
+      };
+
+      // Add recurring fields if applicable
+      if (event.is_recurring) {
+        insertData.is_recurring = true;
+        insertData.recurrence_pattern = event.recurrence_pattern;
+        insertData.recurrence_interval = event.recurrence_interval || 1;
+        insertData.recurrence_days = event.recurrence_days || null;
+        insertData.recurrence_end_date = event.recurrence_end_date?.toISOString() || null;
+      }
+
       const { data, error } = await supabase
         .from("events")
-        .insert({
-          title: event.title!,
-          description: event.description || null,
-          start_time: event.startTime!.toISOString(),
-          end_time: event.endTime!.toISOString(),
-          event_type: event.category || "other",
-          color: event.color || "gray",
-          created_by: user.id,
-          assigned_to: event.assigned_to || null,
-        })
+        .insert(insertData)
         .select()
         .single();
 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
-      toast.success("Event created successfully");
+      if (variables.is_recurring) {
+        toast.success("Recurring event created successfully! Individual instances have been generated.");
+      } else {
+        toast.success("Event created successfully");
+      }
     },
     onError: (error: Error) => {
       toast.error("Failed to create event: " + error.message);
