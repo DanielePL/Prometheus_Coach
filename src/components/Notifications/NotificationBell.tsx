@@ -12,13 +12,20 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 export const NotificationBell = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const navigate = useNavigate();
 
-  const handleNotificationClick = async (id: string, read: boolean) => {
+  const handleNotificationClick = async (id: string, eventId: string | null, read: boolean) => {
     if (!read) {
       await markAsRead(id);
+    }
+    
+    // Navigate to calendar if there's an event associated
+    if (eventId) {
+      navigate(`/calendar?eventId=${eventId}`);
     }
   };
 
@@ -61,7 +68,7 @@ export const NotificationBell = () => {
             notifications.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
-                onClick={() => handleNotificationClick(notification.id, notification.read)}
+                onClick={() => handleNotificationClick(notification.id, notification.event_id, notification.read)}
                 className={cn(
                   "flex flex-col items-start gap-1 p-3 cursor-pointer",
                   !notification.read && "bg-accent"

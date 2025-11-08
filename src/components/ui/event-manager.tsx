@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -61,6 +61,7 @@ export interface EventManagerProps {
   clients?: { id: string; full_name: string }[]
   isCoach?: boolean
   currentUserId?: string | null
+  highlightedEventId?: string | null
 }
 
 const defaultColors = [
@@ -85,6 +86,7 @@ export function EventManager({
   clients = [],
   isCoach = false,
   currentUserId = null,
+  highlightedEventId = null,
 }: EventManagerProps) {
   const [events, setEvents] = useState<Event[]>(initialEvents)
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -110,6 +112,16 @@ export function EventManager({
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
 
+  // Auto-open event when navigating from notification
+  useEffect(() => {
+    if (highlightedEventId && events.length > 0) {
+      const event = events.find((e) => e.id === highlightedEventId);
+      if (event) {
+        setSelectedEvent(event);
+        setIsDialogOpen(true);
+      }
+    }
+  }, [highlightedEventId, events]);
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
       // Search filter

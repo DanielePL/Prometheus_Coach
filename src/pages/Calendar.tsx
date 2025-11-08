@@ -3,6 +3,7 @@ import { BottomNav } from "@/components/Navigation/BottomNav";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import { EventManager, type Event } from "@/components/ui/event-manager";
@@ -18,6 +19,8 @@ const Calendar = () => {
   const { isCoach } = useUserRole();
   const { clients } = useClients();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
 
   // Get current user ID
   useEffect(() => {
@@ -27,6 +30,19 @@ const Calendar = () => {
     };
     getCurrentUser();
   }, []);
+
+  // Handle notification navigation
+  useEffect(() => {
+    const eventId = searchParams.get('eventId');
+    if (eventId && events.length > 0) {
+      setHighlightedEventId(eventId);
+      // Clear the query param after a delay
+      setTimeout(() => {
+        setSearchParams({});
+        setHighlightedEventId(null);
+      }, 3000);
+    }
+  }, [searchParams, events, setSearchParams]);
 
   const handleEventCreate = async (event: Event) => {
     await createEvent(event);
@@ -93,6 +109,7 @@ const Calendar = () => {
               clients={clients}
               isCoach={isCoach}
               currentUserId={currentUserId}
+              highlightedEventId={highlightedEventId}
             />
           )}
         </div>
