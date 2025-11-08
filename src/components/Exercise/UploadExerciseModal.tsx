@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,8 +12,6 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Upload, Video, Loader2, FileVideo } from "lucide-react";
 import { ExerciseCategory } from "@/hooks/useExercises";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 interface UploadExerciseModalProps {
   open: boolean;
@@ -36,6 +35,7 @@ export const UploadExerciseModal = ({
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const [originalSize, setOriginalSize] = useState<number>(0);
   const [compressedSize, setCompressedSize] = useState<number>(0);
+  const [showUploadOriginalDialog, setShowUploadOriginalDialog] = useState(false);
 
   // Form fields
   const [title, setTitle] = useState("");
@@ -86,65 +86,155 @@ export const UploadExerciseModal = ({
     setCompressionProgress(0);
     
     try {
-      const ffmpeg = new FFmpeg();
+      // Create video element to get dimensions
+      const videoElement = document.createElement('video');
+      videoElement.src = URL.createObjectURL(file);
       
-      // Load FFmpeg
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      await new Promise<void>((resolve, reject) => {
+        videoElement.onloadedmetadata = () => resolve();
+        videoElement.onerror = () => reject(new Error('Failed to load video'));
       });
 
-      // Track progress
-      ffmpeg.on('progress', ({ progress }) => {
-        setCompressionProgress(Math.round(progress * 100));
+      const { videoWidth, videoHeight } = videoElement;
+      
+      // Calculate target dimensions (max 720p)
+      const MAX_WIDTH = 1280;
+      const MAX_HEIGHT = 720;
+      let targetWidth = videoWidth;
+      let targetHeight = videoHeight;
+      
+      if (videoWidth > MAX_WIDTH || videoHeight > MAX_HEIGHT) {
+        const aspectRatio = videoWidth / videoHeight;
+        if (aspectRatio > MAX_WIDTH / MAX_HEIGHT) {
+          targetWidth = MAX_WIDTH;
+          targetHeight = Math.round(MAX_WIDTH / aspectRatio);
+        } else {
+          targetHeight = MAX_HEIGHT;
+          targetWidth = Math.round(MAX_HEIGHT * aspectRatio);
+        }
+      }
+
+      setCompressionProgress(10);
+
+      // Create canvas for drawing frames
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) throw new Error('Failed to get canvas context');
+
+      setCompressionProgress(20);
+
+      // Set up MediaRecorder
+      const stream = canvas.captureStream(30); // 30fps
+      
+      // Try different MIME types for best compatibility
+      const mimeTypes = [
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+        'video/mp4'
+      ];
+      
+      let selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
+      
+      if (!selectedMimeType) {
+        throw new Error('No supported video encoding format found');
+      }
+
+      const chunks: Blob[] = [];
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: selectedMimeType,
+        videoBitsPerSecond: 1500000, // 1.5 Mbps
       });
 
-      // Write input file
-      await ffmpeg.writeFile('input.mp4', await fetchFile(file));
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
 
-      // Compress video with optimal settings
-      // Target: 1.5 Mbps, max 1080p, H.264, 30fps, audio at 128kbps
-      await ffmpeg.exec([
-        '-i', 'input.mp4',
-        '-c:v', 'libx264',           // H.264 codec
-        '-preset', 'medium',          // Balance between speed and compression
-        '-b:v', '1500k',              // Video bitrate: 1.5 Mbps
-        '-maxrate', '2000k',          // Max bitrate: 2 Mbps
-        '-bufsize', '3000k',          // Buffer size
-        '-vf', 'scale=min(iw\\,1920):min(ih\\,1080):force_original_aspect_ratio=decrease', // Max 1080p
-        '-r', '30',                   // 30 fps
-        '-c:a', 'aac',                // AAC audio codec
-        '-b:a', '128k',               // Audio bitrate: 128 kbps
-        '-movflags', '+faststart',    // Enable streaming
-        'output.mp4'
-      ]);
+      setCompressionProgress(30);
 
-      // Read output file
-      const data = await ffmpeg.readFile('output.mp4');
-      // Convert FileData to a proper Uint8Array for Blob
-      const uint8Data = new Uint8Array(data as Uint8Array);
-      const compressedBlob = new Blob([uint8Data.buffer], { type: 'video/mp4' });
-      const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, '.mp4'), {
-        type: 'video/mp4',
+      // Record video frames
+      const recordingPromise = new Promise<Blob>((resolve, reject) => {
+        mediaRecorder.onstop = () => {
+          const finalMimeType = selectedMimeType!.split(';')[0];
+          const blob = new Blob(chunks, { type: finalMimeType });
+          resolve(blob);
+        };
+        mediaRecorder.onerror = (e) => reject(e);
       });
+
+      mediaRecorder.start();
+      videoElement.play();
+
+      // Draw frames to canvas
+      const drawFrame = () => {
+        if (videoElement.ended) {
+          mediaRecorder.stop();
+          URL.revokeObjectURL(videoElement.src);
+          return;
+        }
+        
+        ctx.drawImage(videoElement, 0, 0, targetWidth, targetHeight);
+        
+        // Update progress based on video playback
+        const progress = 30 + (videoElement.currentTime / videoElement.duration) * 60;
+        setCompressionProgress(Math.round(progress));
+        
+        requestAnimationFrame(drawFrame);
+      };
+
+      drawFrame();
+
+      const compressedBlob = await recordingPromise;
+      setCompressionProgress(100);
+
+      // Create file from blob
+      const extension = selectedMimeType.includes('webm') ? 'webm' : 'mp4';
+      const compressedFile = new File(
+        [compressedBlob], 
+        file.name.replace(/\.[^/.]+$/, `.${extension}`), 
+        { type: compressedBlob.type }
+      );
 
       setCompressedFile(compressedFile);
       setCompressedSize(compressedFile.size);
-      setCompressionProgress(100);
       
-      const sizeSavedMB = ((file.size - compressedFile.size) / (1024 * 1024)).toFixed(2);
-      const compressionRatio = ((1 - compressedFile.size / file.size) * 100).toFixed(0);
-      
-      toast.success(`Video compressed! Saved ${sizeSavedMB}MB (${compressionRatio}% reduction)`);
+      if (compressedFile.size < file.size) {
+        const sizeSavedMB = ((file.size - compressedFile.size) / (1024 * 1024)).toFixed(2);
+        const compressionRatio = ((1 - compressedFile.size / file.size) * 100).toFixed(0);
+        toast.success(`Video compressed! Saved ${sizeSavedMB}MB (${compressionRatio}% reduction)`);
+      } else {
+        toast.info("Video already optimized, using original");
+        setCompressedFile(file);
+        setCompressedSize(file.size);
+      }
     } catch (error) {
       console.error("Compression error:", error);
-      toast.error("Failed to compress video. Will upload original.");
-      setCompressedFile(file); // Fallback to original
-      setCompressedSize(file.size);
+      setShowUploadOriginalDialog(true);
     } finally {
       setCompressing(false);
     }
+  };
+
+  const handleUploadOriginal = () => {
+    setCompressedFile(videoFile);
+    setCompressedSize(videoFile?.size || 0);
+    setShowUploadOriginalDialog(false);
+    toast.info("Using original video file");
+  };
+
+  const handleCancelUploadOriginal = () => {
+    setShowUploadOriginalDialog(false);
+    setVideoFile(null);
+    setVideoPreview(null);
+    setVideoDuration(null);
+    setOriginalSize(0);
+    setCompressedSize(0);
+    toast.info("Video upload cancelled");
   };
 
   const handleUpload = async () => {
@@ -265,7 +355,8 @@ export const UploadExerciseModal = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto !rounded-none sm:!rounded-none">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Upload New Exercise</DialogTitle>
@@ -538,5 +629,27 @@ export const UploadExerciseModal = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Upload Original Confirmation Dialog */}
+    <AlertDialog open={showUploadOriginalDialog} onOpenChange={setShowUploadOriginalDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Video Compression Unavailable</AlertDialogTitle>
+          <AlertDialogDescription>
+            Video compression failed. The original file is {formatFileSize(originalSize)}. 
+            Would you like to upload the original video anyway?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={handleCancelUploadOriginal}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={handleUploadOriginal}>
+            Upload Anyway
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 };
