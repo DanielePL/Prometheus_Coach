@@ -834,64 +834,117 @@ export function EventManager({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startTime">Start Time</Label>
-                <Input
-                  id="startTime"
-                  type="datetime-local"
-                  value={
-                    isCreating
-                      ? newEvent.startTime
-                        ? new Date(newEvent.startTime.getTime() - newEvent.startTime.getTimezoneOffset() * 60000)
-                            .toISOString()
-                            .slice(0, 16)
-                        : ""
-                      : selectedEvent
-                        ? new Date(
-                            selectedEvent.startTime.getTime() - selectedEvent.startTime.getTimezoneOffset() * 60000,
-                          )
-                            .toISOString()
-                            .slice(0, 16)
-                        : ""
-                  }
-                  onChange={(e) => {
-                    const date = new Date(e.target.value)
-                    const oneHourLater = new Date(date.getTime() + 60 * 60 * 1000)
-                    isCreating
-                      ? setNewEvent((prev) => ({ ...prev, startTime: date, endTime: oneHourLater }))
-                      : setSelectedEvent((prev) => (prev ? { ...prev, startTime: date, endTime: oneHourLater } : null))
-                  }}
-                  disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
-                />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Input
+                    id="startTime"
+                    type="datetime-local"
+                    value={
+                      isCreating
+                        ? newEvent.startTime
+                          ? new Date(newEvent.startTime.getTime() - newEvent.startTime.getTimezoneOffset() * 60000)
+                              .toISOString()
+                              .slice(0, 16)
+                          : ""
+                        : selectedEvent
+                          ? new Date(
+                              selectedEvent.startTime.getTime() - selectedEvent.startTime.getTimezoneOffset() * 60000,
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                          : ""
+                    }
+                    onChange={(e) => {
+                      const date = new Date(e.target.value)
+                      const oneHourLater = new Date(date.getTime() + 60 * 60 * 1000)
+                      isCreating
+                        ? setNewEvent((prev) => ({ ...prev, startTime: date, endTime: oneHourLater }))
+                        : setSelectedEvent((prev) => (prev ? { ...prev, startTime: date, endTime: oneHourLater } : null))
+                    }}
+                    disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="endTime">End Time</Label>
+                  <Input
+                    id="endTime"
+                    type="datetime-local"
+                    value={
+                      isCreating
+                        ? newEvent.endTime
+                          ? new Date(newEvent.endTime.getTime() - newEvent.endTime.getTimezoneOffset() * 60000)
+                              .toISOString()
+                              .slice(0, 16)
+                          : ""
+                        : selectedEvent
+                          ? new Date(selectedEvent.endTime.getTime() - selectedEvent.endTime.getTimezoneOffset() * 60000)
+                              .toISOString()
+                              .slice(0, 16)
+                          : ""
+                    }
+                    onChange={(e) => {
+                      const date = new Date(e.target.value)
+                      isCreating
+                        ? setNewEvent((prev) => ({ ...prev, endTime: date }))
+                        : setSelectedEvent((prev) => (prev ? { ...prev, endTime: date } : null))
+                    }}
+                    disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
+                  />
+                </div>
               </div>
 
+              {/* Duration Display and Selector */}
               <div className="space-y-2">
-                <Label htmlFor="endTime">End Time</Label>
-                <Input
-                  id="endTime"
-                  type="datetime-local"
-                  value={
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-muted-foreground">Duration</Label>
+                  {(() => {
+                    const start = isCreating ? newEvent.startTime : selectedEvent?.startTime
+                    const end = isCreating ? newEvent.endTime : selectedEvent?.endTime
+                    if (start && end) {
+                      const durationMs = end.getTime() - start.getTime()
+                      const hours = Math.floor(durationMs / (1000 * 60 * 60))
+                      const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60))
+                      return (
+                        <Badge variant="secondary" className="text-xs">
+                          {hours > 0 && `${hours} hour${hours !== 1 ? 's' : ''}`}
+                          {hours > 0 && minutes > 0 && ' '}
+                          {minutes > 0 && `${minutes} min${minutes !== 1 ? 's' : ''}`}
+                          {hours === 0 && minutes === 0 && 'Less than 1 min'}
+                        </Badge>
+                      )
+                    }
+                    return null
+                  })()}
+                </div>
+                <Select
+                  onValueChange={(value) => {
+                    const start = isCreating ? newEvent.startTime : selectedEvent?.startTime
+                    if (!start) return
+                    const durationMinutes = parseInt(value)
+                    const newEndTime = new Date(start.getTime() + durationMinutes * 60 * 1000)
                     isCreating
-                      ? newEvent.endTime
-                        ? new Date(newEvent.endTime.getTime() - newEvent.endTime.getTimezoneOffset() * 60000)
-                            .toISOString()
-                            .slice(0, 16)
-                        : ""
-                      : selectedEvent
-                        ? new Date(selectedEvent.endTime.getTime() - selectedEvent.endTime.getTimezoneOffset() * 60000)
-                            .toISOString()
-                            .slice(0, 16)
-                        : ""
-                  }
-                  onChange={(e) => {
-                    const date = new Date(e.target.value)
-                    isCreating
-                      ? setNewEvent((prev) => ({ ...prev, endTime: date }))
-                      : setSelectedEvent((prev) => (prev ? { ...prev, endTime: date } : null))
+                      ? setNewEvent((prev) => ({ ...prev, endTime: newEndTime }))
+                      : setSelectedEvent((prev) => (prev ? { ...prev, endTime: newEndTime } : null))
                   }}
                   disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Quick duration presets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15">15 minutes</SelectItem>
+                    <SelectItem value="30">30 minutes</SelectItem>
+                    <SelectItem value="45">45 minutes</SelectItem>
+                    <SelectItem value="60">1 hour</SelectItem>
+                    <SelectItem value="90">1 hour 30 minutes</SelectItem>
+                    <SelectItem value="120">2 hours</SelectItem>
+                    <SelectItem value="180">3 hours</SelectItem>
+                    <SelectItem value="240">4 hours</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
