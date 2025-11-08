@@ -38,6 +38,7 @@ export interface Event {
   attendees?: string[]
   tags?: string[]
   assigned_to?: string | null
+  created_by_name?: string
 }
 
 export interface EventManagerProps {
@@ -755,6 +756,13 @@ export function EventManager({
                 }
                 placeholder="Event title"
               />
+              {!isCreating && selectedEvent?.created_by_name && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Badge variant="outline" className="text-xs">
+                    Created by: {selectedEvent.created_by_name}
+                  </Badge>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -1019,6 +1027,11 @@ function EventCard({
                   <h4 className="font-semibold text-sm leading-tight">{event.title}</h4>
                   <div className={cn("h-3 w-3 rounded-full flex-shrink-0", colorClasses.bg)} />
                 </div>
+                {event.created_by_name && (
+                  <Badge variant="secondary" className="text-[10px] h-5">
+                    From: {event.created_by_name}
+                  </Badge>
+                )}
                 {event.description && <p className="text-xs text-muted-foreground line-clamp-2">{event.description}</p>}
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
@@ -1063,7 +1076,14 @@ function EventCard({
           isHovered && "scale-[1.03] shadow-2xl ring-2 ring-white/50",
         )}
       >
-        <div className="font-semibold">{event.title}</div>
+        <div className="flex items-start justify-between gap-2">
+          <div className="font-semibold">{event.title}</div>
+          {event.created_by_name && (
+            <Badge variant="secondary" className="text-xs flex-shrink-0">
+              Coach
+            </Badge>
+          )}
+        </div>
         {event.description && <div className="mt-1 text-sm opacity-90 line-clamp-2">{event.description}</div>}
         <div className="mt-2 flex items-center gap-2 text-xs opacity-80">
           <Clock className="h-3 w-3" />
@@ -1115,6 +1135,11 @@ function EventCard({
                 <h4 className="font-semibold leading-tight">{event.title}</h4>
                 <div className={cn("h-4 w-4 rounded-full flex-shrink-0", colorClasses.bg)} />
               </div>
+              {event.created_by_name && (
+                <Badge variant="secondary" className="text-xs">
+                  From: {event.created_by_name}
+                </Badge>
+              )}
               {event.description && <p className="text-sm text-muted-foreground">{event.description}</p>}
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">

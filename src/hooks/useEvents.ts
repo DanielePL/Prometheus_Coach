@@ -15,6 +15,9 @@ interface DatabaseEvent {
   color: string;
   created_at: string;
   updated_at: string;
+  creator?: {
+    full_name: string;
+  };
 }
 
 const mapDatabaseEventToEvent = (dbEvent: DatabaseEvent): Event => ({
@@ -26,6 +29,8 @@ const mapDatabaseEventToEvent = (dbEvent: DatabaseEvent): Event => ({
   color: dbEvent.color as Event["color"],
   category: dbEvent.event_type,
   tags: [],
+  assigned_to: dbEvent.assigned_to,
+  created_by_name: dbEvent.creator?.full_name,
 });
 
 export const useEvents = () => {
@@ -36,7 +41,10 @@ export const useEvents = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("*")
+        .select(`
+          *,
+          creator:profiles!events_created_by_fkey(full_name)
+        `)
         .order("start_time", { ascending: true });
 
       if (error) throw error;
