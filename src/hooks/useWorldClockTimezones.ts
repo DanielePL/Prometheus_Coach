@@ -68,8 +68,26 @@ export function useWorldClockTimezones() {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // Use defaults if no custom timezones set
-        setTimezones(defaultTimezones.map((tz, idx) => ({ ...tz, id: `default-${idx}` })));
+        // Initialize defaults in database for logged-in users
+        const defaultsToInsert = defaultTimezones.map(tz => ({
+          user_id: user.id,
+          timezone: tz.timezone,
+          city_name: tz.city_name,
+          flag: tz.flag,
+          display_order: tz.display_order,
+        }));
+
+        const { data: insertedData, error: insertError } = await supabase
+          .from("user_world_clock_timezones")
+          .insert(defaultsToInsert)
+          .select();
+
+        if (insertError) {
+          console.error("Error inserting default timezones:", insertError);
+          setTimezones(defaultTimezones.map((tz, idx) => ({ ...tz, id: `default-${idx}` })));
+        } else {
+          setTimezones(insertedData || []);
+        }
       } else {
         setTimezones(data);
       }

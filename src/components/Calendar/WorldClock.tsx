@@ -1,4 +1,4 @@
-import { Clock, Globe, Plus, X, Settings, GripVertical } from "lucide-react";
+import { Clock, Globe, Plus, X, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -260,28 +260,23 @@ function SortableTimezoneItem({ tz, time, date, onRemove }: SortableTimezoneItem
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        "flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group",
+        "flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing group",
         isDragging && "opacity-50 bg-muted/50"
       )}
     >
-      <div className="flex items-center gap-2 flex-1">
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </div>
-        {tz.flag && <span className="text-lg">{tz.flag}</span>}
+      <div className="flex items-center gap-3 flex-1">
+        {tz.flag && <span className="text-xl">{tz.flag}</span>}
         <div className="flex-1">
           <p className="text-sm font-medium">{tz.city_name}</p>
           <p className="text-xs text-muted-foreground">{date}</p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3 text-muted-foreground" />
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
           <Badge variant="secondary" className="font-mono text-xs">
             {time || "Loading..."}
           </Badge>
@@ -289,10 +284,13 @@ function SortableTimezoneItem({ tz, time, date, onRemove }: SortableTimezoneItem
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={() => onRemove(tz.id)}
+          className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(tz.id);
+          }}
         >
-          <X className="h-3 w-3" />
+          <X className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>
