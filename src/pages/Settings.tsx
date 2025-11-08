@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BusinessHoursSettings } from "@/components/Calendar/BusinessHoursSettings";
 import { AvailabilitySettings } from "@/components/Calendar/AvailabilitySettings";
 import { TimezoneSettings } from "@/components/Settings/TimezoneSettings";
+import { BookingLinksSettings } from "@/components/Calendar/BookingLinksSettings";
 
 const Settings = () => {
   const { theme, setTheme } = useTheme();
@@ -47,14 +48,19 @@ const Settings = () => {
           </div>
 
           <Tabs defaultValue="availability" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="availability">Availability</TabsTrigger>
+              <TabsTrigger value="booking">Booking Links</TabsTrigger>
               <TabsTrigger value="preferences">Preferences</TabsTrigger>
             </TabsList>
 
             <TabsContent value="availability" className="space-y-6">
               <BusinessHoursSettings />
               <AvailabilitySettings />
+            </TabsContent>
+
+            <TabsContent value="booking" className="space-y-6">
+              <BookingLinksSettings />
             </TabsContent>
 
             <TabsContent value="preferences" className="space-y-6">
