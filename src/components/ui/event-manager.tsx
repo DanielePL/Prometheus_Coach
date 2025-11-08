@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Plus, Calendar, Clock, Grid3x3, List, Search, Filter, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, Calendar, Clock, Grid3x3, List, Search, Filter, X, Repeat } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
@@ -1166,14 +1166,24 @@ function EventCard({
             isHovered && "scale-105 shadow-lg z-10",
           )}
         >
-          {event.title}
+          <div className="flex items-center gap-1">
+            {(event.is_recurring || event.parent_event_id) && (
+              <Repeat className="h-3 w-3 flex-shrink-0" />
+            )}
+            <span className="truncate">{event.title}</span>
+          </div>
         </div>
         {isHovered && (
           <div className="absolute left-0 top-full z-50 mt-1 w-64 animate-in fade-in slide-in-from-top-2 duration-200">
             <Card className="border-2 p-3 shadow-xl">
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-semibold text-sm leading-tight">{event.title}</h4>
+                  <div className="flex items-start gap-1 flex-1 min-w-0">
+                    {(event.is_recurring || event.parent_event_id) && (
+                      <Repeat className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                    )}
+                    <h4 className="font-semibold text-sm leading-tight">{event.title}</h4>
+                  </div>
                   <div className={cn("h-3 w-3 rounded-full flex-shrink-0", colorClasses.bg)} />
                 </div>
                 {event.created_by_name && (
@@ -1226,7 +1236,12 @@ function EventCard({
         )}
       >
         <div className="flex items-start justify-between gap-2">
-          <div className="font-semibold">{event.title}</div>
+          <div className="flex items-start gap-1 flex-1 min-w-0">
+            {(event.is_recurring || event.parent_event_id) && (
+              <Repeat className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            )}
+            <div className="font-semibold">{event.title}</div>
+          </div>
           {event.created_by_name && (
             <Badge variant="secondary" className="text-xs flex-shrink-0">
               Coach
@@ -1274,14 +1289,24 @@ function EventCard({
           isHovered && "scale-105 shadow-lg z-10",
         )}
       >
-        <div className="truncate">{event.title}</div>
+        <div className="flex items-center gap-1 truncate">
+          {(event.is_recurring || event.parent_event_id) && (
+            <Repeat className="h-3 w-3 flex-shrink-0" />
+          )}
+          <span className="truncate">{event.title}</span>
+        </div>
       </div>
       {isHovered && (
         <div className="absolute left-0 top-full z-50 mt-1 w-72 animate-in fade-in slide-in-from-top-2 duration-200">
           <Card className="border-2 p-4 shadow-xl">
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-2">
-                <h4 className="font-semibold leading-tight">{event.title}</h4>
+                <div className="flex items-start gap-1 flex-1 min-w-0">
+                  {(event.is_recurring || event.parent_event_id) && (
+                    <Repeat className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  )}
+                  <h4 className="font-semibold leading-tight">{event.title}</h4>
+                </div>
                 <div className={cn("h-4 w-4 rounded-full flex-shrink-0", colorClasses.bg)} />
               </div>
               {event.created_by_name && (

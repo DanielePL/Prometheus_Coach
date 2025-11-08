@@ -15,6 +15,8 @@ interface DatabaseEvent {
   color: string;
   created_at: string;
   updated_at: string;
+  is_recurring?: boolean;
+  parent_event_id?: string | null;
   creator?: {
     full_name: string;
   };
@@ -32,6 +34,8 @@ const mapDatabaseEventToEvent = (dbEvent: DatabaseEvent): Event => ({
   assigned_to: dbEvent.assigned_to,
   created_by_name: dbEvent.creator?.full_name,
   created_by: dbEvent.created_by,
+  is_recurring: dbEvent.is_recurring,
+  parent_event_id: dbEvent.parent_event_id,
 });
 
 export const useEvents = () => {
