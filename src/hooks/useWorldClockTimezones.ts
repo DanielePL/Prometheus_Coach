@@ -155,6 +155,9 @@ export function useWorldClockTimezones() {
 
       if (error) throw error;
 
+      // Immediately refresh local state so UI updates without a full reload
+      await fetchTimezones();
+
       toast({
         title: "Timezone added",
         description: `${cityName} has been added to your world clock`,
