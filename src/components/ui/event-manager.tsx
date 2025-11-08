@@ -46,6 +46,7 @@ export interface Event {
   recurrence_days?: string[]
   recurrence_end_date?: Date
   parent_event_id?: string | null
+  timezone?: string
 }
 
 export interface EventManagerProps {
@@ -98,6 +99,7 @@ export function EventManager({
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: "",
     description: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     color: colors[0].value,
     category: categories[0],
     tags: [],
@@ -201,6 +203,7 @@ export function EventManager({
     setNewEvent({
       title: "",
       description: "",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       color: colors[0].value,
       category: categories[0],
       tags: [],
@@ -999,6 +1002,99 @@ export function EventManager({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Timezone Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="timezone">Time Zone</Label>
+              <Select
+                value={isCreating ? newEvent.timezone : selectedEvent?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}
+                onValueChange={(value) =>
+                  isCreating
+                    ? setNewEvent((prev) => ({ ...prev, timezone: value }))
+                    : setSelectedEvent((prev) => (prev ? { ...prev, timezone: value } : null))
+                }
+                disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
+              >
+                <SelectTrigger id="timezone">
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                  <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                  <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                  <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                  <SelectItem value="America/Anchorage">Alaska Time (AKT)</SelectItem>
+                  <SelectItem value="Pacific/Honolulu">Hawaii Time (HT)</SelectItem>
+                  <SelectItem value="Europe/London">London (GMT/BST)</SelectItem>
+                  <SelectItem value="Europe/Paris">Paris (CET/CEST)</SelectItem>
+                  <SelectItem value="Europe/Berlin">Berlin (CET/CEST)</SelectItem>
+                  <SelectItem value="Europe/Rome">Rome (CET/CEST)</SelectItem>
+                  <SelectItem value="Europe/Madrid">Madrid (CET/CEST)</SelectItem>
+                  <SelectItem value="Europe/Amsterdam">Amsterdam (CET/CEST)</SelectItem>
+                  <SelectItem value="Europe/Brussels">Brussels (CET/CEST)</SelectItem>
+                  <SelectItem value="Europe/Vienna">Vienna (CET/CEST)</SelectItem>
+                  <SelectItem value="Europe/Stockholm">Stockholm (CET/CEST)</SelectItem>
+                  <SelectItem value="Europe/Moscow">Moscow (MSK)</SelectItem>
+                  <SelectItem value="Asia/Dubai">Dubai (GST)</SelectItem>
+                  <SelectItem value="Asia/Kolkata">India (IST)</SelectItem>
+                  <SelectItem value="Asia/Bangkok">Bangkok (ICT)</SelectItem>
+                  <SelectItem value="Asia/Singapore">Singapore (SGT)</SelectItem>
+                  <SelectItem value="Asia/Hong_Kong">Hong Kong (HKT)</SelectItem>
+                  <SelectItem value="Asia/Shanghai">Shanghai (CST)</SelectItem>
+                  <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                  <SelectItem value="Asia/Seoul">Seoul (KST)</SelectItem>
+                  <SelectItem value="Australia/Sydney">Sydney (AEDT/AEST)</SelectItem>
+                  <SelectItem value="Australia/Melbourne">Melbourne (AEDT/AEST)</SelectItem>
+                  <SelectItem value="Australia/Perth">Perth (AWST)</SelectItem>
+                  <SelectItem value="Pacific/Auckland">Auckland (NZDT/NZST)</SelectItem>
+                  <SelectItem value="UTC">UTC</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Local Time Conversion Display */}
+              {(() => {
+                const start = isCreating ? newEvent.startTime : selectedEvent?.startTime
+                const timezone = isCreating ? newEvent.timezone : selectedEvent?.timezone
+                const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+                
+                if (start && timezone && timezone !== localTimezone) {
+                  const eventTimeStr = new Intl.DateTimeFormat('en-US', {
+                    timeZone: timezone,
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  }).format(start)
+                  
+                  const localTimeStr = new Intl.DateTimeFormat('en-US', {
+                    timeZone: localTimezone,
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  }).format(start)
+                  
+                  return (
+                    <div className="mt-2 p-3 rounded-lg bg-muted/50 border border-border">
+                      <p className="text-xs text-muted-foreground mb-1">Time Conversion:</p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Event time:</span>
+                          <span className="font-medium">{eventTimeStr}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Your local time:</span>
+                          <span className="font-medium text-primary">{localTimeStr}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+                return null
+              })()}
             </div>
 
             <div className="space-y-2">
