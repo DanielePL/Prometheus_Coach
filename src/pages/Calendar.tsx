@@ -22,6 +22,16 @@ const Calendar = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Get current user ID
   useEffect(() => {
@@ -55,6 +65,23 @@ const Calendar = () => {
 
   const handleEventDelete = async (id: string) => {
     await deleteEvent(id);
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
   return (
@@ -120,7 +147,16 @@ const Calendar = () => {
 
             {/* World Clock Sidebar - Hidden on mobile and tablet, visible on xl+ screens */}
             <div className="hidden xl:block">
-              <div className="sticky top-6">
+              <div className="sticky top-6 space-y-6">
+                {/* Current Time and Date Display */}
+                <div className="glass rounded-2xl p-6">
+                  <div className="text-center">
+                    <p className="text-4xl font-bold mb-2">{formatTime(currentTime)}</p>
+                    <p className="text-sm text-primary">{formatDate(currentTime)}</p>
+                  </div>
+                </div>
+
+                {/* World Clock */}
                 <WorldClock />
               </div>
             </div>
