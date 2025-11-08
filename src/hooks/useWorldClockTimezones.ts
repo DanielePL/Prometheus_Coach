@@ -68,25 +68,37 @@ export function useWorldClockTimezones() {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // Initialize defaults in database for logged-in users (or re-insert if user deleted all)
-        const defaultsToInsert = defaultTimezones.map(tz => ({
-          user_id: user.id,
-          timezone: tz.timezone,
-          city_name: tz.city_name,
-          flag: tz.flag,
-          display_order: tz.display_order,
-        }));
-
-        const { data: insertedData, error: insertError } = await supabase
+        // Initialize defaults ONLY on first load, not after user deletions
+        // Check if user has ever had timezones before
+        const { count } = await supabase
           .from("user_world_clock_timezones")
-          .insert(defaultsToInsert)
-          .select();
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
 
-        if (insertError) {
-          console.error("Error inserting default timezones:", insertError);
-          setTimezones(defaultTimezones.map((tz, idx) => ({ ...tz, id: `default-${idx}` })));
+        // Only insert defaults if user has never had any timezones
+        if (count === 0) {
+          const defaultsToInsert = defaultTimezones.map(tz => ({
+            user_id: user.id,
+            timezone: tz.timezone,
+            city_name: tz.city_name,
+            flag: tz.flag,
+            display_order: tz.display_order,
+          }));
+
+          const { data: insertedData, error: insertError } = await supabase
+            .from("user_world_clock_timezones")
+            .insert(defaultsToInsert)
+            .select();
+
+          if (insertError) {
+            console.error("Error inserting default timezones:", insertError);
+            setTimezones([]);
+          } else {
+            setTimezones(insertedData || []);
+          }
         } else {
-          setTimezones(insertedData || []);
+          // User deleted all their timezones intentionally, show empty state
+          setTimezones([]);
         }
       } else {
         setTimezones(data);
@@ -191,9 +203,14 @@ export function useWorldClockTimezones() {
         .eq("id", id)
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Delete error:", error);
+        throw error;
+      }
 
-      setTimezones(timezones.filter(tz => tz.id !== id));
+      // Immediately refetch to update UI
+      await fetchTimezones();
+
       toast({
         title: "Timezone removed",
         description: "Timezone has been removed from your world clock",
