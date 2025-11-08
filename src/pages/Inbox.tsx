@@ -15,6 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { NewMessageDialog } from "@/components/Messaging/NewMessageDialog";
+import { EventMentionParser } from "@/components/Messaging/EventMentionParser";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -350,7 +351,9 @@ const Inbox = () => {
                                 </div>
                               ) : (
                                 <>
-                                  <p className="text-sm break-words">{message.content}</p>
+                                  <div className="text-sm">
+                                    <EventMentionParser content={message.content} />
+                                  </div>
                                   <div className="flex items-center justify-end gap-2 mt-1">
                                     <span className="text-xs opacity-80">
                                       {formatMessageTime(message.created_at)}
@@ -372,7 +375,9 @@ const Inbox = () => {
                               <AvatarFallback>{message.sender.full_name[0]}</AvatarFallback>
                             </Avatar>
                             <div className="glass rounded-2xl rounded-tl-sm px-4 py-2 max-w-[70%]">
-                              <p className="text-sm break-words">{message.content}</p>
+                              <div className="text-sm">
+                                <EventMentionParser content={message.content} />
+                              </div>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs text-muted-foreground">
                                   {formatMessageTime(message.created_at)}

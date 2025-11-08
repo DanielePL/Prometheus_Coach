@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo, useEffect } from "react"
+import { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -1146,6 +1146,19 @@ function EventCard({
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const colorClasses = getColorClasses(event.color)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  // Smooth scroll to highlighted event
+  useEffect(() => {
+    if (event.id === highlightedEventId && cardRef.current) {
+      setTimeout(() => {
+        cardRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 100);
+    }
+  }, [event.id, highlightedEventId]);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
@@ -1169,6 +1182,7 @@ function EventCard({
   if (variant === "compact") {
     return (
       <div
+        ref={cardRef}
         draggable
         onDragStart={() => onDragStart(event)}
         onDragEnd={onDragEnd}
@@ -1242,6 +1256,7 @@ function EventCard({
   if (variant === "detailed") {
     return (
       <div
+        ref={cardRef}
         draggable
         onDragStart={() => onDragStart(event)}
         onDragEnd={onDragEnd}
@@ -1294,6 +1309,7 @@ function EventCard({
 
   return (
     <div
+      ref={cardRef}
       draggable
       onDragStart={() => onDragStart(event)}
       onDragEnd={onDragEnd}
