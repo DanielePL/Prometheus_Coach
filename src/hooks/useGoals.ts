@@ -44,9 +44,11 @@ export const useGoals = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["goals"] });
-      toast.success("Goal added");
+      if (variables.trim()) {
+        toast.success("Goal added");
+      }
     },
     onError: (error) => {
       toast.error("Failed to add goal");
@@ -101,7 +103,9 @@ export const useGoals = () => {
   return {
     goals,
     isLoading,
-    addGoal: addGoalMutation.mutate,
+    addGoal: (text: string, options?: { onSuccess?: (data: Goal) => void }) => {
+      addGoalMutation.mutate(text, options);
+    },
     updateGoal: updateGoalMutation.mutate,
     deleteGoal: deleteGoalMutation.mutate,
   };

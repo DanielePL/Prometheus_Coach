@@ -31,6 +31,7 @@ const Dashboard = () => {
   
   const [editingGoal, setEditingGoal] = useState<{ id: string; text: string } | null>(null);
   const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
+  const [inlineEditingGoalId, setInlineEditingGoalId] = useState<string | null>(null);
 
   const firstName = profile?.full_name?.split(' ')[0] || 'User';
 
@@ -50,7 +51,11 @@ const Dashboard = () => {
   ];
 
   const handleAddGoal = () => {
-    addGoal("New goal");
+    addGoal("", {
+      onSuccess: (newGoal) => {
+        setInlineEditingGoalId(newGoal.id);
+      }
+    });
   };
 
   const handleToggleGoal = (goalId: string, completed: boolean) => {
@@ -77,6 +82,16 @@ const Dashboard = () => {
       deleteGoal(deletingGoalId);
       setDeletingGoalId(null);
     }
+  };
+
+  const handleInlineSave = (goalId: string, text: string) => {
+    updateGoal({ id: goalId, text });
+    setInlineEditingGoalId(null);
+  };
+
+  const handleInlineCancel = (goalId: string) => {
+    deleteGoal(goalId);
+    setInlineEditingGoalId(null);
   };
 
   const formatTime = (date: Date) => {
@@ -307,9 +322,12 @@ const Dashboard = () => {
                 <GoalItem
                   key={goal.id}
                   goal={goal}
+                  isInlineEditing={inlineEditingGoalId === goal.id}
                   onToggle={() => handleToggleGoal(goal.id, goal.completed)}
                   onEdit={() => handleEditGoal(goal.id, goal.text)}
                   onDelete={() => handleDeleteGoal(goal.id)}
+                  onInlineSave={(text) => handleInlineSave(goal.id, text)}
+                  onInlineCancel={() => handleInlineCancel(goal.id)}
                 />
               ))}
             </div>

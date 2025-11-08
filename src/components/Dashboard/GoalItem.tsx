@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface Goal {
   id: string;
@@ -16,13 +17,73 @@ interface Goal {
 
 interface GoalItemProps {
   goal: Goal;
+  isInlineEditing?: boolean;
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onInlineSave?: (text: string) => void;
+  onInlineCancel?: () => void;
 }
 
-export const GoalItem = ({ goal, onToggle, onEdit, onDelete }: GoalItemProps) => {
+export const GoalItem = ({ 
+  goal, 
+  isInlineEditing = false, 
+  onToggle, 
+  onEdit, 
+  onDelete,
+  onInlineSave,
+  onInlineCancel
+}: GoalItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [editText, setEditText] = useState(goal.text);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isInlineEditing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isInlineEditing]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
+
+  const handleSave = () => {
+    const trimmedText = editText.trim();
+    if (trimmedText && onInlineSave) {
+      onInlineSave(trimmedText);
+    } else if (!trimmedText && onInlineCancel) {
+      onInlineCancel();
+    }
+  };
+
+  const handleCancel = () => {
+    if (onInlineCancel) {
+      onInlineCancel();
+    }
+  };
+
+  if (isInlineEditing) {
+    return (
+      <div className="flex items-start gap-3 p-3 rounded-xl bg-background/50 transition-smooth">
+        <div className="w-5 h-5 rounded-full border-2 border-muted-foreground flex items-center justify-center flex-shrink-0 mt-0.5" />
+        <Input
+          ref={inputRef}
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          placeholder="Enter goal text..."
+          className="flex-1 text-sm bg-transparent border-none focus-visible:ring-1 focus-visible:ring-primary p-0 h-auto"
+        />
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -49,7 +110,7 @@ export const GoalItem = ({ goal, onToggle, onEdit, onDelete }: GoalItemProps) =>
       
       <span 
         onClick={onToggle}
-        className={`flex-1 text-sm cursor-pointer ${goal.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+        className={`flex-1 text-sm cursor-pointer pr-2 ${goal.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}
       >
         {goal.text}
       </span>
@@ -59,7 +120,7 @@ export const GoalItem = ({ goal, onToggle, onEdit, onDelete }: GoalItemProps) =>
           <Button
             variant="ghost"
             size="icon"
-            className={`h-8 w-8 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-smooth ${
+            className={`h-8 w-8 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-smooth flex-shrink-0 ${
               isHovered ? 'opacity-100' : 'opacity-0'
             }`}
           >
