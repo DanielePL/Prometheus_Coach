@@ -5,23 +5,38 @@ import { ExerciseHero } from "@/components/Exercise/ExerciseHero";
 import { InfoCard } from "@/components/Exercise/InfoCard";
 import { ProgramTile } from "@/components/Exercise/ProgramTile";
 import { RelatedWorkouts } from "@/components/Exercise/RelatedWorkouts";
-import { Bookmark, Share2, Moon, Sun, Flame, Weight, Clock, Heart, Activity, TrendingUp, AlertTriangle, Target, Zap } from "lucide-react";
+import { Bookmark, Share2, Moon, Sun, Flame, Weight, Clock, Heart, Activity, TrendingUp, AlertTriangle, Target, Zap, Trash2, ArrowLeft } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDeleteExercise } from "@/hooks/useDeleteExercise";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import frontSquatImg from "@/assets/front.jpg";
 import andersonSquatImg from "@/assets/anderson.jpg";
-import { ArrowLeft } from "lucide-react";
 
 const ExerciseDetail = () => {
   const { theme, setTheme } = useTheme();
   const { id } = useParams();
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavoriteExercises();
+  const { user } = useAuth();
+  const { deleteExercise, isDeleting } = useDeleteExercise();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data: exercise, isLoading } = useQuery({
     queryKey: ["exercise", id],
@@ -69,6 +84,23 @@ const ExerciseDetail = () => {
     if (exercise) {
       toggleFavorite(exercise.id);
     }
+  };
+
+  const canDelete = user && exercise && (exercise.created_by === user.id);
+
+  const handleDelete = async () => {
+    if (!exercise) return;
+    
+    try {
+      await deleteExercise({
+        exerciseId: exercise.id,
+        videoFilename: exercise.video_filename,
+      });
+      navigate("/uploads");
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+    setShowDeleteDialog(false);
   };
 
   return (
@@ -130,6 +162,15 @@ const ExerciseDetail = () => {
                   <button className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth">
                     <Share2 size={18} className="text-foreground" />
                   </button>
+                  {canDelete && (
+                    <button
+                      onClick={() => setShowDeleteDialog(true)}
+                      disabled={isDeleting}
+                      className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                   <button 
                     className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth"
                     onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -261,6 +302,15 @@ const ExerciseDetail = () => {
                 <button className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth">
                   <Share2 size={18} className="text-foreground" />
                 </button>
+                {canDelete && (
+                  <button
+                    onClick={() => setShowDeleteDialog(true)}
+                    disabled={isDeleting}
+                    className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
                 <button 
                   className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth"
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -368,6 +418,26 @@ const ExerciseDetail = () => {
       </main>
       
       <BottomNav />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this exercise?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the exercise and its video.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

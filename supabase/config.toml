@@ -2,3 +2,6 @@ project_id = "cebruyycvufpfftewktd"
 
 [functions.upload-video-to-s3]
 verify_jwt = true
+
+[functions.delete-video-from-s3]
+verify_jwt = true
