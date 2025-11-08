@@ -12,6 +12,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useClients } from "@/hooks/useClients";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationBell } from "@/components/Notifications/NotificationBell";
+import { WorldClock } from "@/components/Calendar/WorldClock";
 
 const Calendar = () => {
   const { theme, setTheme } = useTheme();
@@ -89,29 +90,41 @@ const Calendar = () => {
             </div>
           </div>
 
-          {/* Calendar Content - EventManager */}
-          {isLoading ? (
-            <div className="flex items-center justify-center h-96">
-              <div className="text-center">
-                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading calendar...</p>
+          {/* Layout with Calendar and World Clock */}
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6">
+            {/* Calendar Content - EventManager */}
+            <div>
+              {isLoading ? (
+                <div className="flex items-center justify-center h-96">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading calendar...</p>
+                  </div>
+                </div>
+              ) : (
+                <EventManager
+                  events={events}
+                  onEventCreate={handleEventCreate}
+                  onEventUpdate={handleEventUpdate}
+                  onEventDelete={handleEventDelete}
+                  categories={["session", "check-in", "personal", "other"]}
+                  availableTags={["Important", "Urgent", "Session", "Check-in"]}
+                  defaultView="month"
+                  clients={clients}
+                  isCoach={isCoach}
+                  currentUserId={currentUserId}
+                  highlightedEventId={highlightedEventId}
+                />
+              )}
+            </div>
+
+            {/* World Clock Sidebar - Hidden on mobile and tablet, visible on xl+ screens */}
+            <div className="hidden xl:block">
+              <div className="sticky top-6">
+                <WorldClock />
               </div>
             </div>
-          ) : (
-            <EventManager
-              events={events}
-              onEventCreate={handleEventCreate}
-              onEventUpdate={handleEventUpdate}
-              onEventDelete={handleEventDelete}
-              categories={["session", "check-in", "personal", "other"]}
-              availableTags={["Important", "Urgent", "Session", "Check-in"]}
-              defaultView="month"
-              clients={clients}
-              isCoach={isCoach}
-              currentUserId={currentUserId}
-              highlightedEventId={highlightedEventId}
-            />
-          )}
+          </div>
         </div>
       </main>
 

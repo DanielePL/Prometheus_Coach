@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useUserTimezone } from "@/hooks/useUserTimezone"
 
 export interface Event {
   id: string
@@ -89,6 +90,7 @@ export function EventManager({
   currentUserId = null,
   highlightedEventId = null,
 }: EventManagerProps) {
+  const { preferredTimezone, isLoading: isLoadingTimezone } = useUserTimezone()
   const [events, setEvents] = useState<Event[]>(initialEvents)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState<"month" | "week" | "day" | "list">(defaultView)
@@ -99,7 +101,7 @@ export function EventManager({
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: "",
     description: "",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timezone: preferredTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
     color: colors[0].value,
     category: categories[0],
     tags: [],
@@ -108,6 +110,13 @@ export function EventManager({
     recurrence_interval: 1,
     recurrence_days: [],
   })
+
+  // Update timezone when preferredTimezone loads
+  useEffect(() => {
+    if (preferredTimezone && isCreating) {
+      setNewEvent((prev) => ({ ...prev, timezone: preferredTimezone }))
+    }
+  }, [preferredTimezone, isCreating])
 
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedColors, setSelectedColors] = useState<string[]>([])
@@ -203,7 +212,7 @@ export function EventManager({
     setNewEvent({
       title: "",
       description: "",
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone: preferredTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       color: colors[0].value,
       category: categories[0],
       tags: [],
@@ -1383,6 +1392,11 @@ function EventCard({
                   </span>
                   <span className="text-[10px]">({getDuration()})</span>
                 </div>
+                {event.timezone && event.timezone !== Intl.DateTimeFormat().resolvedOptions().timeZone && (
+                  <Badge variant="outline" className="text-[10px] h-5 border-primary/50 text-primary">
+                    🌍 {event.timezone.split('/')[1]?.replace('_', ' ')}
+                  </Badge>
+                )}
                 <div className="flex flex-wrap gap-1">
                   {event.category && (
                     <Badge variant="secondary" className="text-[10px] h-5 text-white dark:text-foreground">
@@ -1439,6 +1453,11 @@ function EventCard({
           <Clock className="h-3 w-3" />
           {formatTime(event.startTime)} - {formatTime(event.endTime)}
         </div>
+        {event.timezone && event.timezone !== Intl.DateTimeFormat().resolvedOptions().timeZone && (
+          <Badge variant="secondary" className="mt-2 text-[10px] border-white/30">
+            🌍 {event.timezone.split('/')[1]?.replace('_', ' ')}
+          </Badge>
+        )}
         {isHovered && (
           <div className="mt-2 flex flex-wrap gap-1 animate-in fade-in slide-in-from-bottom-1 duration-200">
             {event.category && (
@@ -1511,6 +1530,11 @@ function EventCard({
                   </span>
                   <span className="text-[10px]">({getDuration()})</span>
                 </div>
+                {event.timezone && event.timezone !== Intl.DateTimeFormat().resolvedOptions().timeZone && (
+                  <Badge variant="outline" className="text-[10px] border-primary/50 text-primary">
+                    🌍 {event.timezone.split('/')[1]?.replace('_', ' ')}
+                  </Badge>
+                )}
                 <div className="flex flex-wrap gap-1">
                   {event.category && (
                     <Badge variant="secondary" className="text-xs text-white dark:text-foreground">

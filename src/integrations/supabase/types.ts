@@ -337,6 +337,7 @@ export type Database = {
           full_name: string
           id: string
           is_admin: boolean
+          preferred_timezone: string | null
           role: string
           updated_at: string
         }
@@ -345,6 +346,7 @@ export type Database = {
           full_name: string
           id: string
           is_admin?: boolean
+          preferred_timezone?: string | null
           role?: string
           updated_at?: string
         }
@@ -353,6 +355,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_admin?: boolean
+          preferred_timezone?: string | null
           role?: string
           updated_at?: string
         }
