@@ -17,21 +17,12 @@ import jessicaTaylorImg from "@/assets/jessica-taylor.jpg";
 import alexMartinezImg from "@/assets/alex-martinez.jpg";
 import mikeChenImg from "@/assets/mike-chen.jpg";
 import rachelKimImg from "@/assets/rachel-kim.jpg";
-import { useGoals } from "@/hooks/useGoals";
-import { GoalItem } from "@/components/Dashboard/GoalItem";
-import { EditGoalModal } from "@/components/Dashboard/EditGoalModal";
-import { DeleteGoalDialog } from "@/components/Dashboard/DeleteGoalDialog";
 
 const Dashboard = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { profile } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const { goals, addGoal, updateGoal, deleteGoal } = useGoals();
-  
-  const [editingGoal, setEditingGoal] = useState<{ id: string; text: string } | null>(null);
-  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
-  const [inlineEditingGoalId, setInlineEditingGoalId] = useState<string | null>(null);
 
   const firstName = profile?.full_name?.split(' ')[0] || 'User';
 
@@ -50,48 +41,26 @@ const Dashboard = () => {
     { time: "4:00 PM", title: "Client Session - Jessica T." },
   ];
 
-  const handleAddGoal = () => {
-    addGoal("", {
-      onSuccess: (newGoal) => {
-        setInlineEditingGoalId(newGoal.id);
-      }
-    });
+  const [goals, setGoals] = useState([
+    { id: 1, text: "Review 3 client progress reports", completed: true },
+    { id: 2, text: "Update training programs for Team Alpha", completed: false },
+    { id: 3, text: "Follow up with new client onboarding", completed: false },
+    { id: 4, text: "Record new exercise demonstration video", completed: false },
+  ]);
+
+  const toggleGoal = (goalId: number) => {
+    setGoals(goals.map(goal => 
+      goal.id === goalId ? { ...goal, completed: !goal.completed } : goal
+    ));
   };
 
-  const handleToggleGoal = (goalId: string, completed: boolean) => {
-    updateGoal({ id: goalId, completed: !completed });
-  };
-
-  const handleEditGoal = (goalId: string, text: string) => {
-    setEditingGoal({ id: goalId, text });
-  };
-
-  const handleSaveEdit = (text: string) => {
-    if (editingGoal) {
-      updateGoal({ id: editingGoal.id, text });
-      setEditingGoal(null);
-    }
-  };
-
-  const handleDeleteGoal = (goalId: string) => {
-    setDeletingGoalId(goalId);
-  };
-
-  const confirmDeleteGoal = () => {
-    if (deletingGoalId) {
-      deleteGoal(deletingGoalId);
-      setDeletingGoalId(null);
-    }
-  };
-
-  const handleInlineSave = (goalId: string, text: string) => {
-    updateGoal({ id: goalId, text });
-    setInlineEditingGoalId(null);
-  };
-
-  const handleInlineCancel = (goalId: string) => {
-    deleteGoal(goalId);
-    setInlineEditingGoalId(null);
+  const addNewGoal = () => {
+    const newGoal = {
+      id: goals.length + 1,
+      text: "New goal",
+      completed: false
+    };
+    setGoals([...goals, newGoal]);
   };
 
   const formatTime = (date: Date) => {
@@ -309,7 +278,7 @@ const Dashboard = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleAddGoal}
+                  onClick={addNewGoal}
                   className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20"
                 >
                   <Plus className="w-4 h-4" />
@@ -319,38 +288,33 @@ const Dashboard = () => {
             
             <div className="space-y-3">
               {goals.map((goal) => (
-                <GoalItem
-                  key={goal.id}
-                  goal={goal}
-                  isInlineEditing={inlineEditingGoalId === goal.id}
-                  onToggle={() => handleToggleGoal(goal.id, goal.completed)}
-                  onEdit={() => handleEditGoal(goal.id, goal.text)}
-                  onDelete={() => handleDeleteGoal(goal.id)}
-                  onInlineSave={(text) => handleInlineSave(goal.id, text)}
-                  onInlineCancel={() => handleInlineCancel(goal.id)}
-                />
+                <div 
+                  key={goal.id} 
+                  onClick={() => toggleGoal(goal.id)}
+                  className="flex items-start gap-3 p-3 rounded-xl bg-background/50 cursor-pointer hover:bg-background/70 transition-smooth"
+                >
+                  <div className={`
+                    w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5
+                    ${goal.completed 
+                      ? 'bg-primary border-primary' 
+                      : 'border-muted-foreground'
+                    }
+                  `}>
+                    {goal.completed && (
+                      <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className={`text-sm ${goal.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                    {goal.text}
+                  </span>
+                </div>
               ))}
             </div>
           </div>
         </div>
       </main>
-
-      {editingGoal && (
-        <EditGoalModal
-          isOpen={true}
-          onClose={() => setEditingGoal(null)}
-          onSave={handleSaveEdit}
-          currentText={editingGoal.text}
-        />
-      )}
-
-      {deletingGoalId && (
-        <DeleteGoalDialog
-          isOpen={true}
-          onClose={() => setDeletingGoalId(null)}
-          onConfirm={confirmDeleteGoal}
-        />
-      )}
     </div>
   );
 };
