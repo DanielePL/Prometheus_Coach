@@ -174,7 +174,9 @@ const Uploads = () => {
                     isFavorite={isFavorite(exercise.id)}
                     onToggleFavorite={toggleFavorite}
                     showDelete={true}
+                    showEdit={true}
                     onDeleteSuccess={refetch}
+                    onEditSuccess={refetch}
                   />
                 ))}
               </div>

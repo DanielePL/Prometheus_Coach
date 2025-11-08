@@ -1,4 +1,4 @@
-import { Heart, Trash2 } from "lucide-react";
+import { Heart, Trash2, Edit } from "lucide-react";
 import { Exercise } from "@/hooks/useExercises";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,13 +14,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { EditExerciseModal } from "./EditExerciseModal";
 
 interface ExerciseCardProps {
   exercise: Exercise;
   isFavorite: boolean;
   onToggleFavorite: (exerciseId: string) => void;
   showDelete?: boolean;
+  showEdit?: boolean;
   onDeleteSuccess?: () => void;
+  onEditSuccess?: () => void;
 }
 
 export const ExerciseCard = ({
@@ -28,14 +31,18 @@ export const ExerciseCard = ({
   isFavorite,
   onToggleFavorite,
   showDelete = false,
+  showEdit = false,
   onDeleteSuccess,
+  onEditSuccess,
 }: ExerciseCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { deleteExercise, isDeleting } = useDeleteExercise();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const canDelete = showDelete && user && exercise.created_by === user.id;
+  const canEdit = showEdit && user && exercise.created_by === user.id;
 
   const handleCardClick = () => {
     navigate(`/exercise/${exercise.id}`);
@@ -70,6 +77,17 @@ export const ExerciseCard = ({
           </span>
         </div>
         <div className="absolute top-3 right-3 flex gap-2">
+          {canEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowEditModal(true);
+              }}
+              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-primary hover:text-primary-foreground opacity-0 group-hover:opacity-100"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          )}
           {canDelete && (
             <button
               onClick={(e) => {
@@ -107,6 +125,13 @@ export const ExerciseCard = ({
           </p>
         )}
       </div>
+
+      <EditExerciseModal
+        exercise={exercise}
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        onSuccess={onEditSuccess}
+      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

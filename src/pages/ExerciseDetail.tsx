@@ -5,7 +5,8 @@ import { ExerciseHero } from "@/components/Exercise/ExerciseHero";
 import { InfoCard } from "@/components/Exercise/InfoCard";
 import { ProgramTile } from "@/components/Exercise/ProgramTile";
 import { RelatedWorkouts } from "@/components/Exercise/RelatedWorkouts";
-import { Bookmark, Share2, Moon, Sun, Flame, Weight, Clock, Heart, Activity, TrendingUp, AlertTriangle, Target, Zap, Trash2, ArrowLeft } from "lucide-react";
+import { EditExerciseModal } from "@/components/Exercise/EditExerciseModal";
+import { Bookmark, Share2, Moon, Sun, Flame, Weight, Clock, Heart, Activity, TrendingUp, AlertTriangle, Target, Zap, Trash2, Edit, ArrowLeft } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -37,8 +38,9 @@ const ExerciseDetail = () => {
   const { user } = useAuth();
   const { deleteExercise, isDeleting } = useDeleteExercise();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  const { data: exercise, isLoading } = useQuery({
+  const { data: exercise, isLoading, refetch } = useQuery({
     queryKey: ["exercise", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -163,13 +165,21 @@ const ExerciseDetail = () => {
                     <Share2 size={18} className="text-foreground" />
                   </button>
                   {canDelete && (
-                    <button
-                      onClick={() => setShowDeleteDialog(true)}
-                      disabled={isDeleting}
-                      className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-smooth"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setShowEditModal(true)}
+                        className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-smooth"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteDialog(true)}
+                        disabled={isDeleting}
+                        className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </>
                   )}
                   <button 
                     className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth"
@@ -303,13 +313,21 @@ const ExerciseDetail = () => {
                   <Share2 size={18} className="text-foreground" />
                 </button>
                 {canDelete && (
-                  <button
-                    onClick={() => setShowDeleteDialog(true)}
-                    disabled={isDeleting}
-                    className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-smooth"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setShowEditModal(true)}
+                      className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-smooth"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteDialog(true)}
+                      disabled={isDeleting}
+                      className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </>
                 )}
                 <button 
                   className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth"
@@ -418,6 +436,15 @@ const ExerciseDetail = () => {
       </main>
       
       <BottomNav />
+
+      {exercise && (
+        <EditExerciseModal
+          exercise={exercise}
+          open={showEditModal}
+          onOpenChange={setShowEditModal}
+          onSuccess={refetch}
+        />
+      )}
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
