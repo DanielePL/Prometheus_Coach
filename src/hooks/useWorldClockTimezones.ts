@@ -197,6 +197,8 @@ export function useWorldClockTimezones() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log('[WorldClock] removeTimezone start', { id, userId: user.id });
+
       const { error } = await supabase
         .from("user_world_clock_timezones")
         .delete()
@@ -204,9 +206,11 @@ export function useWorldClockTimezones() {
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Delete error:", error);
+        console.error("[WorldClock] Delete error:", error);
         throw error;
       }
+
+      console.log('[WorldClock] removeTimezone deleted', { id });
 
       // Immediately refetch to update UI
       await fetchTimezones();
@@ -216,7 +220,7 @@ export function useWorldClockTimezones() {
         description: "Timezone has been removed from your world clock",
       });
     } catch (error) {
-      console.error("Error removing timezone:", error);
+      console.error("[WorldClock] Error removing timezone:", error);
       toast({
         title: "Error",
         description: "Failed to remove timezone",

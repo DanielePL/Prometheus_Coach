@@ -284,9 +284,13 @@ function SortableTimezoneItem({ tz, time, date, onRemove }: SortableTimezoneItem
         <Button
           variant="ghost"
           size="sm"
+          type="button"
           className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          onPointerDown={(e) => { e.stopPropagation(); }}
+          onMouseDown={(e) => { e.stopPropagation(); }}
           onClick={(e) => {
             e.stopPropagation();
+            console.log('[WorldClock] Remove clicked', { id: tz.id, tz });
             onRemove(tz.id);
           }}
         >
