@@ -120,11 +120,14 @@ export const EventMentionParser = ({ content }: EventMentionParserProps) => {
           {/* Action button */}
           {eventId && (
             <button
+              type="button"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
+                console.log('Navigating to calendar with eventId:', eventId);
                 navigate(`/calendar?eventId=${eventId}`);
               }}
-              className="w-full mt-4 px-4 py-3 rounded-xl font-semibold text-primary-foreground bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all shadow-sm hover:shadow-md"
+              className="w-full mt-4 px-4 py-3 rounded-xl font-semibold text-primary-foreground bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all shadow-sm hover:shadow-md cursor-pointer relative z-10"
             >
               View Event on Calendar
             </button>
