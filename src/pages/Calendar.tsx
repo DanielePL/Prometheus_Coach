@@ -144,8 +144,17 @@ const Calendar = () => {
                 />
               )}
               
-              {/* World Clock - Mobile/Tablet Only */}
-              <div className="xl:hidden">
+              {/* Time/Date and World Clock - Mobile/Tablet Only */}
+              <div className="xl:hidden space-y-6">
+                {/* Current Time and Date Display */}
+                <div className="glass rounded-2xl p-6">
+                  <div className="text-center">
+                    <p className="text-4xl font-bold mb-2">{formatTime(currentTime)}</p>
+                    <p className="text-sm text-primary">{formatDate(currentTime)}</p>
+                  </div>
+                </div>
+
+                {/* World Clock */}
                 <WorldClock />
               </div>
             </div>
