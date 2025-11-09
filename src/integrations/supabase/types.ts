@@ -47,6 +47,42 @@ export type Database = {
         }
         Relationships: []
       }
+      body_measurements: {
+        Row: {
+          arms: number | null
+          chest: number | null
+          client_id: string
+          created_at: string | null
+          date: string
+          hips: number | null
+          id: string
+          legs: number | null
+          waist: number | null
+        }
+        Insert: {
+          arms?: number | null
+          chest?: number | null
+          client_id: string
+          created_at?: string | null
+          date: string
+          hips?: number | null
+          id?: string
+          legs?: number | null
+          waist?: number | null
+        }
+        Update: {
+          arms?: number | null
+          chest?: number | null
+          client_id?: string
+          created_at?: string | null
+          date?: string
+          hips?: number | null
+          id?: string
+          legs?: number | null
+          waist?: number | null
+        }
+        Relationships: []
+      }
       booking_links: {
         Row: {
           created_at: string
@@ -155,6 +191,42 @@ export type Database = {
         }
         Relationships: []
       }
+      client_workouts: {
+        Row: {
+          client_id: string
+          coach_id: string
+          created_at: string | null
+          description: string | null
+          exercises: Json | null
+          id: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          coach_id: string
+          created_at?: string | null
+          description?: string | null
+          exercises?: Json | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          coach_id?: string
+          created_at?: string | null
+          description?: string | null
+          exercises?: Json | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       coach_client_connections: {
         Row: {
           client_id: string
@@ -202,6 +274,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      coach_notes: {
+        Row: {
+          client_id: string
+          coach_id: string
+          created_at: string | null
+          id: string
+          note_text: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          coach_id: string
+          created_at?: string | null
+          id?: string
+          note_text: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          coach_id?: string
+          created_at?: string | null
+          id?: string
+          note_text?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       conversation_participants: {
         Row: {
@@ -556,6 +655,33 @@ export type Database = {
         }
         Relationships: []
       }
+      progress_photos: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          date: string
+          id: string
+          photo_url: string
+          type: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          date: string
+          id?: string
+          photo_url: string
+          type?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          photo_url?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
       user_favorite_exercises: {
         Row: {
           created_at: string
@@ -642,6 +768,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      weight_logs: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          weight: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          date: string
+          id?: string
+          notes?: string | null
+          weight: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          weight?: number
+        }
+        Relationships: []
+      }
+      workout_logs: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string | null
+          exercises_completed: Json | null
+          id: string
+          notes: string | null
+          workout_id: string | null
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          exercises_completed?: Json | null
+          id?: string
+          notes?: string | null
+          workout_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          exercises_completed?: Json | null
+          id?: string
+          notes?: string | null
+          workout_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_logs_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "client_workouts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

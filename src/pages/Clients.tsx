@@ -3,21 +3,17 @@ import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
-import { Search, MessageSquare, Calendar, Dumbbell, MoreVertical, Users } from "lucide-react";
+import { Search, MessageSquare, Calendar, Dumbbell, MoreVertical, Users, TrendingUp, TrendingDown, Minus, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useConnectedClients } from "@/hooks/useConnectedClients";
+import { useClientProgress } from "@/hooks/useClientProgress";
 import { Skeleton } from "@/components/ui/skeleton";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ClientCard } from "@/components/Clients/ClientCard";
 
 const Clients = () => {
   const { theme } = useTheme();
@@ -120,91 +116,7 @@ const Clients = () => {
         {!isLoading && filteredClients.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredClients.map((client) => (
-              <div
-                key={client.id}
-                className="glass rounded-2xl p-6 transition-smooth hover:shadow-[0_0_50px_rgba(var(--primary-rgb),0.7)] group"
-              >
-                {/* Client Avatar & Name */}
-                <div className="flex flex-col items-center mb-4">
-                  <UserAvatar
-                    avatarUrl={null}
-                    fullName={client.full_name}
-                    userId={client.id}
-                    className="w-20 h-20 mb-3 border-2 border-primary/50 text-xl"
-                  />
-                  <h3 className="text-lg font-bold text-center">{client.full_name}</h3>
-                  <Badge className="mt-2 bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/50">
-                    Active
-                  </Badge>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="space-y-2 mb-4 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Connected:</span>
-                    <span className="font-medium">{formatDate(client.connected_at)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Last Session:</span>
-                    <span className="font-medium">Not tracked</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Next Session:</span>
-                    <span className="font-medium">Not scheduled</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Sessions:</span>
-                    <span className="font-medium">0</span>
-                  </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="flex items-center gap-2 pt-4 border-t border-border/50">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={() => navigate("/inbox")}
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={() => navigate("/calendar")}
-                  >
-                    <Calendar className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={() => navigate("/explore")}
-                  >
-                    <Dumbbell className="w-4 h-4" />
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="glass">
-                      <DropdownMenuItem>View Profile</DropdownMenuItem>
-                      <DropdownMenuItem>View Progress</DropdownMenuItem>
-                      <DropdownMenuItem>Session History</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        Disconnect Client
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
+              <ClientCard key={client.id} client={client} />
             ))}
           </div>
         )}
