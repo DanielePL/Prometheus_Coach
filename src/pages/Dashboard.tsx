@@ -6,6 +6,7 @@ import { InfoCard } from "@/components/Exercise/InfoCard";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import legcurlImg from "@/assets/legcurl.jpg";
@@ -23,6 +24,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { pendingRequests, activeClients, isLoading } = useDashboardStats();
 
   const firstName = profile?.full_name?.split(' ')[0] || 'User';
 
@@ -230,7 +232,7 @@ const Dashboard = () => {
             <InfoCard
               icon={Users}
               label="Active Clients"
-              value="24"
+              value={isLoading ? "..." : activeClients.toString()}
               variant="accent"
               avatars={[sarahJohnsonImg, jessicaTaylorImg, alexMartinezImg, mikeChenImg]}
               onClick={() => navigate('/clients')}
@@ -238,7 +240,7 @@ const Dashboard = () => {
             <InfoCard
               icon={Bell}
               label="Pending Requests"
-              value="7"
+              value={isLoading ? "..." : pendingRequests.toString()}
               variant="accent"
               avatars={[alexMartinezImg, mikeChenImg, rachelKimImg, sarahJohnsonImg]}
               onClick={() => navigate('/requests')}
