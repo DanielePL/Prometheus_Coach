@@ -1,0 +1,223 @@
+import { useState } from "react";
+import { Sidebar } from "@/components/Navigation/Sidebar";
+import { BottomNav } from "@/components/Navigation/BottomNav";
+import { useTheme } from "next-themes";
+import { useNavigate } from "react-router-dom";
+import { Search, MessageSquare, Calendar, Dumbbell, MoreVertical, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useConnectedClients } from "@/hooks/useConnectedClients";
+import { Skeleton } from "@/components/ui/skeleton";
+import gradientBg from "@/assets/gradient-bg.jpg";
+import gradientBgDark from "@/assets/gradient-bg-dark.png";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const Clients = () => {
+  const { theme } = useTheme();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const { clients, isLoading } = useConnectedClients();
+
+  const filteredClients = clients.filter((client) =>
+    client.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  return (
+    <div
+      className="min-h-screen w-full"
+      style={{
+        backgroundImage: `url(${theme === "dark" ? gradientBgDark : gradientBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <Sidebar />
+      <BottomNav />
+
+      <main className="lg:ml-20 pb-20 lg:pb-8 pt-8 px-4 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
+              <Users className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-3xl lg:text-4xl font-bold">My Clients</h1>
+              <p className="text-muted-foreground">
+                {clients.length} {clients.length === 1 ? "client" : "clients"} connected
+              </p>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="glass rounded-2xl p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search clients..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-background/50 border-border/50"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="glass rounded-2xl p-6">
+                <div className="flex flex-col items-center gap-4">
+                  <Skeleton className="w-20 h-20 rounded-full" />
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && filteredClients.length === 0 && (
+          <div className="glass rounded-2xl p-12 text-center">
+            <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-2xl font-bold mb-2">
+              {searchQuery ? "No clients found" : "No clients yet"}
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              {searchQuery
+                ? "Try adjusting your search query"
+                : "Send connection requests to start coaching clients"}
+            </p>
+            {!searchQuery && (
+              <Button onClick={() => navigate("/requests")} className="bg-primary hover:bg-primary/90">
+                Go to Requests
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Client Grid */}
+        {!isLoading && filteredClients.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredClients.map((client) => (
+              <div
+                key={client.id}
+                className="glass rounded-2xl p-6 transition-smooth hover:shadow-[0_0_50px_rgba(var(--primary-rgb),0.7)] group"
+              >
+                {/* Client Avatar & Name */}
+                <div className="flex flex-col items-center mb-4">
+                  <Avatar className="w-20 h-20 mb-3 border-2 border-primary/50">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+                      {getInitials(client.full_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h3 className="text-lg font-bold text-center">{client.full_name}</h3>
+                  <Badge className="mt-2 bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/50">
+                    Active
+                  </Badge>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="space-y-2 mb-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Connected:</span>
+                    <span className="font-medium">{formatDate(client.connected_at)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Last Session:</span>
+                    <span className="font-medium">Not tracked</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Next Session:</span>
+                    <span className="font-medium">Not scheduled</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total Sessions:</span>
+                    <span className="font-medium">0</span>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="flex items-center gap-2 pt-4 border-t border-border/50">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
+                    onClick={() => navigate("/inbox")}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
+                    onClick={() => navigate("/calendar")}
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
+                    onClick={() => navigate("/explore")}
+                  >
+                    <Dumbbell className="w-4 h-4" />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="glass">
+                      <DropdownMenuItem>View Profile</DropdownMenuItem>
+                      <DropdownMenuItem>View Progress</DropdownMenuItem>
+                      <DropdownMenuItem>Session History</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive">
+                        Disconnect Client
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default Clients;

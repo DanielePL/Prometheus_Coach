@@ -13,6 +13,7 @@ import Calendar from "./pages/Calendar";
 import Inbox from "./pages/Inbox";
 import CopyInbox from "./pages/CopyInbox";
 import Requests from "./pages/Requests";
+import Clients from "./pages/Clients";
 import Uploads from "./pages/Uploads";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
             <Route path="/copy-inbox" element={<ProtectedRoute><CopyInbox /></ProtectedRoute>} />
             <Route path="/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/barbell-back-squat" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/exercise/:id" element={<ProtectedRoute><ExerciseDetail /></ProtectedRoute>} />
