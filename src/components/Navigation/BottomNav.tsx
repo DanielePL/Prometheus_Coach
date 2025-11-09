@@ -1,6 +1,6 @@
-import { LayoutDashboard, Compass, Bookmark, Users, Calendar, Mail, Settings, User, Upload } from "lucide-react";
+import { LayoutDashboard, Compass, Bookmark, Users, Calendar, Mail, Settings, User, Upload, Dumbbell, TrendingUp } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface NavItem {
   icon: React.ElementType;
@@ -14,8 +14,10 @@ const baseNavItems: NavItem[] = [
   { icon: Compass, label: "Explore", path: "/explore" },
   { icon: Bookmark, label: "Saved", path: "/saved" },
   { icon: Upload, label: "Uploads", path: "/uploads", roleRequired: ["coach", "admin"] },
+  { icon: Dumbbell, label: "My Workouts", path: "/my-workouts", roleRequired: ["client"] },
+  { icon: TrendingUp, label: "My Progress", path: "/my-progress", roleRequired: ["client"] },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
-  { icon: Users, label: "Clients", path: "/clients" },
+  { icon: Users, label: "Clients", path: "/clients", roleRequired: ["coach", "admin"] },
   { icon: Mail, label: "Inbox", path: "/inbox" },
   { icon: Settings, label: "Settings", path: "/settings" },
   { icon: User, label: "Account", path: "/account" },
@@ -23,15 +25,12 @@ const baseNavItems: NavItem[] = [
 
 export const BottomNav = () => {
   const location = useLocation();
-  const { user } = useAuth();
-  
-  // Get user role from metadata
-  const userRole = user?.user_metadata?.role;
+  const { role } = useUserRole();
   
   // Filter nav items based on role
   const navItems = baseNavItems.filter(item => {
     if (!item.roleRequired) return true;
-    return item.roleRequired.includes(userRole);
+    return item.roleRequired.includes(role || "client");
   });
 
   return (

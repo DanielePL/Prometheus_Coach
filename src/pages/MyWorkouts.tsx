@@ -1,0 +1,155 @@
+import { Sidebar } from "@/components/Navigation/Sidebar";
+import { BottomNav } from "@/components/Navigation/BottomNav";
+import { Dumbbell, CheckCircle2, Circle, Clock } from "lucide-react";
+import { useTheme } from "next-themes";
+import gradientBg from "@/assets/gradient-bg.jpg";
+import gradientBgDark from "@/assets/gradient-bg-dark.png";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+const MyWorkouts = () => {
+  const { theme } = useTheme();
+
+  // Mock data - will be replaced with real data from useClientWorkouts hook
+  const workouts = [
+    {
+      id: 1,
+      title: "Upper Body Strength",
+      description: "Focus on chest, shoulders, and triceps",
+      exercises: 8,
+      completed: 5,
+      status: "in_progress",
+      assignedDate: "2025-01-05"
+    },
+    {
+      id: 2,
+      title: "Lower Body Power",
+      description: "Build explosive leg strength",
+      exercises: 6,
+      completed: 0,
+      status: "not_started",
+      assignedDate: "2025-01-06"
+    },
+    {
+      id: 3,
+      title: "Core & Stability",
+      description: "Strengthen your foundation",
+      exercises: 10,
+      completed: 10,
+      status: "completed",
+      assignedDate: "2025-01-03"
+    },
+  ];
+
+  const getStatusIcon = (status: string, completed: number, total: number) => {
+    if (status === "completed" || completed === total) {
+      return <CheckCircle2 className="w-5 h-5 text-green-500" />;
+    } else if (completed > 0) {
+      return <Clock className="w-5 h-5 text-primary" />;
+    }
+    return <Circle className="w-5 h-5 text-muted-foreground" />;
+  };
+
+  const getStatusBadge = (status: string) => {
+    if (status === "completed") {
+      return <Badge className="bg-green-600">Completed</Badge>;
+    } else if (status === "in_progress") {
+      return <Badge className="bg-primary">In Progress</Badge>;
+    }
+    return <Badge variant="outline">Not Started</Badge>;
+  };
+
+  return (
+    <div
+      className="min-h-screen w-full"
+      style={{
+        backgroundImage: `url(${theme === "dark" ? gradientBgDark : gradientBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <Sidebar />
+      <BottomNav />
+
+      <main className="lg:ml-20 pb-20 lg:pb-8 pt-8 px-4 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
+              <Dumbbell className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-3xl lg:text-4xl font-bold">My Workouts</h1>
+              <p className="text-muted-foreground">
+                {workouts.length} {workouts.length === 1 ? "program" : "programs"} assigned by your coach
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Workouts Grid */}
+        {workouts.length === 0 ? (
+          <div className="glass rounded-2xl p-12 text-center">
+            <Dumbbell className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-2xl font-bold mb-2">No workouts assigned yet</h2>
+            <p className="text-muted-foreground mb-6">
+              Your coach will assign exercises to help you reach your goals!
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {workouts.map((workout) => (
+              <div
+                key={workout.id}
+                className="glass rounded-2xl p-6 transition-smooth hover:shadow-[0_0_30px_rgba(255,107,53,0.3)] hover:bg-white/70 dark:hover:bg-black/60 cursor-pointer"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start gap-3">
+                    {getStatusIcon(workout.status, workout.completed, workout.exercises)}
+                    <div>
+                      <h3 className="font-bold text-lg mb-1">{workout.title}</h3>
+                      <p className="text-sm text-muted-foreground">{workout.description}</p>
+                    </div>
+                  </div>
+                  {getStatusBadge(workout.status)}
+                </div>
+
+                {/* Progress */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Exercises</span>
+                    <span className="font-semibold">
+                      {workout.completed}/{workout.exercises}
+                    </span>
+                  </div>
+                  <div className="w-full bg-background/50 rounded-full h-2">
+                    <div
+                      className="bg-primary rounded-full h-2 transition-all"
+                      style={{
+                        width: `${(workout.completed / workout.exercises) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                  <span className="text-sm text-muted-foreground">
+                    Assigned {new Date(workout.assignedDate).toLocaleDateString()}
+                  </span>
+                  <Button size="sm" variant={workout.status === "completed" ? "outline" : "default"}>
+                    {workout.status === "completed" ? "Review" : "Start"}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default MyWorkouts;

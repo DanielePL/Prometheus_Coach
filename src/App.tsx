@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Explore from "./pages/Explore";
@@ -16,6 +17,8 @@ import Requests from "./pages/Requests";
 import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
 import Uploads from "./pages/Uploads";
+import MyWorkouts from "./pages/MyWorkouts";
+import MyProgress from "./pages/MyProgress";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ExerciseDetail from "./pages/ExerciseDetail";
@@ -38,13 +41,15 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
             <Route path="/saved" element={<ProtectedRoute><Saved /></ProtectedRoute>} />
-            <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
             <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
             <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
             <Route path="/copy-inbox" element={<ProtectedRoute><CopyInbox /></ProtectedRoute>} />
             <Route path="/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
-            <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
-            <Route path="/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+            <Route path="/uploads" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Uploads /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Clients /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/clients/:clientId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><ClientDetail /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/my-workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><MyWorkouts /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/my-progress" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><MyProgress /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/barbell-back-squat" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/exercise/:id" element={<ProtectedRoute><ExerciseDetail /></ProtectedRoute>} />

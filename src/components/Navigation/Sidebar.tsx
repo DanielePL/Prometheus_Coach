@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { LayoutDashboard, Compass, Bookmark, Users, UserPlus, Calendar, Mail, Settings, LogOut, Upload } from "lucide-react";
-import { motion } from "framer-motion";
-import { useTheme } from "next-themes";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { UserAvatar } from "@/components/ui/user-avatar";
-import { ProfilePhotoUpload } from "@/components/Profile/ProfilePhotoUpload";
-import logoIcon from "@/assets/logo.png";
+import { motion } from "framer-motion";
+import { LayoutDashboard, Compass, Bookmark, Calendar, Users, Mail, Settings, LogOut, Upload, Dumbbell, TrendingUp } from "lucide-react";
+import { useTheme } from "next-themes";
 import logoFull from "@/assets/logo-full.png";
+import logo from "@/assets/logo.png";
 import logoWhite from "@/assets/logo-white.png";
+import { ProfilePhotoUpload } from "@/components/Profile/ProfilePhotoUpload";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { UserAvatar } from "../ui/user-avatar";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface NavItem {
   icon: React.ElementType;
@@ -22,32 +24,27 @@ const baseNavItems: NavItem[] = [
   { icon: Compass, label: "Explore", path: "/explore" },
   { icon: Bookmark, label: "Saved", path: "/saved" },
   { icon: Upload, label: "Uploads", path: "/uploads", roleRequired: ["coach", "admin"] },
-  { icon: Users, label: "Clients", path: "/clients" },
+  { icon: Dumbbell, label: "My Workouts", path: "/my-workouts", roleRequired: ["client"] },
+  { icon: TrendingUp, label: "My Progress", path: "/my-progress", roleRequired: ["client"] },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
-  { icon: UserPlus, label: "Requests", path: "/requests" },
-  { icon: Settings, label: "Settings", path: "/settings" },
+  { icon: Users, label: "Clients", path: "/clients", roleRequired: ["coach", "admin"] },
   { icon: Mail, label: "Inbox", path: "/inbox" },
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 export const Sidebar = () => {
+  const location = useLocation();
+  const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const [photoUploadOpen, setPhotoUploadOpen] = useState(false);
-  const { theme } = useTheme();
-  const location = useLocation();
-  const { profile, signOut, user } = useAuth();
-  
-  // Get user role from metadata
-  const userRole = user?.user_metadata?.role;
-  
-  // Debug logging
-  console.log('Sidebar - User role:', userRole);
-  console.log('Sidebar - User metadata:', user?.user_metadata);
-  
+  const { user, profile } = useAuth();
+  const { role } = useUserRole();
+
   // Filter nav items based on role
   const navItems = baseNavItems.filter(item => {
     if (!item.roleRequired) return true;
-    const hasRole = item.roleRequired.includes(userRole);
-    if (item.label === 'Uploads') {
+    return item.roleRequired.includes(role || "client");
+  });
       console.log('Uploads visibility check:', { userRole, roleRequired: item.roleRequired, hasRole });
     }
     return hasRole;

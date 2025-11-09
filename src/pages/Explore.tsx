@@ -10,6 +10,8 @@ import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { ExerciseCard } from "@/components/Exercise/ExerciseCard";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/contexts/AuthContext";
 
 const categories = ["all", "bodybuilding", "crossfit", "powerlifting", "weightlifting", "functional", "plyometrics"] as const;
 
@@ -17,14 +19,20 @@ const Explore = () => {
   const { theme, setTheme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const { isCoach } = useUserRole();
+  const { user } = useAuth();
 
   const { data: exercises = [], isLoading } = useExercises({
     category: selectedCategory === "all" ? undefined : (selectedCategory as ExerciseCategory),
     searchQuery: searchQuery || undefined,
   });
 
-  // Filter to show only public exercises
-  const publicExercises = exercises.filter((ex) => ex.visibility === "public");
+  // Filter exercises based on role
+  // Coaches see: public exercises + their own private uploads
+  // Clients see: only public exercises
+  const filteredExercises = isCoach
+    ? exercises.filter((ex) => ex.visibility === "public" || ex.created_by === user?.id)
+    : exercises.filter((ex) => ex.visibility === "public");
 
   const { isFavorite, toggleFavorite } = useFavoriteExercises();
 
@@ -102,13 +110,13 @@ const Explore = () => {
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading exercises...</p>
             </div>
-          ) : publicExercises.length === 0 ? (
+          ) : filteredExercises.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No exercises found. Try a different search or filter.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6 mt-8">
-              {publicExercises.map((exercise) => (
+              {filteredExercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
