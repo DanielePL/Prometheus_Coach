@@ -3,12 +3,12 @@ import { LayoutDashboard, Compass, Bookmark, Users, UserPlus, Calendar, Mail, Se
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { Link, useLocation } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { ProfilePhotoUpload } from "@/components/Profile/ProfilePhotoUpload";
 import logoIcon from "@/assets/logo.png";
 import logoFull from "@/assets/logo-full.png";
 import logoWhite from "@/assets/logo-white.png";
-import profileImage from "@/assets/profile-coachdan.png";
 
 interface NavItem {
   icon: React.ElementType;
@@ -31,6 +31,7 @@ const baseNavItems: NavItem[] = [
 
 export const Sidebar = () => {
   const [open, setOpen] = useState(false);
+  const [photoUploadOpen, setPhotoUploadOpen] = useState(false);
   const { theme } = useTheme();
   const location = useLocation();
   const { profile, signOut, user } = useAuth();
@@ -52,14 +53,6 @@ export const Sidebar = () => {
     return hasRole;
   });
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   return (
     <motion.aside
@@ -126,12 +119,15 @@ export const Sidebar = () => {
       {/* Profile Section */}
       <div className="px-3 space-y-2">
         <div
-          className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-smooth dark:text-white text-muted-foreground ${open ? 'glass' : ''}`}
+          className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-smooth dark:text-white text-muted-foreground ${open ? 'glass' : ''} cursor-pointer hover:bg-background/60`}
+          onClick={() => setPhotoUploadOpen(true)}
         >
-          <Avatar className="w-10 h-10 flex-shrink-0">
-            <AvatarImage src={profileImage} alt={profile?.full_name || 'User'} />
-            <AvatarFallback>{profile?.full_name ? getInitials(profile.full_name) : 'U'}</AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            avatarUrl={profile?.avatar_url}
+            fullName={profile?.full_name || 'User'}
+            userId={user?.id}
+            className="w-10 h-10 flex-shrink-0"
+          />
           <motion.div
             animate={{
               opacity: open ? 1 : 0,
@@ -164,6 +160,9 @@ export const Sidebar = () => {
           </motion.span>
         </button>
       </div>
+
+      {/* Profile Photo Upload Dialog */}
+      <ProfilePhotoUpload open={photoUploadOpen} onOpenChange={setPhotoUploadOpen} />
     </motion.aside>
   );
 };

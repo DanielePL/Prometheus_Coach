@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { Search, MessageSquare, Calendar, Dumbbell, MoreVertical, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useConnectedClients } from "@/hooks/useConnectedClients";
 import { Skeleton } from "@/components/ui/skeleton";
 import gradientBg from "@/assets/gradient-bg.jpg";
@@ -29,14 +29,6 @@ const Clients = () => {
     client.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -134,11 +126,12 @@ const Clients = () => {
               >
                 {/* Client Avatar & Name */}
                 <div className="flex flex-col items-center mb-4">
-                  <Avatar className="w-20 h-20 mb-3 border-2 border-primary/50">
-                    <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
-                      {getInitials(client.full_name)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    avatarUrl={null}
+                    fullName={client.full_name}
+                    userId={client.id}
+                    className="w-20 h-20 mb-3 border-2 border-primary/50 text-xl"
+                  />
                   <h3 className="text-lg font-bold text-center">{client.full_name}</h3>
                   <Badge className="mt-2 bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/50">
                     Active

@@ -8,6 +8,7 @@ interface Profile {
   full_name: string;
   roles: ('client' | 'coach' | 'admin')[];
   is_admin: boolean;
+  avatar_url?: string | null;
 }
 
 interface AuthContextType {
@@ -34,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Fetch profile data
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name')
+        .select('id, full_name, avatar_url')
         .eq('id', userId)
         .single();
 
@@ -55,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfile({
         id: profileData.id,
         full_name: profileData.full_name,
+        avatar_url: profileData.avatar_url,
         roles,
         is_admin
       });
