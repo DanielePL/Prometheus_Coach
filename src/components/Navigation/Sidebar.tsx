@@ -45,10 +45,10 @@ export const Sidebar = () => {
     if (!item.roleRequired) return true;
     return item.roleRequired.includes(role || "client");
   });
-      console.log('Uploads visibility check:', { userRole, roleRequired: item.roleRequired, hasRole });
-    }
-    return hasRole;
-  });
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
 
 
   return (
@@ -67,7 +67,7 @@ export const Sidebar = () => {
       {/* Logo */}
       <div className="flex items-center px-6 mb-8 overflow-hidden">
         <motion.img
-          src={open ? (theme === "dark" ? logoWhite : logoFull) : logoIcon}
+          src={open ? (theme === "dark" ? logoWhite : logoFull) : logo}
           alt="Prometheus Coach"
           animate={{
             width: open ? "160px" : "40px",

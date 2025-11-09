@@ -46,12 +46,15 @@ const Calendar = () => {
   useEffect(() => {
     const eventId = searchParams.get('eventId');
     if (eventId && events.length > 0) {
-      setHighlightedEventId(eventId);
-      // Clear the query param after a delay
-      setTimeout(() => {
-        setSearchParams({});
-        setHighlightedEventId(null);
-      }, 3000);
+      const event = events.find(e => e.id === eventId);
+      if (event) {
+        setHighlightedEventId(eventId);
+        // Clear the query param after a delay
+        setTimeout(() => {
+          setSearchParams({});
+          setHighlightedEventId(null);
+        }, 3000);
+      }
     }
   }, [searchParams, events, setSearchParams]);
 
