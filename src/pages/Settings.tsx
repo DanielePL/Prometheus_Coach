@@ -1,18 +1,60 @@
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import { NotificationBell } from "@/components/Notifications/NotificationBell";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SettingsSidebar } from "@/components/Settings/SettingsSidebar";
+import { ProfileSettings } from "@/components/Settings/ProfileSettings";
+import { AccountSettings } from "@/components/Settings/AccountSettings";
+import { NotificationSettings } from "@/components/Settings/NotificationSettings";
+import { PrivacySettings } from "@/components/Settings/PrivacySettings";
+import { AppearanceSettings } from "@/components/Settings/AppearanceSettings";
 import { BusinessHoursSettings } from "@/components/Calendar/BusinessHoursSettings";
 import { AvailabilitySettings } from "@/components/Calendar/AvailabilitySettings";
-import { TimezoneSettings } from "@/components/Settings/TimezoneSettings";
 import { BookingLinksSettings } from "@/components/Calendar/BookingLinksSettings";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Settings = () => {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { isCoach } = useUserRole();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "profile":
+        return <ProfileSettings />;
+      case "account":
+        return <AccountSettings />;
+      case "notifications":
+        return <NotificationSettings />;
+      case "business-hours":
+        return isCoach ? (
+          <div className="space-y-6">
+            <BusinessHoursSettings />
+            <AvailabilitySettings />
+          </div>
+        ) : null;
+      case "booking":
+        return isCoach ? <BookingLinksSettings /> : null;
+      case "privacy":
+        return <PrivacySettings />;
+      case "appearance":
+        return <AppearanceSettings />;
+      default:
+        return <ProfileSettings />;
+    }
+  };
 
   return (
     <div 
@@ -27,46 +69,19 @@ const Settings = () => {
       <Sidebar />
       
       <main className="flex-1 lg:ml-20 pb-20 lg:pb-0">
-        <div className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 max-w-5xl">
-          {/* Header with Title and Theme Toggle */}
+        <div className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 max-w-7xl">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl lg:text-4xl font-bold">Settings</h1>
-            
-            <div className="flex items-center gap-2">
-              <NotificationBell />
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="glass w-10 h-10 rounded-xl flex items-center justify-center transition-smooth hover:bg-primary hover:text-primary-foreground"
-              >
-                {theme === "dark" ? (
-                  <Sun className="w-5 h-5" />
-                ) : (
-                  <Moon className="w-5 h-5" />
-                )}
-              </button>
-            </div>
+            <NotificationBell />
           </div>
 
-          <Tabs defaultValue="availability" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
-              <TabsTrigger value="availability">Availability</TabsTrigger>
-              <TabsTrigger value="booking">Booking Links</TabsTrigger>
-              <TabsTrigger value="preferences">Preferences</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="availability" className="space-y-6">
-              <BusinessHoursSettings />
-              <AvailabilitySettings />
-            </TabsContent>
-
-            <TabsContent value="booking" className="space-y-6">
-              <BookingLinksSettings />
-            </TabsContent>
-
-            <TabsContent value="preferences" className="space-y-6">
-              <TimezoneSettings />
-            </TabsContent>
-          </Tabs>
+          <div className="flex flex-col lg:flex-row gap-6">
+            <SettingsSidebar isCoach={isCoach} />
+            
+            <div className="flex-1 min-w-0">
+              {renderTabContent()}
+            </div>
+          </div>
         </div>
       </main>
 
