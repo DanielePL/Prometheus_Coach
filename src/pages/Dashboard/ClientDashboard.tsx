@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { NotificationBell } from "@/components/Notifications/NotificationBell";
 
 export const ClientDashboard = () => {
   const { theme, setTheme } = useTheme();
@@ -131,6 +132,8 @@ export const ClientDashboard = () => {
           <Button variant="ghost" size="icon" className="glass rounded-xl">
             <Search className="w-5 h-5" />
           </Button>
+          
+          <NotificationBell />
           
           <div className="glass rounded-2xl px-6 py-3 hidden lg:block">
             <div className="text-right">

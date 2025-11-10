@@ -16,6 +16,7 @@ import jessicaTaylorImg from "@/assets/jessica-taylor.jpg";
 import alexMartinezImg from "@/assets/alex-martinez.jpg";
 import mikeChenImg from "@/assets/mike-chen.jpg";
 import rachelKimImg from "@/assets/rachel-kim.jpg";
+import { NotificationBell } from "@/components/Notifications/NotificationBell";
 
 export const CoachDashboard = () => {
   const { theme, setTheme } = useTheme();
@@ -140,10 +141,7 @@ export const CoachDashboard = () => {
             <Search className="w-5 h-5" />
           </Button>
           
-          <Button variant="ghost" size="icon" className="glass rounded-xl relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-          </Button>
+          <NotificationBell />
           
           <div className="glass rounded-2xl px-6 py-3 hidden lg:block">
             <div className="text-right">
