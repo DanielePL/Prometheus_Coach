@@ -73,7 +73,7 @@ export const useConversations = () => {
           // Get other participant
           const { data: participants } = await supabase
             .from('conversation_participants')
-            .select('user_id, profiles(id, full_name)')
+            .select('user_id, profiles(id, full_name, avatar_url)')
             .eq('conversation_id', conv.id)
             .neq('user_id', user.id)
             .limit(1)
@@ -103,7 +103,7 @@ export const useConversations = () => {
             other_user: {
               id: participants?.profiles?.id || '',
               full_name: participants?.profiles?.full_name || 'Unknown User',
-              avatar_url: undefined,
+              avatar_url: participants?.profiles?.avatar_url,
             },
             last_message: lastMessage || undefined,
             unread_count: unreadCount || 0,

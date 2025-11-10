@@ -1,15 +1,25 @@
 import { LucideIcon } from "lucide-react";
+import { UserAvatar } from "@/components/ui/user-avatar";
+
+interface UserData {
+  id: string;
+  full_name: string;
+  avatar_url?: string | null;
+}
 
 interface InfoCardProps {
   icon?: LucideIcon;
   label: string;
   value: string | React.ReactNode;
   variant?: "default" | "accent";
-  avatars?: string[];
+  users?: UserData[];
   onClick?: () => void;
 }
 
-export const InfoCard = ({ icon: Icon, label, value, variant = "default", avatars, onClick }: InfoCardProps) => {
+export const InfoCard = ({ icon: Icon, label, value, variant = "default", users, onClick }: InfoCardProps) => {
+  const displayUsers = users?.slice(0, 5) || [];
+  const remainingCount = (users?.length || 0) - 5;
+
   return (
     <div 
       onClick={onClick}
@@ -32,17 +42,29 @@ export const InfoCard = ({ icon: Icon, label, value, variant = "default", avatar
         </div>
       </div>
       
-      {avatars && avatars.length > 0 && (
-        <div className="flex items-center justify-end mt-4">
-          {avatars.map((avatar, index) => (
-            <img
-              key={index}
-              src={avatar}
-              alt={`Avatar ${index + 1}`}
-              className="w-8 h-8 rounded-full border-2 border-white/40 object-cover"
+      {users && users.length > 0 && (
+        <div className="flex items-center justify-end mt-4 gap-1">
+          {displayUsers.map((user, index) => (
+            <div
+              key={user.id}
               style={{ marginLeft: index > 0 ? '-10px' : '0' }}
-            />
+            >
+              <UserAvatar
+                avatarUrl={user.avatar_url}
+                fullName={user.full_name}
+                userId={user.id}
+                className="w-8 h-8 border-2 border-white dark:border-border"
+              />
+            </div>
           ))}
+          {remainingCount > 0 && (
+            <div 
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-bold border-2 border-white dark:border-border"
+              style={{ marginLeft: '-10px' }}
+            >
+              +{remainingCount}
+            </div>
+          )}
         </div>
       )}
     </div>

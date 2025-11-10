@@ -5,18 +5,14 @@ import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import gradientBg from "@/assets/gradient-bg.jpg";
-import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import legcurlImg from "@/assets/legcurl.jpg";
 import highkneesImg from "@/assets/highknees.jpg";
 import { Button } from "@/components/ui/button";
 import { ShinyButton } from "@/components/ui/shiny-button";
-import sarahJohnsonImg from "@/assets/sarah-johnson.jpg";
-import jessicaTaylorImg from "@/assets/jessica-taylor.jpg";
-import alexMartinezImg from "@/assets/alex-martinez.jpg";
-import mikeChenImg from "@/assets/mike-chen.jpg";
-import rachelKimImg from "@/assets/rachel-kim.jpg";
 import { NotificationBell } from "@/components/Notifications/NotificationBell";
+import { useUnreadMessageParticipants } from "@/hooks/useUnreadMessageParticipants";
+import { useConnectedClients } from "@/hooks/useConnectedClients";
+import { usePendingRequestParticipants } from "@/hooks/usePendingRequestParticipants";
 
 export const CoachDashboard = () => {
   const { theme, setTheme } = useTheme();
@@ -24,6 +20,9 @@ export const CoachDashboard = () => {
   const { profile } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
   const { pendingRequests, activeClients, isLoading } = useDashboardStats();
+  const { participants: unreadMessageUsers } = useUnreadMessageParticipants();
+  const { clients: connectedClients } = useConnectedClients();
+  const { participants: pendingRequestUsers } = usePendingRequestParticipants();
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Coach';
 
@@ -208,9 +207,9 @@ export const CoachDashboard = () => {
           <InfoCard
             icon={Mail}
             label="Unread Messages"
-            value="3"
+            value={unreadMessageUsers.length.toString()}
             variant="accent"
-            avatars={[rachelKimImg, sarahJohnsonImg, jessicaTaylorImg]}
+            users={unreadMessageUsers}
             onClick={() => navigate('/inbox')}
           />
           <InfoCard
@@ -218,7 +217,11 @@ export const CoachDashboard = () => {
             label="Active Clients"
             value={isLoading ? "..." : activeClients.toString()}
             variant="accent"
-            avatars={[sarahJohnsonImg, jessicaTaylorImg, alexMartinezImg, mikeChenImg]}
+            users={connectedClients.map(client => ({
+              id: client.id,
+              full_name: client.full_name,
+              avatar_url: client.avatar_url,
+            }))}
             onClick={() => navigate('/clients')}
           />
           <InfoCard
@@ -226,7 +229,7 @@ export const CoachDashboard = () => {
             label="Pending Requests"
             value={isLoading ? "..." : pendingRequests.toString()}
             variant="accent"
-            avatars={[alexMartinezImg, mikeChenImg, rachelKimImg, sarahJohnsonImg]}
+            users={pendingRequestUsers}
             onClick={() => navigate('/requests')}
           />
         </div>

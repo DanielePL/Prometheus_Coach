@@ -6,6 +6,7 @@ interface ConnectedClient {
   id: string;
   connection_id: string;
   full_name: string;
+  avatar_url?: string | null;
   connected_at: string;
 }
 
@@ -20,7 +21,7 @@ export const useConnectedClients = () => {
         .from("coach_client_connections")
         .select(`
           id,
-          client:profiles!client_id(id, full_name),
+          client:profiles!client_id(id, full_name, avatar_url),
           responded_at
         `)
         .eq("coach_id", user.id)
@@ -33,6 +34,7 @@ export const useConnectedClients = () => {
         id: item.client.id,
         connection_id: item.id,
         full_name: item.client.full_name,
+        avatar_url: item.client.avatar_url,
         connected_at: item.responded_at,
       })) as ConnectedClient[];
     },
