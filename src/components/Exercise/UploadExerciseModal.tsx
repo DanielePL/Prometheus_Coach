@@ -19,6 +19,42 @@ interface UploadExerciseModalProps {
   onSuccess: () => void;
 }
 
+// Helper function to generate thumbnail from video
+const generateThumbnail = (videoUrl: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    video.src = videoUrl
+    video.crossOrigin = 'anonymous'
+    video.currentTime = 1 // Seek to 1 second for better frame
+    
+    video.onloadeddata = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'))
+        return
+      }
+      
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      
+      // Convert to blob with JPEG compression
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Failed to create thumbnail blob'))
+          return
+        }
+        const url = canvas.toDataURL('image/jpeg', 0.8)
+        resolve(url)
+      }, 'image/jpeg', 0.8)
+    }
+    
+    video.onerror = () => reject(new Error('Failed to load video for thumbnail'))
+  })
+}
+
 export const UploadExerciseModal = ({
   open,
   onOpenChange,
@@ -138,13 +174,40 @@ export const UploadExerciseModal = ({
         throw new Error(uploadResponse.error.message || "Failed to upload video");
       }
 
-      const { success, cloudfrontUrl, filename, error: uploadError } = uploadResponse.data;
+      const { success, cloudfrontUrl, thumbnailUrl, filename, error: uploadError } = uploadResponse.data;
       
       if (!success || !cloudfrontUrl || !filename) {
         throw new Error(uploadError || "Failed to upload video to S3");
       }
 
+      console.log('📹 Video uploaded:', cloudfrontUrl)
+      if (thumbnailUrl) {
+        console.log('🖼️ Thumbnail URL:', thumbnailUrl)
+      }
+
       setUploadProgress(60);
+
+      // Generate thumbnail from video element if not provided by server
+      let finalThumbnailUrl = thumbnailUrl
+      if (!finalThumbnailUrl && videoPreview) {
+        try {
+          console.log('🎬 Generating thumbnail client-side...')
+          const thumbnailDataUrl = await generateThumbnail(videoPreview)
+          
+          // Upload thumbnail to S3
+          const thumbnailBlob = await (await fetch(thumbnailDataUrl)).blob()
+          const thumbnailFile = new File([thumbnailBlob], `${filename.replace('.mp4', '-thumb.jpg')}`, { type: 'image/jpeg' })
+          
+          // We need to upload this thumbnail to S3 or Supabase storage
+          // For now, we'll use the video URL as poster, but store the data URL
+          finalThumbnailUrl = thumbnailDataUrl
+          console.log('✅ Thumbnail generated client-side')
+        } catch (thumbError) {
+          console.error('❌ Client-side thumbnail generation failed:', thumbError)
+        }
+      }
+
+      setUploadProgress(70);
 
       // Step 2: Insert exercise into database
       const { error: dbError } = await supabase.from("exercises").insert({
@@ -153,6 +216,7 @@ export const UploadExerciseModal = ({
         description: description || null,
         video_filename: filename,
         cloudfront_url: cloudfrontUrl,
+        thumbnail_url: finalThumbnailUrl || null,
         duration: Math.round(videoDuration),
         primary_muscles: primaryMuscles || null,
         equipment: equipment || null,

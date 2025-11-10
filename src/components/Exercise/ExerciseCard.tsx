@@ -61,16 +61,50 @@ export const ExerciseCard = ({
     setShowDeleteDialog(false);
   };
 
+  // Log thumbnail info for debugging
+  console.log(`[ExerciseCard] ${exercise.title}:`, {
+    hasThumbnail: !!exercise.thumbnail_url,
+    thumbnailUrl: exercise.thumbnail_url,
+    videoUrl: exercise.cloudfront_url
+  })
+
   return (
     <div className="glass rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_rgba(251,146,60,0.4)] hover:bg-white/20 dark:hover:bg-black/30 p-0">
       <div className="relative h-48 overflow-hidden" onClick={handleCardClick}>
-        <video
-          src={exercise.cloudfront_url}
-          className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
-          muted
-          playsInline
-          preload="metadata"
-        />
+        {exercise.thumbnail_url && !exercise.thumbnail_url.startsWith('data:') ? (
+          // Use thumbnail image if available and not a data URL
+          <img
+            src={exercise.thumbnail_url}
+            alt={exercise.title}
+            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+            onError={(e) => {
+              console.error(`[ExerciseCard] Thumbnail failed to load for ${exercise.title}:`, exercise.thumbnail_url)
+              // Fallback to video if thumbnail fails
+              const target = e.target as HTMLImageElement
+              target.style.display = 'none'
+              const video = document.createElement('video')
+              video.src = exercise.cloudfront_url
+              video.className = 'w-full h-full object-cover transition-all duration-500 group-hover:scale-110'
+              video.muted = true
+              video.playsInline = true
+              video.preload = 'metadata'
+              target.parentElement?.appendChild(video)
+            }}
+          />
+        ) : (
+          // Fallback to video with poster
+          <video
+            src={exercise.cloudfront_url}
+            poster={exercise.thumbnail_url?.startsWith('data:') ? exercise.thumbnail_url : undefined}
+            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+            muted
+            playsInline
+            preload="metadata"
+            onError={() => {
+              console.error(`[ExerciseCard] Video failed to load for ${exercise.title}:`, exercise.cloudfront_url)
+            }}
+          />
+        )}
         <div className="absolute top-3 left-3">
           <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
             {exercise.category}
