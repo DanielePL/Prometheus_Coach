@@ -68,7 +68,7 @@ export const EventMentionParser = ({ content }: EventMentionParserProps) => {
             <div>
               <h3 className="text-sm font-semibold text-foreground">New Event Assigned</h3>
               {assignedBy && (
-                <p className="text-xs text-muted-foreground">by {assignedBy}</p>
+                <p className="text-xs text-foreground">by {assignedBy}</p>
               )}
             </div>
           </div>
@@ -88,13 +88,13 @@ export const EventMentionParser = ({ content }: EventMentionParserProps) => {
             {startFormatted.date && (
               <div className="flex items-start gap-2">
                 <span className="text-sm font-medium text-foreground min-w-[60px]">Date:</span>
-                <span className="text-sm text-muted-foreground">{startFormatted.date}</span>
+                <span className="text-sm text-foreground">{startFormatted.date}</span>
               </div>
             )}
             {startFormatted.time && (
               <div className="flex items-start gap-2">
                 <span className="text-sm font-medium text-foreground min-w-[60px]">Time:</span>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-foreground">
                   {startFormatted.time} - {endFormatted.time}
                 </span>
               </div>
@@ -105,7 +105,7 @@ export const EventMentionParser = ({ content }: EventMentionParserProps) => {
           {description && (
             <div className="pt-2 border-t border-border/30">
               <p className="text-sm font-medium text-foreground mb-1">Description:</p>
-              <p className="text-sm text-muted-foreground italic">{description}</p>
+              <p className="text-sm text-foreground italic">{description}</p>
             </div>
           )}
 
