@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { Camera, Upload, X } from "lucide-react";
+import { useState, useRef } from "react";
+import { Camera, Upload, X, Crop } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ReactCrop, { Crop as CropType, PixelCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 
 interface ProfilePhotoUploadProps {
   open: boolean;
@@ -17,6 +19,10 @@ export const ProfilePhotoUpload = ({ open, onOpenChange }: ProfilePhotoUploadPro
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [crop, setCrop] = useState<CropType>({ unit: "%", width: 90, height: 90, x: 5, y: 5 });
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -38,8 +44,51 @@ export const ProfilePhotoUpload = ({ open, onOpenChange }: ProfilePhotoUploadPro
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreviewUrl(reader.result as string);
+      setShowCropper(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const getCroppedImg = async (): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      if (!imgRef.current || !completedCrop) {
+        reject(new Error("No image to crop"));
+        return;
+      }
+
+      const canvas = document.createElement("canvas");
+      const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
+      const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
+      
+      canvas.width = completedCrop.width;
+      canvas.height = completedCrop.height;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        reject(new Error("No 2d context"));
+        return;
+      }
+
+      ctx.drawImage(
+        imgRef.current,
+        completedCrop.x * scaleX,
+        completedCrop.y * scaleY,
+        completedCrop.width * scaleX,
+        completedCrop.height * scaleY,
+        0,
+        0,
+        completedCrop.width,
+        completedCrop.height
+      );
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Canvas is empty"));
+          return;
+        }
+        resolve(blob);
+      }, "image/jpeg", 0.95);
+    });
   };
 
   const handleUpload = async () => {
@@ -47,16 +96,19 @@ export const ProfilePhotoUpload = ({ open, onOpenChange }: ProfilePhotoUploadPro
 
     setUploading(true);
     try {
+      // Get cropped image
+      const croppedBlob = completedCrop ? await getCroppedImg() : selectedFile;
+      
       // Upload to Supabase Storage
-      const fileExt = selectedFile.name.split(".").pop();
-      const fileName = `${user.id}.${fileExt}`;
+      const fileName = `${user.id}.jpg`;
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, selectedFile, {
+        .upload(filePath, croppedBlob, {
           cacheControl: "3600",
           upsert: true,
+          contentType: "image/jpeg",
         });
 
       if (uploadError) throw uploadError;
@@ -94,6 +146,8 @@ export const ProfilePhotoUpload = ({ open, onOpenChange }: ProfilePhotoUploadPro
   const handleCancel = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
+    setShowCropper(false);
+    setCompletedCrop(null);
   };
 
   return (
@@ -107,35 +161,44 @@ export const ProfilePhotoUpload = ({ open, onOpenChange }: ProfilePhotoUploadPro
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Current/Preview Photo */}
+          {/* Cropper or Preview */}
           <div className="flex flex-col items-center gap-4">
-            {previewUrl ? (
-              <div className="relative">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-primary"
-                />
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  className="absolute -top-2 -right-2 w-8 h-8 rounded-full"
-                  onClick={handleCancel}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+            {showCropper && previewUrl ? (
+              <div className="w-full space-y-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Crop className="w-4 h-4" />
+                  <span>Drag to crop your photo</span>
+                </div>
+                <div className="relative overflow-hidden rounded-lg border border-border">
+                  <ReactCrop
+                    crop={crop}
+                    onChange={(c) => setCrop(c)}
+                    onComplete={(c) => setCompletedCrop(c)}
+                    aspect={1}
+                    circularCrop
+                  >
+                    <img
+                      ref={imgRef}
+                      src={previewUrl}
+                      alt="Crop preview"
+                      className="max-h-[400px] w-full object-contain"
+                    />
+                  </ReactCrop>
+                </div>
               </div>
             ) : (
-              <UserAvatar
-                avatarUrl={profile?.avatar_url}
-                fullName={profile?.full_name || "User"}
-                userId={user?.id}
-                className="w-32 h-32 text-3xl"
-              />
+              <div className="flex flex-col items-center gap-4">
+                <UserAvatar
+                  avatarUrl={profile?.avatar_url}
+                  fullName={profile?.full_name || "User"}
+                  userId={user?.id}
+                  className="w-32 h-32 text-3xl"
+                />
+                <p className="text-sm text-muted-foreground text-center">
+                  {profile?.full_name || "User"}
+                </p>
+              </div>
             )}
-            <p className="text-sm text-muted-foreground text-center">
-              {profile?.full_name || "User"}
-            </p>
           </div>
 
           {/* Upload Actions */}

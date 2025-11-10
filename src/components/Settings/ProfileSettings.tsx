@@ -10,12 +10,14 @@ import { toast } from "sonner";
 import { Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUserRole } from "@/hooks/useUserRole";
+import { ProfilePhotoUpload } from "@/components/Profile/ProfilePhotoUpload";
 
 export function ProfileSettings() {
   const { profile } = useAuth();
   const { isCoach } = useUserRole();
   const [isLoading, setIsLoading] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || "");
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
 
   const handleSave = async () => {
     if (!profile?.id) return;
@@ -53,10 +55,12 @@ export function ProfileSettings() {
               {profile?.full_name?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setPhotoDialogOpen(true)}>
             <Camera className="h-4 w-4" />
             Change Photo
           </Button>
+          
+          <ProfilePhotoUpload open={photoDialogOpen} onOpenChange={setPhotoDialogOpen} />
         </CardContent>
       </Card>
 
