@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,35 @@ import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export function AccountSettings() {
   const { profile } = useAuth();
+  const { role } = useUserRole();
   const [isLoading, setIsLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [accountData, setAccountData] = useState<{ email: string; created_at: string } | null>(null);
+
+  useEffect(() => {
+    const fetchAccountData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("created_at")
+          .eq("id", user.id)
+          .single();
+        
+        setAccountData({
+          email: user.email || "",
+          created_at: profileData?.created_at || ""
+        });
+      }
+    };
+    fetchAccountData();
+  }, []);
 
   const getPasswordStrength = (password: string) => {
     let strength = 0;
@@ -145,14 +167,18 @@ export function AccountSettings() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-muted-foreground">Account Type</Label>
-              <p className="text-lg font-medium capitalize">{profile?.role || "Client"}</p>
+              <p className="text-lg font-medium capitalize">{role || "Client"}</p>
             </div>
             <div>
               <Label className="text-muted-foreground">Account Created</Label>
               <p className="text-lg font-medium">
-                {profile?.created_at ? format(new Date(profile.created_at), "MMM d, yyyy") : "N/A"}
+                {accountData?.created_at ? format(new Date(accountData.created_at), "MMM d, yyyy") : "N/A"}
               </p>
             </div>
+          </div>
+          <div>
+            <Label className="text-muted-foreground">Email</Label>
+            <p className="text-lg font-medium">{accountData?.email || "N/A"}</p>
           </div>
         </CardContent>
       </Card>
