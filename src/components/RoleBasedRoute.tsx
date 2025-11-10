@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 
+// Match DEV_MODE setting from ProtectedRoute
+const DEV_MODE = true;
+
 interface RoleBasedRouteProps {
   children: ReactNode;
   allowedRoles: ('coach' | 'admin' | 'client')[];
@@ -18,6 +21,11 @@ export const RoleBasedRoute = ({
 }: RoleBasedRouteProps) => {
   const { role, isLoading } = useUserRole();
   const navigate = useNavigate();
+
+  // Skip role checks in development mode
+  if (DEV_MODE) {
+    return <>{children}</>;
+  }
 
   useEffect(() => {
     if (!isLoading && role && !allowedRoles.includes(role as any)) {
