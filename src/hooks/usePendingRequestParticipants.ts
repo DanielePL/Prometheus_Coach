@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 interface PendingParticipant {
   id: string;
@@ -8,7 +9,7 @@ interface PendingParticipant {
 }
 
 export const usePendingRequestParticipants = () => {
-  const { data: participants = [], isLoading } = useQuery({
+  const { data: participants = [], isLoading, refetch } = useQuery({
     queryKey: ["pending-request-participants"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -39,6 +40,28 @@ export const usePendingRequestParticipants = () => {
         .filter((p) => p.id && p.full_name);
     },
   });
+
+  // Real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("pending-request-participants-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "coach_client_connections",
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
 
   return {
     participants,

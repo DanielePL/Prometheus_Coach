@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 interface MessageParticipant {
   id: string;
@@ -8,7 +9,7 @@ interface MessageParticipant {
 }
 
 export const useUnreadMessageParticipants = () => {
-  const { data: participants = [], isLoading } = useQuery({
+  const { data: participants = [], isLoading, refetch } = useQuery({
     queryKey: ["unread-message-participants"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -74,6 +75,39 @@ export const useUnreadMessageParticipants = () => {
       return uniqueParticipants;
     },
   });
+
+  // Real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("unread-message-participants-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "messages",
+        },
+        () => {
+          refetch();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "conversation_participants",
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
 
   return {
     participants,
