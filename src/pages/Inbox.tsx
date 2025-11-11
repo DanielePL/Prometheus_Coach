@@ -46,25 +46,33 @@ const Inbox = () => {
   const { conversations, loading: conversationsLoading, error: conversationsError, refetch: refetchConversations } = useConversations();
   const { messages, loading: messagesLoading, sendMessage, editMessage, deleteMessage } = useMessages(selectedConversationId);
 
-  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
+  // Safe access to conversations with fallback to empty array
+  const safeConversations = conversations || [];
+  const selectedConversation = safeConversations.find(c => c.id === selectedConversationId);
 
-  const filteredConversations = conversations.filter((conv) =>
-    (conv.other_user?.full_name || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Safe filtering with comprehensive null checks
+  const filteredConversations = safeConversations.filter((conv) => {
+    if (!conv || !conv.other_user) return false;
+    const fullName = conv.other_user.full_name || '';
+    return fullName.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   // Debug logs for live troubleshooting
   useEffect(() => {
     console.log('Inbox: User loaded:', user?.id);
+    console.log('Inbox: User object:', user);
   }, [user]);
 
   useEffect(() => {
-    console.log('Inbox: Conversations:', conversations);
+    console.log('Inbox: Conversations raw:', conversations);
+    console.log('Inbox: Conversations count:', safeConversations.length);
+    console.log('Inbox: Filtered conversations:', filteredConversations.length);
     if (conversationsError) console.error('Inbox: Conversations error:', conversationsError);
-  }, [conversations, conversationsError]);
+  }, [conversations, safeConversations, filteredConversations, conversationsError]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log('Inbox: Messages count:', messages.length, 'for conversation', selectedConversationId);
+    console.log('Inbox: Messages count:', messages?.length || 0, 'for conversation', selectedConversationId);
   }, [messages, selectedConversationId]);
 
   const handleSendMessage = async () => {
@@ -254,7 +262,7 @@ const Inbox = () => {
                       </Button>
                     </div>
                   </div>
-                ) : filteredConversations.length === 0 ? (
+                ) : !filteredConversations || filteredConversations.length === 0 ? (
                   <div className="flex items-center justify-center h-full p-8 text-center">
                     <div>
                       <p className="text-muted-foreground mb-2">
@@ -268,7 +276,14 @@ const Inbox = () => {
                     </div>
                   </div>
                 ) : (
-                  filteredConversations.map((conversation) => (
+                  filteredConversations.map((conversation) => {
+                    // Safety check for each conversation
+                    if (!conversation || !conversation.id || !conversation.other_user) {
+                      console.warn('Invalid conversation data:', conversation);
+                      return null;
+                    }
+                    
+                    return (
                     <button
                       key={conversation.id}
                       onClick={() => setSelectedConversationId(conversation.id)}
@@ -302,7 +317,8 @@ const Inbox = () => {
                         </div>
                       </div>
                     </button>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -333,12 +349,17 @@ const Inbox = () => {
                       <div className="flex items-center justify-center h-full">
                         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                       </div>
-                    ) : messages.length === 0 ? (
+                    ) : !messages || messages.length === 0 ? (
                       <div className="flex items-center justify-center h-full">
                         <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
                       </div>
                     ) : (
                       messages.map((message) => {
+                        // Safety check for each message
+                        if (!message || !message.id) {
+                          console.warn('Invalid message data:', message);
+                          return null;
+                        }
                         const isOwnMessage = message.sender_id === user?.id;
                         const isEditing = editingMessageId === message.id;
                         const isHovered = hoveredMessageId === message.id;

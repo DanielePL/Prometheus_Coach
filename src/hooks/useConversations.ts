@@ -22,16 +22,21 @@ export interface ConversationWithDetails {
 
 export const useConversations = () => {
   const { user } = useAuth();
+  // Initialize with empty array to ensure conversations is never undefined
   const [conversations, setConversations] = useState<ConversationWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchConversations = async () => {
     if (!user) {
+      console.log('useConversations: No user, setting empty conversations');
+      setConversations([]);
       setLoading(false);
       setError(null);
       return;
     }
+    
+    console.log('useConversations: Fetching conversations for user', user.id);
 
     // Set timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
@@ -50,12 +55,15 @@ export const useConversations = () => {
       if (participantError) throw participantError;
 
       if (!participantData || participantData.length === 0) {
+        console.log('useConversations: No participant data found, user has no conversations');
         setConversations([]);
         setError(null);
         clearTimeout(timeoutId);
         setLoading(false);
         return;
       }
+      
+      console.log('useConversations: Found', participantData.length, 'conversation participations');
 
       const conversationIds = participantData.map(p => p.conversation_id);
 
@@ -112,10 +120,13 @@ export const useConversations = () => {
         })
       );
 
+      console.log('useConversations: Successfully fetched', conversationsWithDetails.length, 'conversations');
       setConversations(conversationsWithDetails);
       setError(null);
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      console.error('useConversations: Error fetching conversations:', error);
+      // Ensure conversations is set to empty array on error, not left as undefined
+      setConversations([]);
       setError('Failed to load conversations');
     } finally {
       clearTimeout(timeoutId);
