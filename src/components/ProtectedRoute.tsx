@@ -43,7 +43,20 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground mb-2">Redirecting to sign in...</p>
+          <button
+            onClick={() => navigate('/auth')}
+            className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

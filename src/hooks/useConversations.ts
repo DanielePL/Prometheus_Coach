@@ -35,9 +35,10 @@ export const useConversations = () => {
 
     // Set timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
+      console.warn('useConversations: request timed out');
       setLoading(false);
       setError('Request timed out. Please try again.');
-    }, 3000);
+    }, 8000);
 
     try {
       // Get all conversations where user is a participant

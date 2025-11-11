@@ -27,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 const Inbox = () => {
   const { theme, setTheme } = useTheme();
@@ -48,13 +49,23 @@ const Inbox = () => {
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
   const filteredConversations = conversations.filter((conv) =>
-    conv.other_user.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+    (conv.other_user?.full_name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Auto-scroll to bottom when new messages arrive
+  // Debug logs for live troubleshooting
+  useEffect(() => {
+    console.log('Inbox: User loaded:', user?.id);
+  }, [user]);
+
+  useEffect(() => {
+    console.log('Inbox: Conversations:', conversations);
+    if (conversationsError) console.error('Inbox: Conversations error:', conversationsError);
+  }, [conversations, conversationsError]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    console.log('Inbox: Messages count:', messages.length, 'for conversation', selectedConversationId);
+  }, [messages, selectedConversationId]);
 
   const handleSendMessage = async () => {
     if (!messageInput.trim()) return;
@@ -505,4 +516,24 @@ const Inbox = () => {
   );
 };
 
-export default Inbox;
+const InboxPage = () => (
+  <ErrorBoundary
+    fallback={
+      <div className="min-h-screen w-full flex items-center justify-center">
+        <div className="text-center">
+          <p className="mb-3">Unable to load inbox. Please refresh the page.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    }
+  >
+    <Inbox />
+  </ErrorBoundary>
+);
+
+export default InboxPage;
