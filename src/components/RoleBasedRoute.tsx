@@ -4,7 +4,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 
 // Match DEV_MODE setting from ProtectedRoute
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 interface RoleBasedRouteProps {
   children: ReactNode;

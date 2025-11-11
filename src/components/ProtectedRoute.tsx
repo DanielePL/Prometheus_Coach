@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 // 
 // ⚠️ IMPORTANT: Always set DEV_MODE = false before deploying!
 // ===============================================
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 interface ProtectedRouteProps {
   children: ReactNode;

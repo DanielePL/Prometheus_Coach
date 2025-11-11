@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { NewMessageDialog } from "@/components/Messaging/NewMessageDialog";
 import { EventMentionParser } from "@/components/Messaging/EventMentionParser";
+import { Link } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -153,9 +154,11 @@ const Inbox = () => {
                 <p className="text-muted-foreground mb-4">
                   You need to be signed in to access your inbox.
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Please set DEV_MODE to false in ProtectedRoute.tsx and sign in to continue.
-                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button asChild>
+                    <Link to="/auth">Go to Sign In</Link>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
