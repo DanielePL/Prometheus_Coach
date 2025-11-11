@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDeleteExercise } from "@/hooks/useDeleteExercise";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -37,6 +38,7 @@ const ExerciseDetail = () => {
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavoriteExercises();
   const { user } = useAuth();
+  const { role, isCoach } = useUserRole();
   const { deleteExercise, isDeleting } = useDeleteExercise();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -90,7 +92,7 @@ const ExerciseDetail = () => {
     }
   };
 
-  const canDelete = user && exercise && (exercise.created_by === user.id);
+  const canEdit = user && exercise && ((isCoach && exercise.created_by === user.id) || role === "admin");
 
   const handleDelete = async () => {
     if (!exercise) return;
@@ -150,11 +152,11 @@ const ExerciseDetail = () => {
               {/* Mobile Info Cards */}
               <div className="lg:hidden lg:col-span-7 space-y-4">
                 <div className="flex items-center gap-3 flex-wrap">
-                  {exercise.equipment && (
-                    <div className="bg-primary rounded-2xl px-4 py-2">
-                      <span className="text-white font-normal">Equipment: {exercise.equipment}</span>
-                    </div>
-                  )}
+                  <div className="bg-primary rounded-2xl px-4 py-2">
+                    <span className="text-white font-normal">
+                      Equipment: {exercise.equipment || "Not specified"}
+                    </span>
+                  </div>
                   <button 
                     onClick={handleToggleFavorite}
                     className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth"
@@ -167,7 +169,7 @@ const ExerciseDetail = () => {
                   <button className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth">
                     <Share2 size={18} className="text-foreground" />
                   </button>
-                  {canDelete && (
+                  {canEdit && (
                     <>
                       <button
                         onClick={() => setShowEditModal(true)}
@@ -193,49 +195,70 @@ const ExerciseDetail = () => {
                   </button>
                 </div>
                 
-                {exercise.primary_muscles && (
-                  <InfoCard
-                    icon={Target}
-                    label="Primary Muscle Groups"
-                    value={<div className="text-base font-normal">{exercise.primary_muscles}</div>}
-                    variant="accent"
-                  />
-                )}
+                <InfoCard
+                  icon={Target}
+                  label="Primary Muscle Groups"
+                  value={
+                    <div className="text-base font-normal">
+                      {exercise.primary_muscles || (
+                        <span className="text-muted-foreground italic">Not specified</span>
+                      )}
+                    </div>
+                  }
+                  variant="accent"
+                />
                 
-                {exercise.key_aspects && (
-                  <InfoCard
-                    icon={Zap}
-                    label="Key Aspects"
-                    value={
+                <InfoCard
+                  icon={Zap}
+                  label="Key Aspects"
+                  value={
+                    exercise.key_aspects ? (
                       <ul className="space-y-1 text-sm">
                         {exercise.key_aspects.split('\n').map((aspect, idx) => (
                           <li key={idx}>• {aspect}</li>
                         ))}
                       </ul>
-                    }
-                    variant="accent"
-                  />
-                )}
+                    ) : (
+                      <div className="text-sm text-muted-foreground italic">
+                        {canEdit ? "Add key form cues" : "No key aspects listed yet"}
+                      </div>
+                    )
+                  }
+                  variant="accent"
+                />
                 
-                {(exercise.suggested_sets || exercise.suggested_reps || exercise.suggested_weight) && (
-                  <div>
-                    <p className="text-base font-medium text-foreground mb-3">Suggested Program</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      {exercise.suggested_sets && <ProgramTile label="Sets" value={exercise.suggested_sets.toString()} />}
-                      {exercise.suggested_reps && <ProgramTile label="Reps" value={exercise.suggested_reps} />}
-                      {exercise.suggested_weight && <ProgramTile label="Weight" value={exercise.suggested_weight} />}
-                    </div>
+                <div>
+                  <p className="text-base font-medium text-foreground mb-3">Suggested Program</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <ProgramTile 
+                      label="Sets" 
+                      value={exercise.suggested_sets?.toString() || "-"} 
+                    />
+                    <ProgramTile 
+                      label="Reps" 
+                      value={exercise.suggested_reps || "-"} 
+                    />
+                    <ProgramTile 
+                      label="Weight" 
+                      value={exercise.suggested_weight || "-"} 
+                    />
                   </div>
-                )}
+                </div>
 
-                {exercise.common_mistakes && (
-                  <InfoCard
-                    icon={AlertTriangle}
-                    label="Common Mistakes"
-                    value={<div className="text-sm font-normal">{exercise.common_mistakes}</div>}
-                    variant="accent"
-                  />
-                )}
+                <InfoCard
+                  icon={AlertTriangle}
+                  label="Common Mistakes"
+                  value={
+                    exercise.common_mistakes ? (
+                      <div className="text-sm font-normal">{exercise.common_mistakes}</div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground italic">
+                        {canEdit ? "Add common mistakes to avoid" : "No common mistakes listed yet"}
+                      </div>
+                    )
+                  }
+                  variant="accent"
+                />
 
                 {/* Workout Metrics */}
                 <div>
@@ -298,11 +321,11 @@ const ExerciseDetail = () => {
               <ExerciseHeader title={exercise.title} />
               
               <div className="flex items-center gap-3 flex-wrap">
-                {exercise.equipment && (
-                  <div className="bg-primary rounded-2xl px-5 py-3">
-                    <span className="text-white font-normal">Equipment: {exercise.equipment}</span>
-                  </div>
-                )}
+                <div className="bg-primary rounded-2xl px-5 py-3">
+                  <span className="text-white font-normal">
+                    Equipment: {exercise.equipment || "Not specified"}
+                  </span>
+                </div>
                 <button 
                   onClick={handleToggleFavorite}
                   className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth"
@@ -315,7 +338,7 @@ const ExerciseDetail = () => {
                 <button className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth">
                   <Share2 size={18} className="text-foreground" />
                 </button>
-                {canDelete && (
+                {canEdit && (
                   <>
                     <button
                       onClick={() => setShowEditModal(true)}
@@ -341,49 +364,70 @@ const ExerciseDetail = () => {
                 </button>
               </div>
               
-              {exercise.primary_muscles && (
-                <InfoCard
-                  icon={Target}
-                  label="Primary Muscle Groups"
-                  value={<div className="text-base font-normal">{exercise.primary_muscles}</div>}
-                  variant="accent"
-                />
-              )}
+              <InfoCard
+                icon={Target}
+                label="Primary Muscle Groups"
+                value={
+                  <div className="text-base font-normal">
+                    {exercise.primary_muscles || (
+                      <span className="text-muted-foreground italic">Not specified</span>
+                    )}
+                  </div>
+                }
+                variant="accent"
+              />
               
-              {exercise.key_aspects && (
-                <InfoCard
-                  icon={Zap}
-                  label="Key Aspects"
-                  value={
+              <InfoCard
+                icon={Zap}
+                label="Key Aspects"
+                value={
+                  exercise.key_aspects ? (
                     <ul className="space-y-1.5 text-sm">
                       {exercise.key_aspects.split('\n').map((aspect, idx) => (
                         <li key={idx}>• {aspect}</li>
                       ))}
                     </ul>
-                  }
-                  variant="accent"
-                />
-              )}
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      {canEdit ? "Add key form cues" : "No key aspects listed yet"}
+                    </div>
+                  )
+                }
+                variant="accent"
+              />
               
-              {(exercise.suggested_sets || exercise.suggested_reps || exercise.suggested_weight) && (
-                <div className="lg:mt-[10px] lg:pt-[10px]">
-                  <p className="text-base font-medium text-foreground mb-4">Suggested Program</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    {exercise.suggested_sets && <ProgramTile label="Sets" value={exercise.suggested_sets.toString()} />}
-                    {exercise.suggested_reps && <ProgramTile label="Reps" value={exercise.suggested_reps} />}
-                    {exercise.suggested_weight && <ProgramTile label="Weight" value={exercise.suggested_weight} />}
-                  </div>
+              <div className="lg:mt-[10px] lg:pt-[10px]">
+                <p className="text-base font-medium text-foreground mb-4">Suggested Program</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <ProgramTile 
+                    label="Sets" 
+                    value={exercise.suggested_sets?.toString() || "-"} 
+                  />
+                  <ProgramTile 
+                    label="Reps" 
+                    value={exercise.suggested_reps || "-"} 
+                  />
+                  <ProgramTile 
+                    label="Weight" 
+                    value={exercise.suggested_weight || "-"} 
+                  />
                 </div>
-              )}
+              </div>
 
-              {exercise.common_mistakes && (
-                <InfoCard
-                  icon={AlertTriangle}
-                  label="Common Mistakes"
-                  value={<div className="text-sm font-normal">{exercise.common_mistakes}</div>}
-                  variant="accent"
-                />
-              )}
+              <InfoCard
+                icon={AlertTriangle}
+                label="Common Mistakes"
+                value={
+                  exercise.common_mistakes ? (
+                    <div className="text-sm font-normal">{exercise.common_mistakes}</div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      {canEdit ? "Add common mistakes to avoid" : "No common mistakes listed yet"}
+                    </div>
+                  )
+                }
+                variant="accent"
+              />
             </div>
           </div>
 
