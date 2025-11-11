@@ -37,7 +37,7 @@ export const Sidebar = () => {
   const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const [photoUploadOpen, setPhotoUploadOpen] = useState(false);
-  const { user, profile } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { role } = useUserRole();
 
   // Filter nav items based on role
@@ -45,10 +45,6 @@ export const Sidebar = () => {
     if (!item.roleRequired) return true;
     return item.roleRequired.includes(role || "client");
   });
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
 
 
   return (
