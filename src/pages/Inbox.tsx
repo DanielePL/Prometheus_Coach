@@ -132,6 +132,39 @@ const Inbox = () => {
     }
   };
 
+  // Show auth required message when no user (DEV_MODE bypass)
+  if (!user) {
+    return (
+      <div
+        className="min-h-screen flex w-full"
+        style={{
+          backgroundImage: `url(${theme === "dark" ? gradientBgDark : gradientBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <Sidebar />
+        <main className="flex-1 lg:ml-20 pb-20 lg:pb-0">
+          <div className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 max-w-7xl">
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="glass rounded-2xl p-8 text-center max-w-md">
+                <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
+                <p className="text-muted-foreground mb-4">
+                  You need to be signed in to access your inbox.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Please set DEV_MODE to false in ProtectedRoute.tsx and sign in to continue.
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen flex w-full"
