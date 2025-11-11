@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Loader2, Search, MessageSquarePlus } from 'lucide-react';
-import { useAvailableUsers } from '@/hooks/useAvailableUsers';
+import { useConnectedUsers } from '@/hooks/useConnectedUsers';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -24,7 +24,7 @@ interface NewMessageDialogProps {
 
 export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }: NewMessageDialogProps) => {
   const { user } = useAuth();
-  const { users, loading, error } = useAvailableUsers();
+  const { users, isLoading: loading, error } = useConnectedUsers();
   const [searchQuery, setSearchQuery] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -197,9 +197,9 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
             <div>
               <DialogTitle className="text-xl text-foreground">New Message</DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                Select someone to start a conversation
+                Start a conversation with a connected user
                 {!loading && users.length > 0 && (
-                  <span className="ml-1 text-primary font-semibold">({users.length} {users.length === 1 ? 'user' : 'users'} available)</span>
+                  <span className="ml-1 text-primary font-semibold">({users.length} connected)</span>
                 )}
               </DialogDescription>
             </div>
@@ -233,7 +233,7 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground text-sm">
-                  {searchQuery ? `No users found matching "${searchQuery}"` : 'No users available'}
+                  {searchQuery ? `No connected users found matching "${searchQuery}"` : 'No connected users yet. Send connection requests to start messaging.'}
                 </p>
               </div>
             ) : (
