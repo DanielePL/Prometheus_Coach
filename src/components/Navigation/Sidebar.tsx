@@ -1,16 +1,25 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Compass, Bookmark, Calendar, Users, Mail, Settings, LogOut, Upload, Dumbbell, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Compass, Bookmark, Calendar, Users, Mail, Settings, LogOut, Upload, Dumbbell, TrendingUp, Loader2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import logoFull from "@/assets/logo-full.png";
 import logo from "@/assets/logo.png";
 import logoWhite from "@/assets/logo-white.png";
 import { ProfilePhotoUpload } from "@/components/Profile/ProfilePhotoUpload";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "../ui/user-avatar";
 import { useUserRole } from "@/hooks/useUserRole";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface NavItem {
   icon: React.ElementType;
@@ -37,6 +46,8 @@ export const Sidebar = () => {
   const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const [photoUploadOpen, setPhotoUploadOpen] = useState(false);
+  const [signOutDialogOpen, setSignOutDialogOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const { user, profile, signOut } = useAuth();
   const { role } = useUserRole();
 
@@ -45,6 +56,16 @@ export const Sidebar = () => {
     if (!item.roleRequired) return true;
     return item.roleRequired.includes(role || "client");
   });
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setIsSigningOut(false);
+      setSignOutDialogOpen(false);
+    }
+  };
 
 
   return (
@@ -134,14 +155,20 @@ export const Sidebar = () => {
         </div>
 
         <button
-          onClick={signOut}
+          onClick={() => setSignOutDialogOpen(true)}
+          disabled={isSigningOut}
           className={`
             flex items-center gap-3 px-3 py-3 rounded-xl transition-smooth w-full
             dark:text-white text-muted-foreground dark:hover:bg-background/60 hover:text-black hover:bg-white/50 hover:glow-orange
+            disabled:opacity-50 disabled:cursor-not-allowed
           `}
           aria-label="Sign Out"
         >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
+          {isSigningOut ? (
+            <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin" />
+          ) : (
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+          )}
           <motion.span
             animate={{
               opacity: open ? 1 : 0,
@@ -149,13 +176,42 @@ export const Sidebar = () => {
             }}
             className="text-sm font-medium whitespace-nowrap"
           >
-            Sign Out
+            {isSigningOut ? "Signing out..." : "Sign Out"}
           </motion.span>
         </button>
       </div>
 
       {/* Profile Photo Upload Dialog */}
       <ProfilePhotoUpload open={photoUploadOpen} onOpenChange={setPhotoUploadOpen} />
+
+      {/* Sign Out Confirmation Dialog */}
+      <AlertDialog open={signOutDialogOpen} onOpenChange={setSignOutDialogOpen}>
+        <AlertDialogContent className="glass border-glass-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out of your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be redirected to the login page. Any unsaved changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSigningOut}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {isSigningOut ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Signing out...
+                </>
+              ) : (
+                "Sign out"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.aside>
   );
 };
