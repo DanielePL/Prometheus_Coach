@@ -8,13 +8,26 @@ interface ExerciseHeroProps {
 }
 
 export const ExerciseHero = ({ image, alt, title, onPlayClick }: ExerciseHeroProps) => {
+  const isVideo = image?.includes('.mp4') || image?.includes('cloudfront');
+  
   return (
     <div className="relative w-full aspect-video lg:aspect-[16/10] rounded-3xl overflow-hidden group">
-      <img 
-        src={image} 
-        alt={alt}
-        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-      />
+      {isVideo ? (
+        <video
+          src={image}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          muted
+          playsInline
+          preload="metadata"
+          aria-label={alt}
+        />
+      ) : (
+        <img 
+          src={image} 
+          alt={alt}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+      )}
       <div className="absolute inset-x-0 bottom-0 h-32 backdrop-blur-sm bg-gradient-to-t from-background/20 to-transparent" />
       {title && (
         <div className="absolute bottom-6 left-6">

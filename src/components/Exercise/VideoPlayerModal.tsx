@@ -77,6 +77,7 @@ export const VideoPlayerModal = ({ isOpen, onClose, videoUrl, title }: VideoPlay
               ref={videoRef}
               src={videoUrl}
               controls
+              muted
               className="w-full max-h-[90vh] rounded-lg shadow-2xl"
               playsInline
               aria-label={title}
