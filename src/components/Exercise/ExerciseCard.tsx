@@ -79,27 +79,29 @@ export const ExerciseCard = ({
             className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
             onError={(e) => {
               console.error(`[ExerciseCard] Thumbnail failed to load for ${exercise.title}:`, exercise.thumbnail_url)
-              // Fallback to video if thumbnail fails
+              // Fallback to video if thumbnail fails - add #t=0.1 for Safari
               const target = e.target as HTMLImageElement
               target.style.display = 'none'
               const video = document.createElement('video')
-              video.src = exercise.cloudfront_url
+              video.src = `${exercise.cloudfront_url}#t=0.1`
               video.className = 'w-full h-full object-cover transition-all duration-500 group-hover:scale-110'
               video.muted = true
               video.playsInline = true
               video.preload = 'metadata'
+              video.setAttribute('webkit-playsinline', 'true')
               target.parentElement?.appendChild(video)
             }}
           />
         ) : (
-          // Fallback to video with poster
+          // Fallback to video - add #t=0.1 for Safari to show first frame
           <video
-            src={exercise.cloudfront_url}
+            src={`${exercise.cloudfront_url}#t=0.1`}
             poster={exercise.thumbnail_url?.startsWith('data:') ? exercise.thumbnail_url : undefined}
             className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
             muted
             playsInline
             preload="metadata"
+            webkit-playsinline="true"
             onError={() => {
               console.error(`[ExerciseCard] Video failed to load for ${exercise.title}:`, exercise.cloudfront_url)
             }}
