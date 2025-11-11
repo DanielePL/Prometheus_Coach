@@ -22,7 +22,9 @@ export const ExerciseHero = ({ image, alt, title, onPlayClick }: ExerciseHeroPro
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="auto"
+          disablePictureInPicture
+          webkit-playsinline="true"
         />
       ) : (
         <img 
