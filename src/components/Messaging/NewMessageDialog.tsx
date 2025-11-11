@@ -126,16 +126,15 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
         }
       }
 
-      // Create new conversation
+      // Create new conversation without RETURNING to avoid RLS on SELECT
       console.log('💬 [NewMessageDialog] No existing conversation found. Creating new one...');
-      const { data: newConversation, error: conversationError } = await supabase
+      const newConversationId = crypto.randomUUID();
+      const { error: conversationError } = await supabase
         .from('conversations')
-        .insert({})
-        .select()
-        .single();
+        .insert({ id: newConversationId });
 
-      console.log('💬 [NewMessageDialog] New conversation created:', newConversation);
-      console.log('💬 [NewMessageDialog] Conversation error:', conversationError);
+      console.log('💬 [NewMessageDialog] New conversation ID:', newConversationId);
+      console.log('💬 [NewMessageDialog] Conversation insert error:', conversationError);
 
       if (conversationError) {
         console.error('❌ [NewMessageDialog] Error creating conversation:', conversationError);
@@ -143,10 +142,10 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
       }
 
       // Add both users as participants
-      console.log('💬 [NewMessageDialog] Adding participants to conversation:', newConversation.id);
+      console.log('💬 [NewMessageDialog] Adding participants to conversation:', newConversationId);
       const participantsToAdd = [
-        { conversation_id: newConversation.id, user_id: user.id },
-        { conversation_id: newConversation.id, user_id: selectedUserId },
+        { conversation_id: newConversationId, user_id: user.id },
+        { conversation_id: newConversationId, user_id: selectedUserId },
       ];
       console.log('💬 [NewMessageDialog] Participants to add:', participantsToAdd);
 
@@ -163,7 +162,7 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
 
       console.log('✅ [NewMessageDialog] Conversation created successfully!');
       // Navigate to new conversation
-      onConversationSelected(newConversation.id);
+      onConversationSelected(newConversationId);
       onOpenChange(false);
       setSearchQuery('');
       toast.success('New conversation started!');
