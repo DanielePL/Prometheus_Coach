@@ -43,18 +43,30 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
   const handleUserSelect = async (selectedUserId: string) => {
     if (!user || creating) return;
 
+    console.log('💬 [NewMessageDialog] ========== CREATING CONVERSATION ==========');
+    console.log('💬 [NewMessageDialog] Current user:', user.id);
+    console.log('💬 [NewMessageDialog] Selected user:', selectedUserId);
+
     setCreating(true);
     try {
       // Check if conversation already exists between these two users
+      console.log('💬 [NewMessageDialog] Checking for existing conversations...');
       const { data: existingParticipants, error: participantsError } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
         .eq('user_id', user.id);
 
-      if (participantsError) throw participantsError;
+      console.log('💬 [NewMessageDialog] My conversations:', existingParticipants);
+      console.log('💬 [NewMessageDialog] Participants error:', participantsError);
+
+      if (participantsError) {
+        console.error('❌ [NewMessageDialog] Error fetching my conversations:', participantsError);
+        throw participantsError;
+      }
 
       if (existingParticipants && existingParticipants.length > 0) {
         const conversationIds = existingParticipants.map(p => p.conversation_id);
+        console.log('💬 [NewMessageDialog] Checking if selected user is in any of these:', conversationIds);
 
         // Check which of these conversations include the selected user
         const { data: otherUserParticipants, error: otherError } = await supabase
@@ -63,10 +75,17 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
           .eq('user_id', selectedUserId)
           .in('conversation_id', conversationIds);
 
-        if (otherError) throw otherError;
+        console.log('💬 [NewMessageDialog] Selected user conversations:', otherUserParticipants);
+        console.log('💬 [NewMessageDialog] Other user error:', otherError);
+
+        if (otherError) {
+          console.error('❌ [NewMessageDialog] Error checking other user:', otherError);
+          throw otherError;
+        }
 
         // If conversation exists, navigate to it
         if (otherUserParticipants && otherUserParticipants.length > 0) {
+          console.log('✅ [NewMessageDialog] Conversation already exists! Navigating to:', otherUserParticipants[0].conversation_id);
           onConversationSelected(otherUserParticipants[0].conversation_id);
           onOpenChange(false);
           setSearchQuery('');
@@ -75,32 +94,49 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
       }
 
       // Create new conversation
+      console.log('💬 [NewMessageDialog] No existing conversation found. Creating new one...');
       const { data: newConversation, error: conversationError } = await supabase
         .from('conversations')
         .insert({})
         .select()
         .single();
 
-      if (conversationError) throw conversationError;
+      console.log('💬 [NewMessageDialog] New conversation created:', newConversation);
+      console.log('💬 [NewMessageDialog] Conversation error:', conversationError);
+
+      if (conversationError) {
+        console.error('❌ [NewMessageDialog] Error creating conversation:', conversationError);
+        throw conversationError;
+      }
 
       // Add both users as participants
+      console.log('💬 [NewMessageDialog] Adding participants to conversation:', newConversation.id);
+      const participantsToAdd = [
+        { conversation_id: newConversation.id, user_id: user.id },
+        { conversation_id: newConversation.id, user_id: selectedUserId },
+      ];
+      console.log('💬 [NewMessageDialog] Participants to add:', participantsToAdd);
+
       const { error: participantError } = await supabase
         .from('conversation_participants')
-        .insert([
-          { conversation_id: newConversation.id, user_id: user.id },
-          { conversation_id: newConversation.id, user_id: selectedUserId },
-        ]);
+        .insert(participantsToAdd);
 
-      if (participantError) throw participantError;
+      console.log('💬 [NewMessageDialog] Participant insert error:', participantError);
 
+      if (participantError) {
+        console.error('❌ [NewMessageDialog] Error adding participants:', participantError);
+        throw participantError;
+      }
+
+      console.log('✅ [NewMessageDialog] Conversation created successfully!');
       // Navigate to new conversation
       onConversationSelected(newConversation.id);
       onOpenChange(false);
       setSearchQuery('');
       toast.success('New conversation started!');
     } catch (error) {
-      console.error('Error creating conversation:', error);
-      toast.error('Failed to start conversation');
+      console.error('❌ [NewMessageDialog] CATCH ERROR:', error);
+      toast.error(`Failed to start conversation: ${error.message || 'Unknown error'}`);
     } finally {
       setCreating(false);
     }

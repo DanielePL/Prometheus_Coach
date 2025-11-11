@@ -82,11 +82,13 @@ export const useAvailableUsers = () => {
           // Don't throw - we can still show users without roles
         }
 
-        // Combine profiles with their roles - NO FILTERING
+        // Combine profiles with their roles
         const usersWithRoles = profiles.map(profile => {
           const roles = userRoles
             ?.filter(ur => ur.user_id === profile.id)
             .map(ur => ur.role) || [];
+          
+          console.log(`👤 [useAvailableUsers] User ${profile.full_name} (${profile.id}): roles =`, roles);
           
           return {
             id: profile.id,
