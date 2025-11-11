@@ -49,6 +49,39 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
 
     setCreating(true);
     try {
+      // Check if user is admin (admins can message anyone)
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      
+      const isAdmin = userRoles?.some(r => r.role === 'admin');
+      console.log('💬 [NewMessageDialog] Is admin?', isAdmin);
+
+      if (!isAdmin) {
+        // Check if users are connected via coach-client relationship
+        console.log('💬 [NewMessageDialog] Checking coach-client connection...');
+        const { data: connection, error: connectionError } = await supabase
+          .from('coach_client_connections')
+          .select('*')
+          .eq('status', 'accepted')
+          .or(`and(coach_id.eq.${user.id},client_id.eq.${selectedUserId}),and(coach_id.eq.${selectedUserId},client_id.eq.${user.id})`)
+          .maybeSingle();
+
+        console.log('💬 [NewMessageDialog] Connection found:', connection);
+        console.log('💬 [NewMessageDialog] Connection error:', connectionError);
+
+        if (!connection) {
+          console.log('❌ [NewMessageDialog] No connection found - blocking conversation');
+          toast.error('You must be connected to message this user. Send a connection request first.');
+          setCreating(false);
+          return;
+        }
+
+        console.log('✅ [NewMessageDialog] Connection verified! Proceeding...');
+      } else {
+        console.log('✅ [NewMessageDialog] Admin user - bypassing connection check');
+      }
       // Check if conversation already exists between these two users
       console.log('💬 [NewMessageDialog] Checking for existing conversations...');
       const { data: existingParticipants, error: participantsError } = await supabase
