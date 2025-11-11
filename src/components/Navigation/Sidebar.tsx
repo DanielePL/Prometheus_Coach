@@ -160,7 +160,7 @@ export const Sidebar = () => {
           className={`
             flex items-center gap-3 px-3 py-3 rounded-xl transition-smooth w-full
             dark:text-white text-muted-foreground dark:hover:bg-background/60 hover:text-black hover:bg-white/50 hover:glow-orange
-            disabled:opacity-50 disabled:cursor-not-allowed
+            hover:animate-pulse disabled:opacity-50 disabled:cursor-not-allowed
           `}
           aria-label="Sign Out"
         >

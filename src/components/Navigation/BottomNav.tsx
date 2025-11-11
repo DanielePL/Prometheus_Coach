@@ -86,7 +86,7 @@ export const BottomNav = () => {
           <button
             onClick={() => setSignOutDialogOpen(true)}
             disabled={isSigningOut}
-            className="flex flex-col items-center justify-center gap-1 transition-smooth dark:text-white text-muted-foreground disabled:opacity-50"
+            className="flex flex-col items-center justify-center gap-1 transition-smooth dark:text-white text-muted-foreground hover:animate-pulse disabled:opacity-50"
             aria-label="Sign Out"
           >
             {isSigningOut ? (
