@@ -52,7 +52,15 @@ export const useConversations = () => {
         .select('conversation_id, last_read_at')
         .eq('user_id', user.id);
 
-      if (participantError) throw participantError;
+      if (participantError) {
+        console.error('useConversations: Error fetching participant data:', {
+          message: participantError.message,
+          details: participantError.details,
+          hint: participantError.hint,
+          code: participantError.code
+        });
+        throw participantError;
+      }
 
       if (!participantData || participantData.length === 0) {
         console.log('useConversations: No participant data found, user has no conversations');
@@ -74,7 +82,15 @@ export const useConversations = () => {
         .in('id', conversationIds)
         .order('updated_at', { ascending: false });
 
-      if (conversationsError) throw conversationsError;
+      if (conversationsError) {
+        console.error('useConversations: Error fetching conversations data:', {
+          message: conversationsError.message,
+          details: conversationsError.details,
+          hint: conversationsError.hint,
+          code: conversationsError.code
+        });
+        throw conversationsError;
+      }
 
       // For each conversation, get the other participant and last message
       const conversationsWithDetails = await Promise.all(
@@ -123,11 +139,28 @@ export const useConversations = () => {
       console.log('useConversations: Successfully fetched', conversationsWithDetails.length, 'conversations');
       setConversations(conversationsWithDetails);
       setError(null);
-    } catch (error) {
-      console.error('useConversations: Error fetching conversations:', error);
+    } catch (error: any) {
+      console.error('useConversations: Error fetching conversations:', {
+        error,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        stack: error?.stack
+      });
       // Ensure conversations is set to empty array on error, not left as undefined
       setConversations([]);
-      setError('Failed to load conversations');
+      
+      // Set a more descriptive error message
+      let errorMessage = 'Failed to load conversations';
+      if (error?.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      if (error?.hint) {
+        errorMessage += ` (${error.hint})`;
+      }
+      
+      setError(errorMessage);
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);

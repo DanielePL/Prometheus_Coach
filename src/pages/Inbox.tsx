@@ -250,9 +250,17 @@ const Inbox = () => {
                   </div>
                 ) : conversationsError ? (
                   <div className="flex items-center justify-center h-full p-8 text-center">
-                    <div>
+                    <div className="max-w-md">
                       <p className="text-destructive font-semibold mb-2">Error loading conversations</p>
-                      <p className="text-muted-foreground text-sm mb-4">{conversationsError}</p>
+                      <p className="text-muted-foreground text-sm mb-4 break-words">{conversationsError}</p>
+                      <div className="text-xs text-muted-foreground mb-4 p-3 bg-muted/50 rounded">
+                        <p className="font-semibold mb-1">Troubleshooting tips:</p>
+                        <ul className="text-left list-disc pl-4 space-y-1">
+                          <li>Check browser console (F12) for detailed errors</li>
+                          <li>Verify you're logged in correctly</li>
+                          <li>Try refreshing the page</li>
+                        </ul>
+                      </div>
                       <Button 
                         onClick={() => refetchConversations()} 
                         variant="outline"
