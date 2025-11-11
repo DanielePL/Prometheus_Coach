@@ -100,7 +100,7 @@ export const BottomNav = () => {
 
       {/* Sign Out Confirmation Dialog */}
       <AlertDialog open={signOutDialogOpen} onOpenChange={setSignOutDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="animate-in slide-in-from-bottom-4 duration-300 border-primary/20 shadow-[0_0_30px_rgba(255,107,53,0.15)]">
           <AlertDialogHeader>
             <AlertDialogTitle>Sign out of your account?</AlertDialogTitle>
             <AlertDialogDescription>
