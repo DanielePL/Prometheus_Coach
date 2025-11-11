@@ -93,46 +93,97 @@ export const useConversations = () => {
       }
 
       // For each conversation, get the other participant and last message
+      console.log('useConversations: Processing', conversationsData?.length || 0, 'conversations');
+      
       const conversationsWithDetails = await Promise.all(
-        (conversationsData || []).map(async (conv) => {
-          // Get other participant
-          const { data: participants } = await supabase
-            .from('conversation_participants')
-            .select('user_id, profiles(id, full_name, avatar_url)')
-            .eq('conversation_id', conv.id)
-            .neq('user_id', user.id)
-            .limit(1)
-            .single();
+        (conversationsData || []).map(async (conv, index) => {
+          try {
+            console.log(`useConversations: [${index}] Processing conversation ${conv.id}`);
+            
+            // Get other participant
+            console.log(`useConversations: [${index}] Fetching other participant for conversation ${conv.id}`);
+            const { data: participants, error: participantError } = await supabase
+              .from('conversation_participants')
+              .select('user_id, profiles(id, full_name, avatar_url)')
+              .eq('conversation_id', conv.id)
+              .neq('user_id', user.id)
+              .limit(1)
+              .single();
 
-          // Get last message
-          const { data: lastMessage } = await supabase
-            .from('messages')
-            .select('content, created_at, sender_id')
-            .eq('conversation_id', conv.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+            if (participantError) {
+              console.error(`useConversations: [${index}] ERROR fetching participant:`, {
+                conversation_id: conv.id,
+                error: participantError,
+                message: participantError.message,
+                details: participantError.details,
+                hint: participantError.hint,
+                code: participantError.code
+              });
+              throw participantError;
+            }
+            
+            console.log(`useConversations: [${index}] Found participant:`, participants);
 
-          // Count unread messages
-          const participant = participantData.find(p => p.conversation_id === conv.id);
-          const { count: unreadCount } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id)
-            .neq('sender_id', user.id)
-            .gt('created_at', participant?.last_read_at || new Date(0).toISOString());
+            // Get last message
+            console.log(`useConversations: [${index}] Fetching last message for conversation ${conv.id}`);
+            const { data: lastMessage, error: messageError } = await supabase
+              .from('messages')
+              .select('content, created_at, sender_id')
+              .eq('conversation_id', conv.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
 
-          return {
-            id: conv.id,
-            updated_at: conv.updated_at,
-            other_user: {
-              id: participants?.profiles?.id || '',
-              full_name: participants?.profiles?.full_name || 'Unknown User',
-              avatar_url: participants?.profiles?.avatar_url,
-            },
-            last_message: lastMessage || undefined,
-            unread_count: unreadCount || 0,
-          };
+            if (messageError) {
+              console.error(`useConversations: [${index}] ERROR fetching last message:`, {
+                conversation_id: conv.id,
+                error: messageError
+              });
+            }
+
+            // Count unread messages
+            console.log(`useConversations: [${index}] Counting unread messages for conversation ${conv.id}`);
+            const participant = participantData.find(p => p.conversation_id === conv.id);
+            const { count: unreadCount, error: countError } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('conversation_id', conv.id)
+              .neq('sender_id', user.id)
+              .gt('created_at', participant?.last_read_at || new Date(0).toISOString());
+
+            if (countError) {
+              console.error(`useConversations: [${index}] ERROR counting unread messages:`, {
+                conversation_id: conv.id,
+                error: countError
+              });
+            }
+
+            const result = {
+              id: conv.id,
+              updated_at: conv.updated_at,
+              other_user: {
+                id: participants?.profiles?.id || '',
+                full_name: participants?.profiles?.full_name || 'Unknown User',
+                avatar_url: participants?.profiles?.avatar_url,
+              },
+              last_message: lastMessage || undefined,
+              unread_count: unreadCount || 0,
+            };
+            
+            console.log(`useConversations: [${index}] Successfully processed conversation ${conv.id}`);
+            return result;
+          } catch (convError: any) {
+            console.error(`useConversations: [${index}] CRITICAL ERROR processing conversation ${conv.id}:`, {
+              error: convError,
+              message: convError?.message,
+              details: convError?.details,
+              hint: convError?.hint,
+              code: convError?.code,
+              stack: convError?.stack
+            });
+            // Re-throw to stop processing and show error to user
+            throw convError;
+          }
         })
       );
 
