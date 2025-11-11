@@ -302,7 +302,7 @@ const Inbox = () => {
                       <div className="relative">
                         <Avatar className="w-12 h-12">
                           <AvatarImage src={conversation.other_user.avatar_url} alt={conversation.other_user.full_name} />
-                          <AvatarFallback>{conversation.other_user.full_name[0]}</AvatarFallback>
+                          <AvatarFallback>{conversation.other_user.full_name?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                         </Avatar>
                       </div>
 
@@ -341,7 +341,7 @@ const Inbox = () => {
                       <div className="relative">
                         <Avatar className="w-10 h-10">
                           <AvatarImage src={selectedConversation.other_user.avatar_url} alt={selectedConversation.other_user.full_name} />
-                          <AvatarFallback>{selectedConversation.other_user.full_name[0]}</AvatarFallback>
+                          <AvatarFallback>{selectedConversation.other_user.full_name?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                         </Avatar>
                       </div>
                       <div>

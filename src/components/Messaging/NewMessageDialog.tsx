@@ -179,7 +179,7 @@ export const NewMessageDialog = ({ open, onOpenChange, onConversationSelected }:
                   <Avatar className="w-12 h-12">
                     <AvatarImage src={undefined} alt={availableUser.full_name} />
                     <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                      {availableUser.full_name[0].toUpperCase()}
+                      {availableUser.full_name?.[0]?.toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
 
