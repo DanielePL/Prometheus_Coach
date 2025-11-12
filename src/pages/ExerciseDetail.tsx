@@ -7,6 +7,7 @@ import { ProgramTile } from "@/components/Exercise/ProgramTile";
 import { RelatedWorkouts } from "@/components/Exercise/RelatedWorkouts";
 import { EditExerciseModal } from "@/components/Exercise/EditExerciseModal";
 import { VideoPlayerModal } from "@/components/Exercise/VideoPlayerModal";
+import { AssignExerciseModal } from "@/components/Exercise/AssignExerciseModal";
 import { Bookmark, Share2, Moon, Sun, Flame, Weight, Clock, Heart, Activity, TrendingUp, AlertTriangle, Target, Zap, Trash2, Edit, ArrowLeft } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useParams, useNavigate } from "react-router-dom";
@@ -16,6 +17,7 @@ import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDeleteExercise } from "@/hooks/useDeleteExercise";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAssignExercise } from "@/hooks/useAssignExercise";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -40,9 +42,11 @@ const ExerciseDetail = () => {
   const { user } = useAuth();
   const { role, isCoach } = useUserRole();
   const { deleteExercise, isDeleting } = useDeleteExercise();
+  const { assignExercise } = useAssignExercise();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
   const { data: exercise, isLoading, refetch } = useQuery({
     queryKey: ["exercise", id],
@@ -93,6 +97,18 @@ const ExerciseDetail = () => {
   };
 
   const canEdit = user && exercise && ((isCoach && exercise.created_by === user.id) || role === "admin");
+  const canShare = user && exercise && canEdit; // Same permissions as edit
+
+  const handleAssign = async (clientIds: string[]) => {
+    if (!exercise || !user) return;
+    
+    await assignExercise({
+      exerciseId: exercise.id,
+      exerciseTitle: exercise.title,
+      clientIds,
+      coachId: user.id,
+    });
+  };
 
   const handleDelete = async () => {
     if (!exercise) return;
@@ -166,9 +182,15 @@ const ExerciseDetail = () => {
                       className={isFavorite(exercise.id) ? "fill-primary text-primary" : "text-foreground"} 
                     />
                   </button>
-                  <button className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth">
-                    <Share2 size={18} className="text-foreground" />
-                  </button>
+                  {canShare && (
+                    <button 
+                      onClick={() => setShowAssignModal(true)}
+                      className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-smooth"
+                      title="Assign to clients"
+                    >
+                      <Share2 size={18} />
+                    </button>
+                  )}
                   {canEdit && (
                     <>
                       <button
@@ -335,9 +357,15 @@ const ExerciseDetail = () => {
                     className={isFavorite(exercise.id) ? "fill-primary text-primary" : "text-foreground"} 
                   />
                 </button>
-                <button className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-background/60 transition-smooth">
-                  <Share2 size={18} className="text-foreground" />
-                </button>
+                {canShare && (
+                  <button 
+                    onClick={() => setShowAssignModal(true)}
+                    className="glass rounded-2xl p-2 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-smooth"
+                    title="Assign to clients"
+                  >
+                    <Share2 size={18} />
+                  </button>
+                )}
                 {canEdit && (
                   <>
                     <button
@@ -515,12 +543,22 @@ const ExerciseDetail = () => {
 
       {/* Video Player Modal */}
       {exercise && (
-        <VideoPlayerModal
-          isOpen={showVideoPlayer}
-          onClose={() => setShowVideoPlayer(false)}
-          videoUrl={exercise.cloudfront_url}
-          title={exercise.title}
-        />
+        <>
+          <VideoPlayerModal
+            isOpen={showVideoPlayer}
+            onClose={() => setShowVideoPlayer(false)}
+            videoUrl={exercise.cloudfront_url}
+            title={exercise.title}
+          />
+          
+          <AssignExerciseModal
+            open={showAssignModal}
+            onOpenChange={setShowAssignModal}
+            exerciseId={exercise.id}
+            exerciseTitle={exercise.title}
+            onAssign={handleAssign}
+          />
+        </>
       )}
     </div>
   );
