@@ -72,10 +72,10 @@ export const AssignExerciseModal = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] glass border-border">
+      <DialogContent className="sm:max-w-[500px] bg-background border-border">
         <DialogHeader>
-          <DialogTitle className="text-xl">Assign Exercise to Clients</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-xl text-foreground">Assign Exercise to Clients</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Assign "{exerciseTitle}" to one or more of your clients
           </DialogDescription>
         </DialogHeader>
@@ -88,7 +88,7 @@ export const AssignExerciseModal = ({
               placeholder="Search clients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 bg-background border-border text-foreground"
             />
           </div>
 
@@ -102,7 +102,7 @@ export const AssignExerciseModal = ({
               />
               <label
                 htmlFor="select-all"
-                className="text-sm font-medium cursor-pointer"
+                className="text-sm font-medium cursor-pointer text-foreground"
               >
                 {selectedClients.length === filteredClients.length && filteredClients.length > 0
                   ? "Deselect All"
@@ -128,7 +128,7 @@ export const AssignExerciseModal = ({
                 {filteredClients.map((client) => (
                   <div
                     key={client.id}
-                    className="flex items-center gap-3 p-3 rounded-lg glass hover:bg-background/60 transition-smooth cursor-pointer"
+                    className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border hover:bg-accent transition-smooth cursor-pointer"
                     onClick={() => handleToggleClient(client.id)}
                   >
                     <Checkbox
@@ -141,7 +141,7 @@ export const AssignExerciseModal = ({
                       userId={client.id}
                       className="w-8 h-8"
                     />
-                    <span className="text-sm font-medium">{client.full_name}</span>
+                    <span className="text-sm font-medium text-foreground">{client.full_name}</span>
                   </div>
                 ))}
               </div>
