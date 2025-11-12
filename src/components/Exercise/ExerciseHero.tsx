@@ -13,11 +13,11 @@ export const ExerciseHero = ({ image, alt, title, onPlayClick }: ExerciseHeroPro
                   image?.includes('cloudfront');
 
   return (
-    <div className="relative w-full aspect-video lg:aspect-[16/10] rounded-3xl overflow-hidden group">
+    <div className="relative w-full aspect-video lg:aspect-[16/10] rounded-3xl overflow-hidden">
       {isVideo ? (
         <video
           src={image}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-cover"
           autoPlay
           muted
           loop
@@ -30,7 +30,7 @@ export const ExerciseHero = ({ image, alt, title, onPlayClick }: ExerciseHeroPro
         <img 
           src={image} 
           alt={alt}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-cover"
         />
       )}
       <div className="absolute inset-x-0 bottom-0 h-32 z-10 backdrop-blur-sm bg-gradient-to-t from-background/20 to-transparent" />
