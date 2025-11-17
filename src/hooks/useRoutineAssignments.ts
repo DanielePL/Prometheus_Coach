@@ -65,6 +65,13 @@ export const useAssignRoutine = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Get routine name for notification
+      const { data: routine } = await supabase
+        .from("routines")
+        .select("name")
+        .eq("id", routineId)
+        .single();
+
       const assignments = clientIds.map((clientId) => ({
         routine_id: routineId,
         coach_id: user.id,
@@ -83,7 +90,7 @@ export const useAssignRoutine = () => {
       // Create notifications for each client
       const notifications = clientIds.map((clientId) => ({
         user_id: clientId,
-        message: "Your coach assigned you a new workout routine",
+        message: `Your coach assigned you a new workout routine${routine ? `: ${routine.name}` : ''}`,
       }));
 
       await supabase.from("notifications").insert(notifications);

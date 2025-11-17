@@ -114,6 +114,24 @@ export const useCompleteWorkoutSession = () => {
       clientNotes?: string;
       durationSeconds: number;
     }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Get session data to find the coach
+      const { data: session, error: sessionError } = await supabase
+        .from("workout_sessions")
+        .select(`
+          routine_id,
+          routines (
+            name,
+            coach_id
+          )
+        `)
+        .eq("id", sessionId)
+        .single();
+
+      if (sessionError) throw sessionError;
+
       const { data, error } = await supabase
         .from("workout_sessions")
         .update({
@@ -127,6 +145,15 @@ export const useCompleteWorkoutSession = () => {
         .single();
 
       if (error) throw error;
+
+      // Create notification for coach
+      if (session.routines?.coach_id) {
+        await supabase.from("notifications").insert({
+          user_id: session.routines.coach_id,
+          message: `Your client completed a workout: ${session.routines.name}`,
+        });
+      }
+
       return data;
     },
     onSuccess: () => {
