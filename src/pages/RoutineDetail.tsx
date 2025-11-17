@@ -2,16 +2,30 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useRoutine } from "@/hooks/useRoutines";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Edit, Users, Loader2 } from "lucide-react";
+import { ArrowLeft, Edit, Users, Loader2, Moon, Sun } from "lucide-react";
+import { Sidebar } from "@/components/Navigation/Sidebar";
+import { BottomNav } from "@/components/Navigation/BottomNav";
+import { useTheme } from "next-themes";
+import gradientBg from "@/assets/gradient-bg.jpg";
+import gradientBgDark from "@/assets/gradient-bg-dark.png";
 
 export default function RoutineDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const { data: routine, isLoading } = useRoutine(id);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div 
+        className="min-h-screen flex w-full items-center justify-center"
+        style={{
+          backgroundImage: `url(${theme === "dark" ? gradientBgDark : gradientBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+        }}
+      >
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -19,18 +33,55 @@ export default function RoutineDetail() {
 
   if (!routine) {
     return (
-      <div className="container mx-auto p-6">
-        <p className="text-center text-muted-foreground">Routine not found</p>
+      <div 
+        className="min-h-screen flex w-full items-center justify-center"
+        style={{
+          backgroundImage: `url(${theme === "dark" ? gradientBgDark : gradientBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <Sidebar />
+        <BottomNav />
+        <div className="container mx-auto p-6">
+          <p className="text-center text-muted-foreground">Routine not found</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <Button variant="ghost" onClick={() => navigate("/routines")} className="mb-6">
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Routines
-      </Button>
+    <div 
+      className="min-h-screen flex w-full"
+      style={{
+        backgroundImage: `url(${theme === "dark" ? gradientBgDark : gradientBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <Sidebar />
+      <BottomNav />
+      
+      <main className="flex-1 lg:ml-20 pb-20 lg:pb-0">
+        <div className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 max-w-4xl">
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="fixed top-4 right-4 glass w-10 h-10 rounded-xl flex items-center justify-center transition-smooth hover:bg-primary hover:text-primary-foreground z-50"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+          </button>
+
+          <Button variant="ghost" onClick={() => navigate("/routines")} className="mb-6">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Routines
+          </Button>
 
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -93,6 +144,8 @@ export default function RoutineDetail() {
           </Card>
         )}
       </div>
+        </div>
+      </main>
     </div>
   );
 }
