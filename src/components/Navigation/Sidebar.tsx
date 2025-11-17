@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Compass, Bookmark, Calendar, Users, Mail, Settings, LogOut, Upload, Dumbbell, TrendingUp, Loader2 } from "lucide-react";
+import { LayoutDashboard, Compass, Bookmark, Calendar, Users, Mail, Settings, LogOut, Upload, Dumbbell, TrendingUp, Loader2, ListOrdered } from "lucide-react";
 import { useTheme } from "next-themes";
 import logoFull from "@/assets/logo-full.png";
 import logo from "@/assets/logo.png";
@@ -33,6 +33,7 @@ const baseNavItems: NavItem[] = [
   { icon: Compass, label: "Explore", path: "/explore" },
   { icon: Bookmark, label: "Saved", path: "/saved" },
   { icon: Upload, label: "Uploads", path: "/uploads", roleRequired: ["coach", "admin"] },
+  { icon: ListOrdered, label: "Routines", path: "/routines", roleRequired: ["coach", "admin"] },
   { icon: Dumbbell, label: "My Workouts", path: "/my-workouts", roleRequired: ["client"] },
   { icon: TrendingUp, label: "My Progress", path: "/my-progress", roleRequired: ["client"] },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
