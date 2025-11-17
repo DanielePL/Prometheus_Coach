@@ -41,14 +41,31 @@ export const useRoutine = (routineId: string | undefined) => {
         .select(`
           *,
           routine_exercises (
-            *,
-            exercises (*)
+            id,
+            exercise_id,
+            order_index,
+            sets,
+            reps_min,
+            reps_max,
+            rest_seconds,
+            notes,
+            exercises (
+              id,
+              title,
+              thumbnail_url
+            )
           )
         `)
         .eq("id", routineId)
+        .order("order_index", { ascending: true, foreignTable: "routine_exercises" })
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching routine:", error);
+        throw error;
+      }
+      
+      console.log("Routine data loaded:", data);
       return data;
     },
     enabled: !!routineId,

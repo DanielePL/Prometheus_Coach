@@ -31,7 +31,8 @@ export default function RoutineDetail() {
     );
   }
 
-  if (!routine) {
+  if (!routine && !isLoading) {
+    console.error("Routine not found for ID:", id);
     return (
       <div 
         className="min-h-screen flex w-full items-center justify-center"
@@ -42,10 +43,12 @@ export default function RoutineDetail() {
           backgroundAttachment: "fixed",
         }}
       >
-        <Sidebar />
-        <BottomNav />
-        <div className="container mx-auto p-6">
-          <p className="text-center text-muted-foreground">Routine not found</p>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-foreground mb-2">Routine not found</h2>
+          <p className="text-muted-foreground mb-4">The routine you're looking for doesn't exist or you don't have permission to view it.</p>
+          <Button onClick={() => navigate("/routines")} variant="outline" className="mt-4">
+            Back to Routines
+          </Button>
         </div>
       </div>
     );

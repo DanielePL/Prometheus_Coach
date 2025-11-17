@@ -179,26 +179,31 @@ export default function CreateEditRoutine() {
   );
 
   useEffect(() => {
-    if (routine) {
-      setName(routine.name);
+    if (routine && isEditing) {
+      console.log("Populating edit form with routine:", routine);
+      setName(routine.name || "");
       setDescription(routine.description || "");
-      if (routine.routine_exercises) {
-        setExercises(
-          routine.routine_exercises.map((re: any) => ({
+      
+      if (routine.routine_exercises && Array.isArray(routine.routine_exercises)) {
+        const exercisesList = routine.routine_exercises
+          .sort((a: any, b: any) => a.order_index - b.order_index)
+          .map((re: any) => ({
             routine_id: routine.id,
             exercise_id: re.exercise_id,
             order_index: re.order_index,
-            sets: re.sets,
-            reps_min: re.reps_min,
-            reps_max: re.reps_max,
-            rest_seconds: re.rest_seconds,
-            notes: re.notes,
+            sets: re.sets || 3,
+            reps_min: re.reps_min || null,
+            reps_max: re.reps_max || null,
+            rest_seconds: re.rest_seconds || 90,
+            notes: re.notes || null,
             exercise: re.exercises,
-          }))
-        );
+          }));
+        
+        console.log("Setting exercises:", exercisesList);
+        setExercises(exercisesList);
       }
     }
-  }, [routine]);
+  }, [routine, isEditing]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
