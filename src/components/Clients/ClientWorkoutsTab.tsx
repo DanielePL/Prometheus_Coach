@@ -1,8 +1,8 @@
-import { Plus, Dumbbell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useWorkoutSessions } from "@/hooks/useWorkoutSessions";
+import { format } from "date-fns";
+import { Clock, Dumbbell, TrendingUp, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useClientWorkouts } from "@/hooks/useClientWorkouts";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface ClientWorkoutsTabProps {
   clientId: string;
@@ -15,75 +15,98 @@ const statusColors = {
 };
 
 export const ClientWorkoutsTab = ({ clientId }: ClientWorkoutsTabProps) => {
-  const { data: workouts, isLoading } = useClientWorkouts(clientId);
+  const navigate = useNavigate();
+  const { data: sessions, isLoading } = useWorkoutSessions();
+
+  const clientSessions = sessions?.filter(
+    (session: any) => session.client_id === clientId && session.status === "completed"
+  ) || [];
+
+  const totalWorkouts = clientSessions.length;
+  const totalDuration = clientSessions.reduce((sum: number, s: any) => sum + (s.duration_seconds || 0), 0);
+  const avgDuration = totalWorkouts > 0 ? Math.floor(totalDuration / totalWorkouts / 60) : 0;
+  const totalVolume = clientSessions.reduce((sum: number, session: any) => {
+    const setLogs = session.set_logs || [];
+    return sum + setLogs.reduce((s: number, log: any) => {
+      if (log.completed && log.weight_used && log.reps_completed) {
+        return s + (log.weight_used * log.reps_completed);
+      }
+      return s;
+    }, 0);
+  }, 0);
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-32" />
-        ))}
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (clientSessions.length === 0) {
+    return (
+      <div className="glass rounded-2xl p-8 text-center">
+        <Dumbbell className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+        <p className="text-muted-foreground">No completed workouts yet.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Assigned Workouts</h2>
-        <Button className="bg-primary hover:bg-primary/90">
-          <Plus className="w-4 h-4 mr-2" />
-          Assign New Workout
-        </Button>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="glass rounded-xl p-4 text-center">
+          <Dumbbell className="w-6 h-6 mx-auto mb-2 text-primary" />
+          <p className="text-2xl font-bold">{totalWorkouts}</p>
+          <p className="text-sm text-muted-foreground">Workouts</p>
+        </div>
+        <div className="glass rounded-xl p-4 text-center">
+          <Clock className="w-6 h-6 mx-auto mb-2 text-primary" />
+          <p className="text-2xl font-bold">{avgDuration}</p>
+          <p className="text-sm text-muted-foreground">Avg Minutes</p>
+        </div>
+        <div className="glass rounded-xl p-4 text-center">
+          <TrendingUp className="w-6 h-6 mx-auto mb-2 text-primary" />
+          <p className="text-2xl font-bold">{(totalVolume / 1000).toFixed(1)}k</p>
+          <p className="text-sm text-muted-foreground">Total Volume</p>
+        </div>
       </div>
 
-      {workouts && workouts.length > 0 ? (
-        <div className="space-y-4">
-          {workouts.map((workout) => (
-            <div key={workout.id} className="glass rounded-2xl p-6 transition-smooth hover:shadow-[0_0_50px_rgba(var(--primary-rgb),0.5)]">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                    <Dumbbell className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold mb-1">{workout.title}</h3>
-                    {workout.description && (
-                      <p className="text-sm text-muted-foreground">{workout.description}</p>
-                    )}
-                  </div>
-                </div>
-                <Badge className={statusColors[workout.status as keyof typeof statusColors]}>
-                  {workout.status.replace("_", " ")}
-                </Badge>
-              </div>
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Workout History</h3>
+        <div className="space-y-3">
+          {clientSessions.map((session: any) => {
+            const setLogs = session.set_logs || [];
+            const sessionVolume = setLogs.reduce((sum: number, log: any) => {
+              if (log.completed && log.weight_used && log.reps_completed) {
+                return sum + (log.weight_used * log.reps_completed);
+              }
+              return sum;
+            }, 0);
+            const routineExercises = session.routines?.routine_exercises || [];
+            const completedExercises = new Set(setLogs.map((log: any) => log.exercise_id)).size;
+            const completionRate = routineExercises.length > 0 ? Math.round((completedExercises / routineExercises.length) * 100) : 0;
 
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>
-                  Assigned: {new Date(workout.created_at).toLocaleDateString()}
-                </span>
-                {workout.exercises && Array.isArray(workout.exercises) && (
-                  <span>
-                    {workout.exercises.length} exercise{workout.exercises.length !== 1 ? "s" : ""}
-                  </span>
-                )}
+            return (
+              <div key={session.id} className="glass rounded-xl p-4 hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => navigate(`/workouts/history/${session.id}`)}>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h4 className="font-semibold">{session.routines?.name}</h4>
+                    <p className="text-sm text-muted-foreground">{format(new Date(session.completed_at || session.started_at), "PPP")}</p>
+                  </div>
+                  <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/50">{completionRate}% Complete</Badge>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{Math.floor((session.duration_seconds || 0) / 60)} min</span>
+                  <span className="flex items-center gap-1"><Dumbbell className="w-4 h-4" />{setLogs.length} sets</span>
+                  <span className="flex items-center gap-1"><TrendingUp className="w-4 h-4" />{sessionVolume.toLocaleString()} lbs</span>
+                </div>
+                {session.client_notes && <p className="text-sm text-muted-foreground mt-2 line-clamp-1">"{session.client_notes}"</p>}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-      ) : (
-        <div className="glass rounded-2xl p-12 text-center">
-          <Dumbbell className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-xl font-bold mb-2">No workouts assigned yet</h3>
-          <p className="text-muted-foreground mb-6">
-            Assign a workout to get this client started
-          </p>
-          <Button className="bg-primary hover:bg-primary/90">
-            <Plus className="w-4 h-4 mr-2" />
-            Assign First Workout
-          </Button>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

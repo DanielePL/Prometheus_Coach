@@ -100,7 +100,8 @@ export default function WorkoutSession() {
       setCurrentExerciseIndex((prev) => prev + 1);
       setRestTimer(null);
     } else {
-      setCompleteDialogOpen(true);
+      // All exercises complete - go to workout complete page
+      navigate(`/workouts/complete/${id}`);
     }
   };
 

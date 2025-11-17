@@ -28,6 +28,8 @@ import CreateEditRoutine from "./pages/CreateEditRoutine";
 import RoutineDetail from "./pages/RoutineDetail";
 import ClientWorkouts from "./pages/ClientWorkouts";
 import WorkoutSession from "./pages/WorkoutSession";
+import WorkoutComplete from "./pages/WorkoutComplete";
+import WorkoutHistoryDetail from "./pages/WorkoutHistoryDetail";
 
 function App() {
   return (
@@ -52,8 +54,12 @@ function App() {
             <Route path="/clients/:clientId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><ClientDetail /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/routines" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Routines /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/routines/create" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/routines/:id" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><RoutineDetail /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/routines/:id/edit" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/routines/:routineId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><RoutineDetail /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/routines/:routineId/edit" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><ClientWorkouts /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/workouts/session/:sessionId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><WorkoutSession /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/workouts/complete/:sessionId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><WorkoutComplete /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/workouts/history/:sessionId" element={<ProtectedRoute><WorkoutHistoryDetail /></ProtectedRoute>} />
             <Route path="/my-workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><MyWorkouts /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/my-progress" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><MyProgress /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><ClientWorkouts /></RoleBasedRoute></ProtectedRoute>} />
