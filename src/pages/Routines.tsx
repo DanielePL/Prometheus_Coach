@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AssignRoutineModal } from "@/components/Routines/AssignRoutineModal";
 
 export default function Routines() {
   const navigate = useNavigate();
@@ -24,6 +25,8 @@ export default function Routines() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState<string | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [routineToAssign, setRoutineToAssign] = useState<{ id: string; name: string } | null>(null);
 
   const filteredRoutines = routines?.filter((routine) =>
     routine.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -119,7 +122,10 @@ export default function Routines() {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => {/* TODO: Open assign modal */}}
+                    onClick={() => {
+                      setRoutineToAssign({ id: routine.id, name: routine.name });
+                      setAssignModalOpen(true);
+                    }}
                   >
                     <Users className="w-4 h-4 mr-1" />
                     Assign
@@ -166,6 +172,16 @@ export default function Routines() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Assign Routine Modal */}
+      {routineToAssign && (
+        <AssignRoutineModal
+          open={assignModalOpen}
+          onOpenChange={setAssignModalOpen}
+          routineId={routineToAssign.id}
+          routineName={routineToAssign.name}
+        />
+      )}
     </div>
   );
 }
