@@ -10,10 +10,10 @@ import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 
 export default function RoutineDetail() {
-  const { id } = useParams();
+  const { routineId } = useParams();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { data: routine, isLoading } = useRoutine(id);
+  const { data: routine, isLoading } = useRoutine(routineId);
 
   if (isLoading) {
     return (
@@ -32,7 +32,7 @@ export default function RoutineDetail() {
   }
 
   if (!routine && !isLoading) {
-    console.error("Routine not found for ID:", id);
+    console.error("Routine not found for ID:", routineId);
     return (
       <div 
         className="min-h-screen flex w-full items-center justify-center"
@@ -94,7 +94,7 @@ export default function RoutineDetail() {
           )}
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate(`/routines/${id}/edit`)}>
+          <Button onClick={() => navigate(`/routines/${routineId}/edit`)}>
             <Edit className="w-4 h-4 mr-2" />
             Edit
           </Button>

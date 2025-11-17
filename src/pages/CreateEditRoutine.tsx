@@ -154,12 +154,12 @@ function SortableExerciseCard({ exercise, onUpdate, onRemove, index }: {
 }
 
 export default function CreateEditRoutine() {
-  const { id } = useParams();
+  const { routineId } = useParams();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const isEditing = !!id;
+  const isEditing = !!routineId;
 
-  const { data: routine, isLoading: routineLoading } = useRoutine(id);
+  const { data: routine, isLoading: routineLoading } = useRoutine(routineId);
   const createRoutine = useCreateRoutine();
   const updateRoutine = useUpdateRoutine();
   const saveExercises = useSaveRoutineExercises();
@@ -224,7 +224,7 @@ export default function CreateEditRoutine() {
     setExercises((prev) => [
       ...prev,
       {
-        routine_id: id || "",
+        routine_id: routineId || "",
         exercise_id: exerciseId,
         order_index: prev.length,
         sets: 3,
@@ -260,7 +260,7 @@ export default function CreateEditRoutine() {
     console.log("Number of exercises:", exercises.length);
     console.log("Exercises to save:", JSON.stringify(exercises, null, 2));
     console.log("Is editing:", isEditing);
-    console.log("Routine ID (if editing):", id);
+    console.log("Routine ID (if editing):", routineId);
 
     if (!name.trim()) {
       console.error("❌ Validation failed: Name is empty");
@@ -270,31 +270,31 @@ export default function CreateEditRoutine() {
 
     setIsSaving(true);
     try {
-      let routineId = id;
+      let finalRoutineId = routineId;
 
       if (isEditing) {
         console.log("Updating existing routine...");
-        await updateRoutine.mutateAsync({ id: id!, name, description });
+        await updateRoutine.mutateAsync({ id: routineId!, name, description });
         console.log("✅ Routine updated");
       } else {
         console.log("Creating new routine...");
         const newRoutine = await createRoutine.mutateAsync({ name, description });
-        routineId = newRoutine.id;
-        console.log("✅ New routine created with ID:", routineId);
+        finalRoutineId = newRoutine.id;
+        console.log("✅ New routine created with ID:", finalRoutineId);
       }
 
-      if (routineId) {
+      if (finalRoutineId) {
         const exercisesToSave = exercises.map((ex, index) => ({
           ...ex,
-          routine_id: routineId!,
+          routine_id: finalRoutineId!,
           order_index: index,
         }));
 
-        console.log("Saving exercises for routine:", routineId);
+        console.log("Saving exercises for routine:", finalRoutineId);
         console.log("Exercises payload:", JSON.stringify(exercisesToSave, null, 2));
 
         await saveExercises.mutateAsync({
-          routineId,
+          routineId: finalRoutineId,
           exercises: exercisesToSave,
         });
         console.log("✅ Exercises saved successfully");
