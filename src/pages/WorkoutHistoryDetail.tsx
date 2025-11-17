@@ -1,6 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useWorkoutSession } from "@/hooks/useWorkoutSessions";
+import { useClientPersonalRecords } from "@/hooks/usePersonalRecords";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, Clock, Dumbbell, Trophy } from "lucide-react";
 import { useTheme } from "next-themes";
 import { format } from "date-fns";
@@ -13,7 +16,9 @@ export default function WorkoutHistoryDetail() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const { data: session, isLoading } = useWorkoutSession(sessionId);
+  const { data: personalRecords } = useClientPersonalRecords(session?.client_id || "");
 
   if (isLoading || !session) {
     return (
@@ -34,7 +39,7 @@ export default function WorkoutHistoryDetail() {
   const routineExercises = session.routines?.routine_exercises || [];
   const setLogs = session.set_logs || [];
 
-  // Group set logs by exercise
+  // Group set logs by exercise and check for PRs
   const exerciseGroups = routineExercises.map((re: any) => {
     const logs = setLogs.filter((log: any) => log.exercise_id === re.exercise_id);
     const exerciseVolume = logs.reduce((sum: number, log: any) => {
@@ -44,10 +49,17 @@ export default function WorkoutHistoryDetail() {
       return sum;
     }, 0);
 
+    // Check if this session contains a PR for this exercise
+    const exercisePR = personalRecords?.find(
+      (pr) => pr.exercise_id === re.exercise_id && pr.session_id === sessionId
+    );
+
     return {
       exercise: re.exercises,
       logs,
       volume: exerciseVolume,
+      isPR: !!exercisePR,
+      prDetails: exercisePR,
     };
   });
 
@@ -126,11 +138,24 @@ export default function WorkoutHistoryDetail() {
                     />
                   )}
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-1">
-                      {group.exercise.title}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-xl font-semibold">
+                        {group.exercise.title}
+                      </h3>
+                      {group.isPR && (
+                        <Badge className="bg-gradient-to-r from-primary to-primary/80 text-white">
+                          <Trophy className="w-3 h-3 mr-1" />
+                          PR
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       Volume: {group.volume.toLocaleString()} lbs
+                      {group.isPR && group.prDetails && (
+                        <span className="ml-2 text-primary font-semibold">
+                          • Best: {group.prDetails.weight_used} lbs × {group.prDetails.reps_completed} reps
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>

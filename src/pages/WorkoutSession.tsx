@@ -3,12 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useWorkoutSession, useCompleteWorkoutSession } from "@/hooks/useWorkoutSessions";
 import { useSaveSetLog } from "@/hooks/useSetLogs";
 import { usePreviousPerformance } from "@/hooks/usePreviousPerformance";
+import { usePersonalRecord, useSavePersonalRecord, checkIsPR } from "@/hooks/usePersonalRecords";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -19,14 +22,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, X, Loader2, Timer, Plus, Minus } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Loader2, Timer, Plus, Minus, Trophy } from "lucide-react";
+import confetti from "canvas-confetti";
+import { toast } from "sonner";
 
 export default function WorkoutSession() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: session, isLoading } = useWorkoutSession(id);
   const completeWorkout = useCompleteWorkoutSession();
   const saveSetLog = useSaveSetLog();
+  const savePersonalRecord = useSavePersonalRecord();
 
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [setData, setSetData] = useState<Record<string, { weight: string; reps: string; completed: boolean }>>({});
@@ -35,6 +42,7 @@ export default function WorkoutSession() {
   const [endDialogOpen, setEndDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [clientNotes, setClientNotes] = useState("");
+  const [prAchieved, setPrAchieved] = useState<{ exerciseName: string; weight: number; reps: number } | null>(null);
 
   const exercises = session?.routines?.routine_exercises || [];
   const currentExercise = exercises[currentExerciseIndex];
@@ -44,6 +52,12 @@ export default function WorkoutSession() {
   const { data: previousPerformance } = usePreviousPerformance(
     currentExercise?.exercise_id || "",
     id || ""
+  );
+
+  // Fetch current PR for current exercise
+  const { data: currentPR } = usePersonalRecord(
+    user?.id || "",
+    currentExercise?.exercise_id || ""
   );
 
   // Audio for rest timer completion
@@ -98,6 +112,48 @@ export default function WorkoutSession() {
     const newCompleted = !current.completed;
 
     setSetData((prev) => ({ ...prev, [key]: { ...current, completed: newCompleted } }));
+
+    const weight = parseFloat(current.weight) || 0;
+    const reps = parseInt(current.reps) || 0;
+
+    // Check for PR when completing a set
+    if (newCompleted && weight > 0 && reps > 0) {
+      const isPR = checkIsPR(currentPR, weight, reps);
+      
+      if (isPR) {
+        // Save PR to database
+        await savePersonalRecord.mutateAsync({
+          client_id: user!.id,
+          exercise_id: currentExercise.exercise_id,
+          weight_used: weight,
+          reps_completed: reps,
+          session_id: id!,
+        });
+
+        // Trigger celebration
+        setPrAchieved({
+          exerciseName: currentExercise.exercises.title,
+          weight,
+          reps,
+        });
+
+        // Confetti animation
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ["#FF6B35", "#FF8F6B", "#FFB088"],
+        });
+
+        // Toast notification
+        toast.success(`🏆 New Personal Record!`, {
+          description: `${weight} lbs × ${reps} reps on ${currentExercise.exercises.title}`,
+        });
+
+        // Auto-dismiss PR badge after 5 seconds
+        setTimeout(() => setPrAchieved(null), 5000);
+      }
+    }
 
     // Save to database
     await saveSetLog.mutateAsync({
@@ -245,11 +301,24 @@ export default function WorkoutSession() {
               />
             )}
             <div className="flex-1">
-              <h2 className="text-2xl font-semibold text-foreground mb-2">
-                {currentExercise.exercises?.title}
-              </h2>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-2xl font-semibold text-foreground">
+                  {currentExercise.exercises?.title}
+                </h2>
+                {prAchieved && prAchieved.exerciseName === currentExercise.exercises.title && (
+                  <Badge className="bg-gradient-to-r from-primary to-primary/80 text-white animate-pulse">
+                    <Trophy className="w-4 h-4 mr-1" />
+                    New PR!
+                  </Badge>
+                )}
+              </div>
               <div className="text-muted-foreground text-sm space-y-1">
                 <p>Target: {currentExercise.sets} sets × {currentExercise.reps_min}-{currentExercise.reps_max} reps</p>
+                {currentPR && (
+                  <p className="text-primary font-semibold">
+                    Current PR: {currentPR.weight_used} lbs × {currentPR.reps_completed} reps
+                  </p>
+                )}
                 {currentExercise.notes && (
                   <p className="italic">"{currentExercise.notes}"</p>
                 )}

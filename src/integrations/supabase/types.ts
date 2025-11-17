@@ -622,6 +622,54 @@ export type Database = {
           },
         ]
       }
+      personal_records: {
+        Row: {
+          achieved_at: string
+          client_id: string
+          created_at: string | null
+          exercise_id: string
+          id: string
+          reps_completed: number
+          session_id: string | null
+          weight_used: number
+        }
+        Insert: {
+          achieved_at?: string
+          client_id: string
+          created_at?: string | null
+          exercise_id: string
+          id?: string
+          reps_completed: number
+          session_id?: string | null
+          weight_used: number
+        }
+        Update: {
+          achieved_at?: string
+          client_id?: string
+          created_at?: string | null
+          exercise_id?: string
+          id?: string
+          reps_completed?: number
+          session_id?: string | null
+          weight_used?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_records_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_records_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
