@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRoutine } from "@/hooks/useRoutines";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { ArrowLeft, Edit, Users, Loader2, Moon, Sun } from "lucide-react";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { useTheme } from "next-themes";
+import { AssignRoutineModal } from "@/components/Routines/AssignRoutineModal";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 
@@ -108,19 +110,15 @@ export default function RoutineDetail() {
           </Button>
         </div>
 
-        {/* Assign Routine Modal */}
-        <AssignRoutineModal
-          open={assignModalOpen}
-          onOpenChange={setAssignModalOpen}
-          routineId={routineId!}
-          routineName={routine.name}
-        />
-          <Button variant="outline">
-            <Users className="w-4 h-4 mr-2" />
-            Assign
-          </Button>
-        </div>
       </div>
+
+      {/* Assign Routine Modal */}
+      <AssignRoutineModal
+        open={assignModalOpen}
+        onOpenChange={setAssignModalOpen}
+        routineId={routineId!}
+        routineName={routine.name}
+      />
 
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">Exercises</h2>
