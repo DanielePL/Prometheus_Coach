@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useWorkoutSession, useCompleteWorkoutSession } from "@/hooks/useWorkoutSessions";
 import { useSaveSetLog } from "@/hooks/useSetLogs";
+import { usePreviousPerformance } from "@/hooks/usePreviousPerformance";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, X, Loader2, Timer } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Loader2, Timer, Plus, Minus } from "lucide-react";
 
 export default function WorkoutSession() {
   const { id } = useParams();
@@ -39,6 +40,15 @@ export default function WorkoutSession() {
   const currentExercise = exercises[currentExerciseIndex];
   const totalExercises = exercises.length;
 
+  // Fetch previous performance for current exercise
+  const { data: previousPerformance } = usePreviousPerformance(
+    currentExercise?.exercise_id || "",
+    id || ""
+  );
+
+  // Audio for rest timer completion
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   // Elapsed timer
   useEffect(() => {
     if (!session) return;
@@ -48,12 +58,22 @@ export default function WorkoutSession() {
     return () => clearInterval(interval);
   }, [session]);
 
-  // Rest timer countdown
+  // Rest timer countdown with alerts
   useEffect(() => {
-    if (restTimer === null || restTimer <= 0) {
+    if (restTimer === null) return;
+    
+    if (restTimer <= 0) {
+      // Rest complete - play sound and vibrate
+      if (audioRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
       setRestTimer(null);
       return;
     }
+    
     const interval = setInterval(() => {
       setRestTimer((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
     }, 1000);
@@ -112,6 +132,14 @@ export default function WorkoutSession() {
     }
   };
 
+  const skipRestTimer = () => {
+    setRestTimer(null);
+  };
+
+  const addRestTime = (seconds: number) => {
+    setRestTimer((prev) => (prev || 0) + seconds);
+  };
+
   const handleCompleteWorkout = async () => {
     await completeWorkout.mutateAsync({
       sessionId: id!,
@@ -164,16 +192,45 @@ export default function WorkoutSession() {
         <Progress value={progress} className="h-2" />
       </div>
 
-      {/* Rest Timer */}
+      {/* Rest Timer with Controls */}
       {restTimer !== null && restTimer > 0 && (
-        <Card className="p-4 mb-6 bg-primary/10 border-primary text-center">
-          <p className="text-sm text-muted-foreground mb-1">Rest Time</p>
-          <p className="text-3xl font-bold text-primary">{formatTime(restTimer)}</p>
-          <Button variant="ghost" size="sm" onClick={() => setRestTimer(null)} className="mt-2">
-            Skip Rest
-          </Button>
+        <Card className="p-6 mb-6 bg-primary/10 border-primary text-center">
+          <p className="text-sm text-muted-foreground mb-2">Rest Time</p>
+          <p className="text-4xl font-bold text-primary mb-4">{formatTime(restTimer)}</p>
+          <p className="text-xs text-muted-foreground mb-4">
+            Recommended: {formatTime(currentExercise.rest_seconds || 90)}
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addRestTime(-15)}
+              disabled={restTimer <= 15}
+            >
+              <Minus className="w-4 h-4 mr-1" />
+              15s
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={skipRestTimer}
+            >
+              Skip Rest
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addRestTime(15)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              15s
+            </Button>
+          </div>
         </Card>
       )}
+
+      {/* Hidden audio element for rest timer */}
+      <audio ref={audioRef} src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGS76+eeSBELTqXh8bVjGwU6kdvy0H4yBSR2x/DdkEAKE12z6OqoVRQLRp/g8r5uIQUsgs/y2Ik2CBdju+vnm0gRC06l4fC1YxsFOpHb8s9+MgUkdsfw3JBBChNds+jqqFUVC0af4PK+biEFLILP8tmJNggXY7zs5ptJEQtOpeHwtGMbBTuR2/LPfjIFJHbH8NyQQQoTXbPo6qhVFQtGn+DyvW4hBSyCz/LZiTUIFmK87OWbSRELTqXh8LRjGwU7kdvyz34yBSR2x/DckEEKE12z6OqoVRULRp/g8r1uIQUsgs/y2Yk1CBZivOzlm0kRC06l4fC0YxsFO5Hb8s5+MgUkdsfv3JBBChNds+jqqFUVC0af4PK9biEFLILP8tmJNQgWYrzs5ZtJEQtOpeHwtGMbBTuR2/LOfTIFJHbH79yQQQoTXbPo6qhVFQtGn+DyvW4hBSyCz/LZiTUIFmK87OWbSRELTqXh8LRjGwU7kdvyzn0yBSR2x+/ckEEKE12z6OqoVRULRp/g8r1uIQUsgs/y2Yk1CBZivOzlm0kRC06l4fC0YxsFO5Hb8s59MgUkdsfv3JBBChNds+jqqFUVC0af4PK9biEFLILP8tmJNQgWYrzs5ZtJEQtOpeHwtGMbBTuR2/LOfTIFJHbH79yQQQoTXbPo6qhVFQtGn+DyvW4hBSyCz/LZiTUIFmK87OWbSRELTqXh8LRjGwU7kdvyzn0yBSR2x+/ckEEKE12z6OqoVRULRp/g8r1uIQUsgs/y2Yk1CBZivOzlm0kRC06l4fC0YxsFO5Hb8s59MgUkdsfv3JBBChNds+jqqFUVC0af4PK9biEFLILP8tmJNQgWYrzs5ZtJEQtOpeHwtGMbBTuR2/LOfTIFJHbH79yQQQoTXbPo6qhVFQtGn+DyvW4hBSyC" preload="auto"></audio>
 
       {/* Current Exercise */}
       <Card className="p-6 mb-6 bg-card border-border">
@@ -197,6 +254,20 @@ export default function WorkoutSession() {
                   <p className="italic">"{currentExercise.notes}"</p>
                 )}
               </div>
+              
+              {/* Previous Performance */}
+              {previousPerformance && previousPerformance.length > 0 && (
+                <div className="bg-muted/50 rounded-lg p-3 mt-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Last Performance:</p>
+                  <div className="flex gap-3 text-sm flex-wrap">
+                    {previousPerformance.map((log: any, idx: number) => (
+                      <span key={idx} className="text-foreground">
+                        Set {log.set_number}: {log.weight_used ? `${log.weight_used} lbs` : '-'} × {log.reps_completed || '-'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
