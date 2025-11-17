@@ -27,10 +27,11 @@ interface ExerciseInRoutine extends RoutineExercise {
   };
 }
 
-function SortableExerciseCard({ exercise, onUpdate, onRemove }: {
+function SortableExerciseCard({ exercise, onUpdate, onRemove, index }: {
   exercise: ExerciseInRoutine;
   onUpdate: (updates: Partial<RoutineExercise>) => void;
   onRemove: () => void;
+  index: number;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: exercise.exercise_id,
@@ -38,15 +39,34 @@ function SortableExerciseCard({ exercise, onUpdate, onRemove }: {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: transition || 'transform 200ms ease',
+    zIndex: isDragging ? 50 : 'auto',
   };
 
   return (
-    <Card ref={setNodeRef} style={style} className="p-4 bg-card border-border">
+    <Card 
+      ref={setNodeRef} 
+      style={style} 
+      className={`p-4 bg-card border-border transition-all ${
+        isDragging 
+          ? 'opacity-50 scale-105 shadow-lg ring-2 ring-primary/50' 
+          : 'hover:border-primary/30'
+      }`}
+    >
       <div className="flex gap-4">
-        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing pt-2">
-          <GripVertical className="w-5 h-5 text-muted-foreground" />
+        {/* Order Number Badge */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+            {index + 1}
+          </div>
+          <div 
+            {...attributes} 
+            {...listeners} 
+            className="cursor-grab active:cursor-grabbing hover:bg-primary/10 p-2 rounded-lg transition-colors group"
+            title="Drag to reorder"
+          >
+            <GripVertical className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+          </div>
         </div>
 
         {exercise.exercise?.thumbnail_url && (
@@ -344,7 +364,14 @@ export default function CreateEditRoutine() {
 
         <div>
           <div className="flex items-center justify-between mb-4">
-            <Label>Exercises ({exercises.length})</Label>
+            <div>
+              <Label>Exercises ({exercises.length})</Label>
+              {exercises.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Drag exercises to reorder them
+                </p>
+              )}
+            </div>
             <Button onClick={() => setPickerOpen(true)} size="sm">
               <Plus className="w-4 h-4 mr-2" />
               Add Exercise
@@ -359,6 +386,7 @@ export default function CreateEditRoutine() {
                     <SortableExerciseCard
                       key={exercise.exercise_id}
                       exercise={exercise}
+                      index={index}
                       onUpdate={(updates) => updateExercise(index, updates)}
                       onRemove={() => removeExercise(index)}
                     />
