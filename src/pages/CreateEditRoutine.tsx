@@ -16,6 +16,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 
@@ -253,7 +254,17 @@ export default function CreateEditRoutine() {
   };
 
   const handleSave = async () => {
+    console.log("=== HANDLE SAVE STARTED ===");
+    console.log("Routine name:", name);
+    console.log("Routine description:", description);
+    console.log("Number of exercises:", exercises.length);
+    console.log("Exercises to save:", JSON.stringify(exercises, null, 2));
+    console.log("Is editing:", isEditing);
+    console.log("Routine ID (if editing):", id);
+
     if (!name.trim()) {
+      console.error("❌ Validation failed: Name is empty");
+      toast.error("Routine name is required");
       return;
     }
 
@@ -262,26 +273,41 @@ export default function CreateEditRoutine() {
       let routineId = id;
 
       if (isEditing) {
+        console.log("Updating existing routine...");
         await updateRoutine.mutateAsync({ id: id!, name, description });
+        console.log("✅ Routine updated");
       } else {
+        console.log("Creating new routine...");
         const newRoutine = await createRoutine.mutateAsync({ name, description });
         routineId = newRoutine.id;
+        console.log("✅ New routine created with ID:", routineId);
       }
 
       if (routineId) {
+        const exercisesToSave = exercises.map((ex, index) => ({
+          ...ex,
+          routine_id: routineId!,
+          order_index: index,
+        }));
+
+        console.log("Saving exercises for routine:", routineId);
+        console.log("Exercises payload:", JSON.stringify(exercisesToSave, null, 2));
+
         await saveExercises.mutateAsync({
           routineId,
-          exercises: exercises.map((ex, index) => ({
-            ...ex,
-            routine_id: routineId!,
-            order_index: index,
-          })),
+          exercises: exercisesToSave,
         });
+        console.log("✅ Exercises saved successfully");
+      } else {
+        console.error("❌ No routine ID available to save exercises");
       }
 
+      console.log("=== SAVE COMPLETED SUCCESSFULLY ===");
       navigate("/routines");
     } catch (error) {
-      console.error("Failed to save routine:", error);
+      console.error("❌ Failed to save routine:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      toast.error("Failed to save routine. Check console for details.");
     } finally {
       setIsSaving(false);
     }
