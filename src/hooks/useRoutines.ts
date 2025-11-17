@@ -77,20 +77,36 @@ export const useCreateRoutine = () => {
 
   return useMutation({
     mutationFn: async (routine: { name: string; description?: string }) => {
+      console.log("=== CREATING NEW ROUTINE ===");
+      console.log("Routine data:", JSON.stringify(routine, null, 2));
+
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user) {
+        console.error("❌ User not authenticated");
+        throw new Error("Not authenticated");
+      }
+      console.log("✅ User authenticated:", user.id);
+
+      const routineToInsert = {
+        coach_id: user.id,
+        name: routine.name,
+        description: routine.description,
+      };
+      console.log("Data to insert:", JSON.stringify(routineToInsert, null, 2));
 
       const { data, error } = await supabase
         .from("routines")
-        .insert({
-          coach_id: user.id,
-          name: routine.name,
-          description: routine.description,
-        })
+        .insert(routineToInsert)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Insert error:", error);
+        throw error;
+      }
+
+      console.log("✅ Routine created successfully:", data);
+      console.log("New routine ID:", data.id);
       return data;
     },
     onSuccess: () => {

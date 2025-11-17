@@ -19,34 +19,55 @@ export const useSaveRoutineExercises = () => {
 
   return useMutation({
     mutationFn: async ({ routineId, exercises }: { routineId: string; exercises: RoutineExercise[] }) => {
+      console.log("=== SAVING ROUTINE EXERCISES ===");
+      console.log("Routine ID:", routineId);
+      console.log("Number of exercises to save:", exercises.length);
+      console.log("Exercises data:", JSON.stringify(exercises, null, 2));
+
       // First, delete existing exercises for this routine
+      console.log("Step 1: Deleting existing exercises...");
       const { error: deleteError } = await supabase
         .from("routine_exercises")
         .delete()
         .eq("routine_id", routineId);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error("❌ Delete error:", deleteError);
+        throw deleteError;
+      }
+      console.log("✅ Existing exercises deleted successfully");
 
       // Then insert the new exercises
       if (exercises.length > 0) {
+        const exercisesToInsert = exercises.map((ex, index) => ({
+          routine_id: routineId,
+          exercise_id: ex.exercise_id,
+          order_index: index,
+          sets: ex.sets,
+          reps_min: ex.reps_min,
+          reps_max: ex.reps_max,
+          rest_seconds: ex.rest_seconds,
+          notes: ex.notes,
+        }));
+
+        console.log("Step 2: Inserting new exercises...");
+        console.log("Data to insert:", JSON.stringify(exercisesToInsert, null, 2));
+
         const { data, error: insertError } = await supabase
           .from("routine_exercises")
-          .insert(
-            exercises.map((ex, index) => ({
-              routine_id: routineId,
-              exercise_id: ex.exercise_id,
-              order_index: index,
-              sets: ex.sets,
-              reps_min: ex.reps_min,
-              reps_max: ex.reps_max,
-              rest_seconds: ex.rest_seconds,
-              notes: ex.notes,
-            }))
-          )
+          .insert(exercisesToInsert)
           .select();
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error("❌ Insert error:", insertError);
+          throw insertError;
+        }
+
+        console.log("✅ Exercises inserted successfully:", data);
+        console.log("Number of exercises inserted:", data?.length);
         return data;
+      } else {
+        console.log("⚠️ No exercises to insert");
       }
     },
     onSuccess: (_, variables) => {
