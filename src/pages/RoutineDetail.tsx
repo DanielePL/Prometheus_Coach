@@ -14,6 +14,7 @@ export default function RoutineDetail() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { data: routine, isLoading } = useRoutine(routineId);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -94,10 +95,26 @@ export default function RoutineDetail() {
           )}
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setAssignModalOpen(true)}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Assign to Clients
+          </Button>
           <Button onClick={() => navigate(`/routines/${routineId}/edit`)}>
             <Edit className="w-4 h-4 mr-2" />
             Edit
           </Button>
+        </div>
+
+        {/* Assign Routine Modal */}
+        <AssignRoutineModal
+          open={assignModalOpen}
+          onOpenChange={setAssignModalOpen}
+          routineId={routineId!}
+          routineName={routine.name}
+        />
           <Button variant="outline">
             <Users className="w-4 h-4 mr-2" />
             Assign
