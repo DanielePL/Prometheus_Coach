@@ -175,8 +175,10 @@ const Uploads = () => {
                     onToggleFavorite={toggleFavorite}
                     showDelete={true}
                     showEdit={true}
+                    showShare={true}
                     onDeleteSuccess={refetch}
                     onEditSuccess={refetch}
+                    onAssignSuccess={refetch}
                   />
                 ))}
               </div>
