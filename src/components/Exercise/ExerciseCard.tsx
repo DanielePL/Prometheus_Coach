@@ -25,6 +25,7 @@ interface ExerciseCardProps {
   showDelete?: boolean;
   showEdit?: boolean;
   showShare?: boolean;
+  isUploadsPage?: boolean;
   onDeleteSuccess?: () => void;
   onEditSuccess?: () => void;
   onAssignSuccess?: () => void;
@@ -37,6 +38,7 @@ export const ExerciseCard = ({
   showDelete = false,
   showEdit = false,
   showShare = false,
+  isUploadsPage = false,
   onDeleteSuccess,
   onEditSuccess,
   onAssignSuccess,
@@ -97,7 +99,7 @@ export const ExerciseCard = ({
           <img
             src={exercise.thumbnail_url}
             alt={exercise.title}
-            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:grayscale"
+            className="w-full h-full object-cover transition-all duration-300 group-hover:scale-110 group-hover:grayscale"
             onError={(e) => {
               console.error(`[ExerciseCard] Thumbnail failed to load for ${exercise.title}:`, exercise.thumbnail_url)
               // Fallback to video if thumbnail fails - add #t=0.1 for Safari
@@ -118,7 +120,7 @@ export const ExerciseCard = ({
           <video
             src={`${exercise.cloudfront_url}#t=0.1`}
             poster={exercise.thumbnail_url?.startsWith('data:') ? exercise.thumbnail_url : undefined}
-            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:grayscale"
+            className="w-full h-full object-cover transition-all duration-300 group-hover:scale-110 group-hover:grayscale"
             muted
             playsInline
             preload="metadata"
@@ -128,70 +130,102 @@ export const ExerciseCard = ({
             }}
           />
         )}
-        <div className="absolute top-3 left-3">
-          <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
-            {exercise.category}
-          </span>
-        </div>
-        <div className="absolute top-3 right-3 flex gap-2 z-10">
-          {canEdit && (
+        
+        {/* Icon overlays - conditional based on page */}
+        {isUploadsPage ? (
+          // Uploads page: Show Edit + Delete (top left) and Share + Heart (top right)
+          <>
+            <div className="absolute top-3 left-3 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {canEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowEditModal(true);
+                  }}
+                  className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-primary hover:text-primary-foreground"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDeleteDialog(true);
+                  }}
+                  disabled={isDeleting}
+                  className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="absolute top-3 right-3 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {showShare && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAssignModal(true);
+                  }}
+                  className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-primary hover:text-primary-foreground"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFavorite(exercise.id);
+                }}
+                className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110"
+              >
+                <Heart
+                  className={`w-4 h-4 ${
+                    isFavorite
+                      ? "fill-primary text-primary"
+                      : "text-foreground"
+                  }`}
+                />
+              </button>
+            </div>
+          </>
+        ) : (
+          // Other pages: Show only Share + Heart (top right)
+          <div className="absolute top-3 right-3 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            {showShare && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAssignModal(true);
+                }}
+                className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-primary hover:text-primary-foreground"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowEditModal(true);
+                onToggleFavorite(exercise.id);
               }}
-              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-primary hover:text-primary-foreground"
+              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110"
             >
-              <Edit className="w-4 h-4" />
+              <Heart
+                className={`w-4 h-4 ${
+                  isFavorite
+                    ? "fill-primary text-primary"
+                    : "text-foreground"
+                }`}
+              />
             </button>
-          )}
-          {showShare && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAssignModal(true);
-              }}
-              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-primary hover:text-primary-foreground"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-          )}
-          {canDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDeleteDialog(true);
-              }}
-              disabled={isDeleting}
-              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFavorite(exercise.id);
-            }}
-            className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110"
-          >
-            <Heart
-              className={`w-4 h-4 ${
-                isFavorite
-                  ? "fill-primary text-primary"
-                  : "text-foreground"
-              }`}
-            />
-          </button>
-        </div>
+          </div>
+        )}
       </div>
       <div className="p-4 px-5" onClick={handleCardClick}>
-        <h3 className="font-bold text-lg">{exercise.title}</h3>
-        {exercise.duration && (
-          <p className="text-sm text-muted-foreground mt-1">
-            {Math.floor(exercise.duration / 60)}:{(exercise.duration % 60).toString().padStart(2, '0')}
-          </p>
-        )}
+        <h3 className="font-bold text-lg mb-2">{exercise.title}</h3>
+        <span className="inline-block bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold capitalize">
+          {exercise.category}
+        </span>
       </div>
 
       <EditExerciseModal
