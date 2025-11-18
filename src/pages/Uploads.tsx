@@ -176,6 +176,7 @@ const Uploads = () => {
                     showDelete={true}
                     showEdit={true}
                     showShare={true}
+                    isUploadsPage={true}
                     onDeleteSuccess={refetch}
                     onEditSuccess={refetch}
                     onAssignSuccess={refetch}
