@@ -7,9 +7,11 @@ import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { ExerciseCard } from "@/components/Exercise/ExerciseCard";
 import { Exercise } from "@/hooks/useExercises";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Saved = () => {
   const { theme, setTheme } = useTheme();
+  const { isCoach } = useUserRole();
 
   const { favorites, isLoading, toggleFavorite } = useFavoriteExercises();
 
@@ -62,6 +64,7 @@ const Saved = () => {
                   exercise={favorite.exercises as Exercise}
                   isFavorite={true}
                   onToggleFavorite={toggleFavorite}
+                  showShare={isCoach}
                 />
               ))}
             </div>

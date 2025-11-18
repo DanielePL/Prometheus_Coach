@@ -122,6 +122,7 @@ const Explore = () => {
                   exercise={exercise}
                   isFavorite={isFavorite(exercise.id)}
                   onToggleFavorite={toggleFavorite}
+                  showShare={isCoach}
                 />
               ))}
             </div>

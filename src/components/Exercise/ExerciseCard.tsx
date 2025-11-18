@@ -1,8 +1,9 @@
-import { Heart, Trash2, Edit } from "lucide-react";
+import { Heart, Trash2, Edit, Share2 } from "lucide-react";
 import { Exercise } from "@/hooks/useExercises";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDeleteExercise } from "@/hooks/useDeleteExercise";
+import { useAssignExercise } from "@/hooks/useAssignExercise";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -15,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EditExerciseModal } from "./EditExerciseModal";
+import { AssignExerciseModal } from "./AssignExerciseModal";
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -22,8 +24,10 @@ interface ExerciseCardProps {
   onToggleFavorite: (exerciseId: string) => void;
   showDelete?: boolean;
   showEdit?: boolean;
+  showShare?: boolean;
   onDeleteSuccess?: () => void;
   onEditSuccess?: () => void;
+  onAssignSuccess?: () => void;
 }
 
 export const ExerciseCard = ({
@@ -32,14 +36,18 @@ export const ExerciseCard = ({
   onToggleFavorite,
   showDelete = false,
   showEdit = false,
+  showShare = false,
   onDeleteSuccess,
   onEditSuccess,
+  onAssignSuccess,
 }: ExerciseCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { deleteExercise, isDeleting } = useDeleteExercise();
+  const { assignExercise } = useAssignExercise();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
   const canDelete = showDelete && user && exercise.created_by === user.id;
   const canEdit = showEdit && user && exercise.created_by === user.id;
@@ -61,6 +69,19 @@ export const ExerciseCard = ({
     setShowDeleteDialog(false);
   };
 
+  const handleAssign = async (clientIds: string[]) => {
+    if (!user) return;
+    
+    await assignExercise({
+      exerciseId: exercise.id,
+      exerciseTitle: exercise.title,
+      clientIds,
+      coachId: user.id,
+    });
+    
+    onAssignSuccess?.();
+  };
+
   // Log thumbnail info for debugging
   console.log(`[ExerciseCard] ${exercise.title}:`, {
     hasThumbnail: !!exercise.thumbnail_url,
@@ -76,7 +97,7 @@ export const ExerciseCard = ({
           <img
             src={exercise.thumbnail_url}
             alt={exercise.title}
-            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:grayscale"
             onError={(e) => {
               console.error(`[ExerciseCard] Thumbnail failed to load for ${exercise.title}:`, exercise.thumbnail_url)
               // Fallback to video if thumbnail fails - add #t=0.1 for Safari
@@ -84,7 +105,7 @@ export const ExerciseCard = ({
               target.style.display = 'none'
               const video = document.createElement('video')
               video.src = `${exercise.cloudfront_url}#t=0.1`
-              video.className = 'w-full h-full object-cover transition-all duration-500 group-hover:scale-110'
+              video.className = 'w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:grayscale'
               video.muted = true
               video.playsInline = true
               video.preload = 'metadata'
@@ -97,7 +118,7 @@ export const ExerciseCard = ({
           <video
             src={`${exercise.cloudfront_url}#t=0.1`}
             poster={exercise.thumbnail_url?.startsWith('data:') ? exercise.thumbnail_url : undefined}
-            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:grayscale"
             muted
             playsInline
             preload="metadata"
@@ -112,16 +133,27 @@ export const ExerciseCard = ({
             {exercise.category}
           </span>
         </div>
-        <div className="absolute top-3 right-3 flex gap-2">
+        <div className="absolute top-3 right-3 flex gap-2 z-10">
           {canEdit && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowEditModal(true);
               }}
-              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-primary hover:text-primary-foreground opacity-0 group-hover:opacity-100"
+              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-primary hover:text-primary-foreground"
             >
               <Edit className="w-4 h-4" />
+            </button>
+          )}
+          {showShare && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAssignModal(true);
+              }}
+              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-primary hover:text-primary-foreground"
+            >
+              <Share2 className="w-4 h-4" />
             </button>
           )}
           {canDelete && (
@@ -131,7 +163,7 @@ export const ExerciseCard = ({
                 setShowDeleteDialog(true);
               }}
               disabled={isDeleting}
-              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100"
+              className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 flex items-center justify-center transition-smooth hover:scale-110 hover:bg-destructive hover:text-destructive-foreground"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -167,6 +199,14 @@ export const ExerciseCard = ({
         open={showEditModal}
         onOpenChange={setShowEditModal}
         onSuccess={onEditSuccess}
+      />
+
+      <AssignExerciseModal
+        open={showAssignModal}
+        onOpenChange={setShowAssignModal}
+        exerciseId={exercise.id}
+        exerciseTitle={exercise.title}
+        onAssign={handleAssign}
       />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
