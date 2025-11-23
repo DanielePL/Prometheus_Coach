@@ -27,10 +27,10 @@ import confetti from "canvas-confetti";
 import { toast } from "sonner";
 
 export default function WorkoutSession() {
-  const { id } = useParams();
+  const { sessionId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: session, isLoading } = useWorkoutSession(id);
+  const { data: session, isLoading } = useWorkoutSession(sessionId);
   const completeWorkout = useCompleteWorkoutSession();
   const saveSetLog = useSaveSetLog();
   const savePersonalRecord = useSavePersonalRecord();
@@ -51,7 +51,7 @@ export default function WorkoutSession() {
   // Fetch previous performance for current exercise
   const { data: previousPerformance } = usePreviousPerformance(
     currentExercise?.exercise_id || "",
-    id || ""
+    sessionId || ""
   );
 
   // Fetch current PR for current exercise
@@ -127,7 +127,7 @@ export default function WorkoutSession() {
           exercise_id: currentExercise.exercise_id,
           weight_used: weight,
           reps_completed: reps,
-          session_id: id!,
+          session_id: sessionId!,
         });
 
         // Trigger celebration
@@ -157,7 +157,7 @@ export default function WorkoutSession() {
 
     // Save to database
     await saveSetLog.mutateAsync({
-      session_id: id!,
+      session_id: sessionId!,
       exercise_id: currentExercise.exercise_id,
       set_number: setNumber,
       reps_completed: current.reps ? parseInt(current.reps) : null,
@@ -177,7 +177,7 @@ export default function WorkoutSession() {
       setRestTimer(null);
     } else {
       // All exercises complete - go to workout complete page
-      navigate(`/workouts/complete/${id}`);
+      navigate(`/workouts/complete/${sessionId}`);
     }
   };
 
@@ -198,7 +198,7 @@ export default function WorkoutSession() {
 
   const handleCompleteWorkout = async () => {
     await completeWorkout.mutateAsync({
-      sessionId: id!,
+      sessionId: sessionId!,
       clientNotes,
       durationSeconds: elapsedSeconds,
     });
