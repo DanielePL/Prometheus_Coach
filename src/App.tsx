@@ -62,8 +62,6 @@ function App() {
             <Route path="/workouts/history/:sessionId" element={<ProtectedRoute><WorkoutHistoryDetail /></ProtectedRoute>} />
             <Route path="/my-workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><MyWorkouts /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/my-progress" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><MyProgress /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><ClientWorkouts /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/workouts/session/:id" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><WorkoutSession /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/barbell-back-squat" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/exercise/:id" element={<ProtectedRoute><ExerciseDetail /></ProtectedRoute>} />
