@@ -13,11 +13,21 @@ export default function ClientWorkouts() {
   const { data: sessions, isLoading: sessionsLoading } = useWorkoutSessions();
   const startWorkout = useStartWorkoutSession();
 
+  console.log('📊 ClientWorkouts Data:', { assignments, sessions, assignmentsLoading, sessionsLoading });
+
   const completedSessions = sessions?.filter((s) => s.status === "completed") || [];
 
   const handleStartWorkout = async (routineId: string) => {
-    const session = await startWorkout.mutateAsync(routineId);
-    navigate(`/workouts/session/${session.id}`);
+    console.log('🔥 START CLICKED! routineId:', routineId);
+    try {
+      console.log('🔥 Calling startWorkout mutation...');
+      const session = await startWorkout.mutateAsync(routineId);
+      console.log('🔥 Session created:', session);
+      console.log('🔥 Navigating to:', `/workouts/session/${session.id}`);
+      navigate(`/workouts/session/${session.id}`);
+    } catch (error) {
+      console.error('❌ Failed to start workout:', error);
+    }
   };
 
   const formatDuration = (seconds: number | null) => {
@@ -50,6 +60,13 @@ export default function ClientWorkouts() {
               const lastCompleted = completedSessions.find(
                 (s) => s.routine_id === routine?.id
               );
+
+              console.log('🎯 Rendering routine card:', { 
+                assignmentId: assignment.id, 
+                routineId: routine?.id, 
+                routineName: routine?.name,
+                exerciseCount 
+              });
 
               return (
                 <Card
@@ -99,9 +116,16 @@ export default function ClientWorkouts() {
                     )}
 
                     <Button
-                      onClick={() => handleStartWorkout(routine?.id)}
+                      onClick={() => {
+                        console.log('🎯 Button clicked! Routine ID:', routine?.id);
+                        if (!routine?.id) {
+                          console.error('❌ No routine ID available!');
+                          return;
+                        }
+                        handleStartWorkout(routine.id);
+                      }}
                       className="w-full"
-                      disabled={startWorkout.isPending}
+                      disabled={startWorkout.isPending || !routine?.id}
                     >
                       {startWorkout.isPending ? (
                         <>
