@@ -1,45 +1,60 @@
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Dumbbell, CheckCircle2, Circle, Clock } from "lucide-react";
+import { Dumbbell, CheckCircle2, Circle, Clock, Loader2 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useNavigate } from "react-router-dom";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useClientRoutineAssignments } from "@/hooks/useRoutineAssignments";
+import { useWorkoutSessions, useStartWorkoutSession } from "@/hooks/useWorkoutSessions";
 
 const MyWorkouts = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
+  const { data: assignments, isLoading: assignmentsLoading } = useClientRoutineAssignments();
+  const { data: sessions, isLoading: sessionsLoading } = useWorkoutSessions();
+  const startWorkout = useStartWorkoutSession();
 
-  // Mock data - will be replaced with real data from useClientWorkouts hook
-  const workouts = [
-    {
-      id: 1,
-      title: "Upper Body Strength",
-      description: "Focus on chest, shoulders, and triceps",
-      exercises: 8,
-      completed: 5,
-      status: "in_progress",
-      assignedDate: "2025-01-05"
-    },
-    {
-      id: 2,
-      title: "Lower Body Power",
-      description: "Build explosive leg strength",
-      exercises: 6,
-      completed: 0,
-      status: "not_started",
-      assignedDate: "2025-01-06"
-    },
-    {
-      id: 3,
-      title: "Core & Stability",
-      description: "Strengthen your foundation",
-      exercises: 10,
-      completed: 10,
-      status: "completed",
-      assignedDate: "2025-01-03"
-    },
-  ];
+  const completedSessions = sessions?.filter((s) => s.status === "completed") || [];
+
+  const handleStartWorkout = async (routineId: string) => {
+    console.log('Start clicked, routineId:', routineId);
+    try {
+      const session = await startWorkout.mutateAsync(routineId);
+      console.log('Session created:', session);
+      navigate(`/workouts/session/${session.id}`);
+    } catch (error) {
+      console.error('Failed to start workout:', error);
+    }
+  };
+
+  const handleReviewWorkout = (routineId: string) => {
+    console.log('Review clicked, routineId:', routineId);
+    const lastSession = completedSessions.find(s => s.routine_id === routineId);
+    if (lastSession) {
+      navigate(`/workouts/history/${lastSession.id}`);
+    }
+  };
+
+  // Transform assignments into workouts format
+  const workouts = assignments?.map((assignment: any) => {
+    const routine = assignment.routines;
+    const exerciseCount = routine?.routine_exercises?.length || 0;
+    const completedForRoutine = completedSessions.filter(s => s.routine_id === routine?.id);
+    const lastCompleted = completedForRoutine[0];
+    
+    return {
+      id: routine?.id,
+      title: routine?.name || "Untitled Workout",
+      description: routine?.description || "No description",
+      exercises: exerciseCount,
+      completed: completedForRoutine.length,
+      status: lastCompleted ? "completed" : "not_started",
+      assignedDate: assignment.assigned_at || assignment.created_at
+    };
+  }) || [];
 
   const getStatusIcon = (status: string, completed: number, total: number) => {
     if (status === "completed" || completed === total) {
@@ -88,8 +103,12 @@ const MyWorkouts = () => {
           </div>
         </div>
 
-        {/* Workouts Grid */}
-        {workouts.length === 0 ? (
+        {/* Loading State */}
+        {(assignmentsLoading || sessionsLoading) ? (
+          <div className="glass rounded-2xl p-12 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : workouts.length === 0 ? (
           <div className="glass rounded-2xl p-12 text-center">
             <Dumbbell className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-2xl font-bold mb-2">No workouts assigned yet</h2>
@@ -139,8 +158,26 @@ const MyWorkouts = () => {
                   <span className="text-sm text-muted-foreground">
                     Assigned {new Date(workout.assignedDate).toLocaleDateString()}
                   </span>
-                  <Button size="sm" variant={workout.status === "completed" ? "outline" : "default"}>
-                    {workout.status === "completed" ? "Review" : "Start"}
+                  <Button 
+                    size="sm" 
+                    variant={workout.status === "completed" ? "outline" : "default"}
+                    onClick={() => {
+                      if (workout.status === "completed") {
+                        handleReviewWorkout(workout.id);
+                      } else {
+                        handleStartWorkout(workout.id);
+                      }
+                    }}
+                    disabled={startWorkout.isPending}
+                  >
+                    {startWorkout.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Starting...
+                      </>
+                    ) : (
+                      workout.status === "completed" ? "Review" : "Start"
+                    )}
                   </Button>
                 </div>
               </div>
