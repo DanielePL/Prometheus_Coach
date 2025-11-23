@@ -267,13 +267,7 @@ export default function WorkoutSession() {
     <div className="container mx-auto p-6 max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{session.routines?.name}</h1>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Timer className="w-4 h-4" />
-            <span>{formatTime(elapsedSeconds)}</span>
-          </div>
-        </div>
+      <h1 className="text-2xl font-bold text-foreground">{session.routines?.name}</h1>
         <Button variant="ghost" onClick={() => setEndDialogOpen(true)}>
           <X className="w-5 h-5" />
         </Button>
