@@ -48,6 +48,9 @@ export default function WorkoutSession() {
   const currentExercise = exercises[currentExerciseIndex];
   const totalExercises = exercises.length;
 
+  // Default rest time if not specified
+  const DEFAULT_REST_SECONDS = 90;
+
   // Fetch previous performance for current exercise
   const { data: previousPerformance } = usePreviousPerformance(
     currentExercise?.exercise_id || "",
@@ -63,6 +66,21 @@ export default function WorkoutSession() {
   // Audio for rest timer completion
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Persist and restore timer state
+  useEffect(() => {
+    if (!sessionId) return;
+    
+    const savedStartTime = localStorage.getItem(`workout_${sessionId}_start`);
+    if (savedStartTime) {
+      const elapsed = Math.floor((Date.now() - parseInt(savedStartTime)) / 1000);
+      setElapsedSeconds(elapsed);
+    } else if (session?.started_at) {
+      const elapsed = Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
+      setElapsedSeconds(elapsed);
+      localStorage.setItem(`workout_${sessionId}_start`, new Date(session.started_at).getTime().toString());
+    }
+  }, [sessionId, session]);
+
   // Elapsed timer
   useEffect(() => {
     if (!session) return;
@@ -70,6 +88,18 @@ export default function WorkoutSession() {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
+  }, [session]);
+
+  // Navigation prompt
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (session?.status === "in_progress") {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [session]);
 
   // Rest timer countdown with alerts
@@ -167,7 +197,9 @@ export default function WorkoutSession() {
 
     // Start rest timer if completing a set
     if (newCompleted) {
-      setRestTimer(currentExercise.rest_seconds);
+      const restTime = currentExercise.rest_seconds || DEFAULT_REST_SECONDS;
+      setRestTimer(restTime);
+      localStorage.setItem(`workout_${sessionId}_rest`, restTime.toString());
     }
   };
 
@@ -190,6 +222,9 @@ export default function WorkoutSession() {
 
   const skipRestTimer = () => {
     setRestTimer(null);
+    if (sessionId) {
+      localStorage.removeItem(`workout_${sessionId}_rest`);
+    }
   };
 
   const addRestTime = (seconds: number) => {
@@ -202,6 +237,11 @@ export default function WorkoutSession() {
       clientNotes,
       durationSeconds: elapsedSeconds,
     });
+    // Clean up localStorage
+    if (sessionId) {
+      localStorage.removeItem(`workout_${sessionId}_start`);
+      localStorage.removeItem(`workout_${sessionId}_rest`);
+    }
     navigate("/workouts");
   };
 
@@ -248,13 +288,49 @@ export default function WorkoutSession() {
         <Progress value={progress} className="h-2" />
       </div>
 
-      {/* Rest Timer with Controls */}
+      {/* Rest Timer with Circular Progress */}
       {restTimer !== null && restTimer > 0 && (
         <Card className="p-6 mb-6 bg-primary/10 border-primary text-center">
           <p className="text-sm text-muted-foreground mb-2">Rest Time</p>
-          <p className="text-4xl font-bold text-primary mb-4">{formatTime(restTimer)}</p>
+          
+          {/* Circular Progress Indicator */}
+          <div className="flex items-center justify-center mb-4">
+            <div className="relative w-32 h-32">
+              <svg className="w-full h-full -rotate-90">
+                <circle
+                  cx="64"
+                  cy="64"
+                  r="56"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="none"
+                  className="text-muted"
+                />
+                <circle
+                  cx="64"
+                  cy="64"
+                  r="56"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeDasharray={`${2 * Math.PI * 56}`}
+                  strokeDashoffset={`${2 * Math.PI * 56 * (1 - restTimer / (currentExercise.rest_seconds || DEFAULT_REST_SECONDS))}`}
+                  className={`transition-all duration-1000 ${
+                    restTimer < 10 ? "text-destructive" : 
+                    restTimer < 30 ? "text-yellow-500" : 
+                    "text-primary"
+                  }`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-3xl font-bold text-primary">{formatTime(restTimer)}</p>
+              </div>
+            </div>
+          </div>
+          
           <p className="text-xs text-muted-foreground mb-4">
-            Recommended: {formatTime(currentExercise.rest_seconds || 90)}
+            Recommended: {formatTime(currentExercise.rest_seconds || DEFAULT_REST_SECONDS)}
           </p>
           <div className="flex items-center justify-center gap-2">
             <Button
@@ -410,7 +486,13 @@ export default function WorkoutSession() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Continue Workout</AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate("/workouts")}>
+            <AlertDialogAction onClick={() => {
+              if (sessionId) {
+                localStorage.removeItem(`workout_${sessionId}_start`);
+                localStorage.removeItem(`workout_${sessionId}_rest`);
+              }
+              navigate("/workouts");
+            }}>
               End Workout
             </AlertDialogAction>
           </AlertDialogFooter>
