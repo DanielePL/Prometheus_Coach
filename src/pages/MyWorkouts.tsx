@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { Dumbbell, CheckCircle2, Circle, Clock, Loader2 } from "lucide-react";
@@ -16,17 +17,20 @@ const MyWorkouts = () => {
   const { data: assignments, isLoading: assignmentsLoading } = useClientRoutineAssignments();
   const { data: sessions, isLoading: sessionsLoading } = useWorkoutSessions();
   const startWorkout = useStartWorkoutSession();
+  const [startingRoutineId, setStartingRoutineId] = useState<string | null>(null);
 
   const completedSessions = sessions?.filter((s) => s.status === "completed") || [];
 
   const handleStartWorkout = async (routineId: string) => {
     console.log('Start clicked, routineId:', routineId);
+    setStartingRoutineId(routineId);
     try {
       const session = await startWorkout.mutateAsync(routineId);
       console.log('Session created:', session);
       navigate(`/workouts/session/${session.id}`);
     } catch (error) {
       console.error('Failed to start workout:', error);
+      setStartingRoutineId(null);
     }
   };
 
@@ -168,9 +172,9 @@ const MyWorkouts = () => {
                         handleStartWorkout(workout.id);
                       }
                     }}
-                    disabled={startWorkout.isPending}
+                    disabled={startingRoutineId === workout.id}
                   >
-                    {startWorkout.isPending ? (
+                    {startingRoutineId === workout.id ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Starting...
