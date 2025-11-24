@@ -242,7 +242,7 @@ export default function WorkoutSession() {
       localStorage.removeItem(`workout_${sessionId}_start`);
       localStorage.removeItem(`workout_${sessionId}_rest`);
     }
-    navigate("/workouts");
+    navigate("/my-workouts");
   };
 
   if (isLoading) {
@@ -485,7 +485,7 @@ export default function WorkoutSession() {
                 localStorage.removeItem(`workout_${sessionId}_start`);
                 localStorage.removeItem(`workout_${sessionId}_rest`);
               }
-              navigate("/workouts");
+              navigate("/my-workouts");
             }}>
               End Workout
             </AlertDialogAction>

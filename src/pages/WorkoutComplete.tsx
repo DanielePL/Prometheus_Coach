@@ -90,7 +90,7 @@ export default function WorkoutComplete() {
       durationSeconds,
     });
 
-    navigate("/workouts");
+    navigate("/my-workouts");
   };
 
   return (
