@@ -10,20 +10,21 @@ interface Session {
   event_type: string;
 }
 
-export const useClientUpcomingSessions = () => {
+export const useClientUpcomingSessions = (clientId?: string) => {
   const { data: sessions = [], isLoading, refetch } = useQuery({
-    queryKey: ["client-upcoming-sessions"],
+    queryKey: ["client-upcoming-sessions", clientId || "self"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
+      const targetClientId = clientId || user.id;
       const now = new Date().toISOString();
 
       // Get sessions where user is assigned_to (sessions with coach)
       const { data, error } = await supabase
         .from("events")
         .select("id, title, start_time, end_time, event_type")
-        .eq("assigned_to", user.id)
+        .eq("assigned_to", targetClientId)
         .gte("start_time", now)
         .order("start_time", { ascending: true })
         .limit(4);

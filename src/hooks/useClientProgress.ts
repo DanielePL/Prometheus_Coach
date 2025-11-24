@@ -17,13 +17,20 @@ export const useClientProgress = (clientId: string) => {
 
       // Get workout completion rate for this month
       const { data: assignedWorkouts } = await supabase
-        .from("client_workouts")
-        .select("id, status")
+        .from("routine_assignments")
+        .select("id")
         .eq("client_id", clientId)
-        .gte("created_at", firstDayOfMonth.toISOString());
+        .gte("assigned_at", firstDayOfMonth.toISOString());
+
+      const { data: completedSessions } = await supabase
+        .from("workout_sessions")
+        .select("id")
+        .eq("client_id", clientId)
+        .eq("status", "completed")
+        .gte("completed_at", firstDayOfMonth.toISOString());
 
       const totalWorkouts = assignedWorkouts?.length || 0;
-      const completedWorkouts = assignedWorkouts?.filter((w) => w.status === "completed").length || 0;
+      const completedWorkouts = completedSessions?.length || 0;
       const workoutCompletionRate = totalWorkouts > 0 ? Math.round((completedWorkouts / totalWorkouts) * 100) : 0;
 
       // Get weight trend (last 2 entries)
@@ -45,18 +52,21 @@ export const useClientProgress = (clientId: string) => {
 
       // Get last workout date
       const { data: lastWorkout } = await supabase
-        .from("workout_logs")
+        .from("workout_sessions")
         .select("completed_at")
         .eq("client_id", clientId)
+        .eq("status", "completed")
         .order("completed_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
       // Calculate current streak
       const { data: recentWorkouts } = await supabase
-        .from("workout_logs")
+        .from("workout_sessions")
         .select("completed_at")
         .eq("client_id", clientId)
+        .eq("status", "completed")
+        .not("completed_at", "is", null)
         .order("completed_at", { ascending: false })
         .limit(30);
 
