@@ -1080,8 +1080,11 @@ export type Database = {
           client_notes: string | null
           completed_at: string | null
           created_at: string | null
+          current_exercise_index: number | null
           duration_seconds: number | null
           id: string
+          paused_at: string | null
+          paused_elapsed_seconds: number | null
           routine_id: string
           started_at: string | null
           status: string | null
@@ -1091,8 +1094,11 @@ export type Database = {
           client_notes?: string | null
           completed_at?: string | null
           created_at?: string | null
+          current_exercise_index?: number | null
           duration_seconds?: number | null
           id?: string
+          paused_at?: string | null
+          paused_elapsed_seconds?: number | null
           routine_id: string
           started_at?: string | null
           status?: string | null
@@ -1102,8 +1108,11 @@ export type Database = {
           client_notes?: string | null
           completed_at?: string | null
           created_at?: string | null
+          current_exercise_index?: number | null
           duration_seconds?: number | null
           id?: string
+          paused_at?: string | null
+          paused_elapsed_seconds?: number | null
           routine_id?: string
           started_at?: string | null
           status?: string | null
