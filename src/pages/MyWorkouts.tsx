@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Dumbbell, CheckCircle2, Circle, Clock, Loader2, Moon, Sun } from "lucide-react";
+import { Dumbbell, CheckCircle2, Circle, Clock, Loader2, Moon, Sun, Play } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import gradientBg from "@/assets/gradient-bg.jpg";
@@ -47,7 +47,15 @@ const MyWorkouts = () => {
     const routine = assignment.routines;
     const exerciseCount = routine?.routine_exercises?.length || 0;
     const completedForRoutine = completedSessions.filter(s => s.routine_id === routine?.id);
+    const pausedSession = sessions?.find(s => s.routine_id === routine?.id && s.status === "paused");
     const lastCompleted = completedForRoutine[0];
+    
+    let status = "not_started";
+    if (pausedSession) {
+      status = "paused";
+    } else if (lastCompleted) {
+      status = "completed";
+    }
     
     return {
       id: routine?.id,
@@ -55,13 +63,16 @@ const MyWorkouts = () => {
       description: routine?.description || "No description",
       exercises: exerciseCount,
       completed: completedForRoutine.length,
-      status: lastCompleted ? "completed" : "not_started",
+      status,
+      pausedSessionId: pausedSession?.id,
       assignedDate: assignment.assigned_at || assignment.created_at
     };
   }) || [];
 
   const getStatusIcon = (status: string, completed: number, total: number) => {
-    if (status === "completed" || completed === total) {
+    if (status === "paused") {
+      return <Play className="w-5 h-5 text-yellow-500" />;
+    } else if (status === "completed" || completed === total) {
       return <CheckCircle2 className="w-5 h-5 text-green-500" />;
     } else if (completed > 0) {
       return <Clock className="w-5 h-5 text-primary" />;
@@ -70,7 +81,9 @@ const MyWorkouts = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    if (status === "completed") {
+    if (status === "paused") {
+      return <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50">Paused</Badge>;
+    } else if (status === "completed") {
       return <Badge className="bg-green-600">Completed</Badge>;
     } else if (status === "in_progress") {
       return <Badge className="bg-primary">In Progress</Badge>;
@@ -180,23 +193,30 @@ const MyWorkouts = () => {
                   </span>
                   <Button 
                     size="sm" 
-                    variant={workout.status === "completed" ? "outline" : "default"}
+                    variant={workout.status === "completed" ? "outline" : workout.status === "paused" ? "default" : "default"}
                     onClick={() => {
                       if (workout.status === "completed") {
                         handleReviewWorkout(workout.id);
+                      } else if (workout.status === "paused" && workout.pausedSessionId) {
+                        // Navigate directly to the paused session
+                        navigate(`/workouts/session/${workout.pausedSessionId}`);
                       } else {
                         handleStartWorkout(workout.id);
                       }
                     }}
                     disabled={startingRoutineId === workout.id}
+                    className={workout.status === "paused" ? "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700" : ""}
                   >
                     {startingRoutineId === workout.id ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Starting...
+                        {workout.status === "paused" ? "Resuming..." : "Starting..."}
                       </>
                     ) : (
-                      workout.status === "completed" ? "Review" : "Start"
+                      <>
+                        {workout.status === "paused" && <Play className="w-4 h-4 mr-2" />}
+                        {workout.status === "completed" ? "Review" : workout.status === "paused" ? "Resume" : "Start"}
+                      </>
                     )}
                   </Button>
                 </div>

@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useWorkoutSession, useCompleteWorkoutSession } from "@/hooks/useWorkoutSessions";
+import { usePauseWorkoutSession } from "@/hooks/usePauseWorkoutSession";
 import { useSaveSetLog } from "@/hooks/useSetLogs";
 import { usePreviousPerformance } from "@/hooks/usePreviousPerformance";
 import { usePersonalRecord, useSavePersonalRecord, checkIsPR } from "@/hooks/usePersonalRecords";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, X, Loader2, Timer, Plus, Minus, Trophy } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Loader2, Timer, Plus, Minus, Trophy, Pause } from "lucide-react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
 
@@ -32,6 +34,7 @@ export default function WorkoutSession() {
   const { user } = useAuth();
   const { data: session, isLoading } = useWorkoutSession(sessionId);
   const completeWorkout = useCompleteWorkoutSession();
+  const pauseWorkout = usePauseWorkoutSession();
   const saveSetLog = useSaveSetLog();
   const savePersonalRecord = useSavePersonalRecord();
 
@@ -40,6 +43,7 @@ export default function WorkoutSession() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [restTimer, setRestTimer] = useState<number | null>(null);
   const [endDialogOpen, setEndDialogOpen] = useState(false);
+  const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [clientNotes, setClientNotes] = useState("");
   const [prAchieved, setPrAchieved] = useState<{ exerciseName: string; weight: number; reps: number } | null>(null);
@@ -68,16 +72,35 @@ export default function WorkoutSession() {
 
   // Persist and restore timer state
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || !session) return;
     
-    const savedStartTime = localStorage.getItem(`workout_${sessionId}_start`);
-    if (savedStartTime) {
-      const elapsed = Math.floor((Date.now() - parseInt(savedStartTime)) / 1000);
-      setElapsedSeconds(elapsed);
-    } else if (session?.started_at) {
-      const elapsed = Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
-      setElapsedSeconds(elapsed);
-      localStorage.setItem(`workout_${sessionId}_start`, new Date(session.started_at).getTime().toString());
+    // If resuming a paused workout, restore state
+    if (session.status === "paused" && session.paused_elapsed_seconds) {
+      setElapsedSeconds(session.paused_elapsed_seconds);
+      setCurrentExerciseIndex(session.current_exercise_index || 0);
+      
+      // Update localStorage with adjusted start time
+      const adjustedStartTime = Date.now() - (session.paused_elapsed_seconds * 1000);
+      localStorage.setItem(`workout_${sessionId}_start`, adjustedStartTime.toString());
+      
+      // Update status back to in_progress
+      supabase
+        .from("workout_sessions")
+        .update({ status: "in_progress" })
+        .eq("id", sessionId)
+        .then(() => {
+          toast.success("Workout resumed!");
+        });
+    } else {
+      const savedStartTime = localStorage.getItem(`workout_${sessionId}_start`);
+      if (savedStartTime) {
+        const elapsed = Math.floor((Date.now() - parseInt(savedStartTime)) / 1000);
+        setElapsedSeconds(elapsed);
+      } else if (session.started_at) {
+        const elapsed = Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
+        setElapsedSeconds(elapsed);
+        localStorage.setItem(`workout_${sessionId}_start`, new Date(session.started_at).getTime().toString());
+      }
     }
   }, [sessionId, session]);
 
@@ -231,6 +254,20 @@ export default function WorkoutSession() {
     setRestTimer((prev) => (prev || 0) + seconds);
   };
 
+  const handlePauseWorkout = async () => {
+    await pauseWorkout.mutateAsync({
+      sessionId: sessionId!,
+      currentExerciseIndex,
+      elapsedSeconds,
+    });
+    // Clean up localStorage
+    if (sessionId) {
+      localStorage.removeItem(`workout_${sessionId}_start`);
+      localStorage.removeItem(`workout_${sessionId}_rest`);
+    }
+    navigate("/my-workouts");
+  };
+
   const handleCompleteWorkout = async () => {
     await completeWorkout.mutateAsync({
       sessionId: sessionId!,
@@ -267,10 +304,20 @@ export default function WorkoutSession() {
     <div className="container mx-auto p-6 max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-      <h1 className="text-2xl font-bold text-foreground">{session.routines?.name}</h1>
-        <Button variant="ghost" onClick={() => setEndDialogOpen(true)}>
-          <X className="w-5 h-5" />
-        </Button>
+        <h1 className="text-2xl font-bold text-foreground">{session.routines?.name}</h1>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setPauseDialogOpen(true)}
+            className="border-primary/50 hover:bg-primary/10"
+          >
+            <Pause className="w-5 h-5 mr-2" />
+            Pause
+          </Button>
+          <Button variant="ghost" onClick={() => setEndDialogOpen(true)}>
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Progress Bar */}
@@ -468,6 +515,34 @@ export default function WorkoutSession() {
           <ChevronRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
+
+      {/* Pause Workout Dialog */}
+      <AlertDialog open={pauseDialogOpen} onOpenChange={setPauseDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pause Workout?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress will be saved and you can resume this workout anytime.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continue Workout</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handlePauseWorkout}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {pauseWorkout.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Pausing...
+                </>
+              ) : (
+                "Pause Workout"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* End Workout Dialog */}
       <AlertDialog open={endDialogOpen} onOpenChange={setEndDialogOpen}>
