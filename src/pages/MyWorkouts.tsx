@@ -52,10 +52,18 @@ const MyWorkouts = () => {
     
     // Count unique exercises completed in the most recent session
     let completedExercises = 0;
+    const completedExerciseIds = new Set<string>();
     if (lastCompleted?.set_logs) {
-      const uniqueExercises = new Set(lastCompleted.set_logs.map((log: any) => log.exercise_id));
-      completedExercises = uniqueExercises.size;
+      lastCompleted.set_logs.forEach((log: any) => completedExerciseIds.add(log.exercise_id));
+      completedExercises = completedExerciseIds.size;
     }
+    
+    // Map exercises with completion status
+    const exerciseList = routine?.routine_exercises?.map((re: any) => ({
+      id: re.exercise_id,
+      name: re.exercises?.title || "Unknown Exercise",
+      isCompleted: completedExerciseIds.has(re.exercise_id)
+    })) || [];
     
     let status = "not_started";
     if (pausedSession) {
@@ -72,7 +80,8 @@ const MyWorkouts = () => {
       completed: completedExercises,
       status,
       pausedSessionId: pausedSession?.id,
-      assignedDate: assignment.assigned_at || assignment.created_at
+      assignedDate: assignment.assigned_at || assignment.created_at,
+      exerciseList
     };
   }) || [];
 
@@ -191,6 +200,24 @@ const MyWorkouts = () => {
                       }}
                     />
                   </div>
+                  
+                  {/* Exercise Completion List */}
+                  {workout.exerciseList && workout.exerciseList.length > 0 && (
+                    <div className="space-y-1.5 pt-2">
+                      {workout.exerciseList.map((exercise: any) => (
+                        <div key={exercise.id} className="flex items-center gap-2 text-sm">
+                          {exercise.isCompleted ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          ) : (
+                            <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          )}
+                          <span className={exercise.isCompleted ? "text-foreground" : "text-muted-foreground"}>
+                            {exercise.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer */}
