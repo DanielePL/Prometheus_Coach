@@ -76,7 +76,7 @@ const ClientDetail = () => {
           <div className="glass rounded-2xl p-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               <UserAvatar
-                avatarUrl={null}
+                avatarUrl={client.avatar_url}
                 fullName={client.full_name}
                 userId={client.id}
                 className="w-24 h-24 text-3xl"

@@ -10,31 +10,41 @@ interface Activity {
   details?: string;
 }
 
-export const useClientRecentActivity = () => {
+export const useClientRecentActivity = (clientId?: string) => {
   const { data: activities = [], isLoading, refetch } = useQuery({
-    queryKey: ["client-recent-activity"],
+    queryKey: ["client-recent-activity", clientId || "self"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
+      
+      const targetClientId = clientId || user.id;
 
       const allActivities: Activity[] = [];
 
-      // Get recent workout logs
-      const { data: workoutLogs } = await supabase
-        .from("workout_logs")
-        .select("id, completed_at, workout_id, client_workouts(title)")
-        .eq("client_id", user.id)
+      // Get recent workout sessions (using workout_sessions, not workout_logs)
+      const { data: workoutSessions } = await supabase
+        .from("workout_sessions")
+        .select(`
+          id, 
+          completed_at,
+          routine:routines(name)
+        `)
+        .eq("client_id", targetClientId)
+        .eq("status", "completed")
+        .not("completed_at", "is", null)
         .order("completed_at", { ascending: false })
         .limit(5);
 
-      if (workoutLogs) {
-        workoutLogs.forEach((log: any) => {
-          allActivities.push({
-            id: log.id,
-            type: 'workout',
-            title: `Completed ${log.client_workouts?.title || 'Workout'}`,
-            timestamp: log.completed_at,
-          });
+      if (workoutSessions) {
+        workoutSessions.forEach((session: any) => {
+          if (session.completed_at) {
+            allActivities.push({
+              id: session.id,
+              type: 'workout',
+              title: `Completed ${session.routine?.name || 'Workout'}`,
+              timestamp: session.completed_at,
+            });
+          }
         });
       }
 
@@ -43,7 +53,7 @@ export const useClientRecentActivity = () => {
       const { data: sessions } = await supabase
         .from("events")
         .select("id, title, start_time")
-        .eq("assigned_to", user.id)
+        .eq("assigned_to", targetClientId)
         .lte("start_time", now)
         .order("start_time", { ascending: false })
         .limit(5);
@@ -63,7 +73,7 @@ export const useClientRecentActivity = () => {
       const { data: weights } = await supabase
         .from("weight_logs")
         .select("id, weight, date, created_at")
-        .eq("client_id", user.id)
+        .eq("client_id", targetClientId)
         .order("created_at", { ascending: false })
         .limit(5);
 
@@ -78,21 +88,25 @@ export const useClientRecentActivity = () => {
         });
       }
 
-      // Get recent workout assignments
+      // Get recent routine assignments
       const { data: assignments } = await supabase
-        .from("client_workouts")
-        .select("id, title, created_at")
-        .eq("client_id", user.id)
-        .order("created_at", { ascending: false })
+        .from("routine_assignments")
+        .select(`
+          id, 
+          assigned_at,
+          routine:routines(name)
+        `)
+        .eq("client_id", targetClientId)
+        .order("assigned_at", { ascending: false })
         .limit(5);
 
       if (assignments) {
-        assignments.forEach((assignment) => {
+        assignments.forEach((assignment: any) => {
           allActivities.push({
             id: assignment.id,
             type: 'assignment',
-            title: `Coach assigned: ${assignment.title}`,
-            timestamp: assignment.created_at,
+            title: `Coach assigned: ${assignment.routine?.name || 'Workout'}`,
+            timestamp: assignment.assigned_at,
           });
         });
       }
@@ -113,7 +127,7 @@ export const useClientRecentActivity = () => {
         {
           event: "*",
           schema: "public",
-          table: "workout_logs",
+          table: "workout_sessions",
         },
         () => {
           refetch();
@@ -135,7 +149,7 @@ export const useClientRecentActivity = () => {
         {
           event: "*",
           schema: "public",
-          table: "client_workouts",
+          table: "routine_assignments",
         },
         () => {
           refetch();

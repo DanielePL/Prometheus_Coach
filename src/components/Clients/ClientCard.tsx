@@ -15,6 +15,7 @@ interface ClientCardProps {
   client: {
     id: string;
     full_name: string;
+    avatar_url?: string | null;
     connected_at: string;
   };
 }
@@ -62,7 +63,7 @@ export const ClientCard = ({ client }: ClientCardProps) => {
       {/* Client Avatar & Name */}
       <div className="flex flex-col items-center mb-4">
         <UserAvatar
-          avatarUrl={null}
+          avatarUrl={client.avatar_url}
           fullName={client.full_name}
           userId={client.id}
           className="w-20 h-20 mb-3 border-2 border-primary/50 text-xl"
