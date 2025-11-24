@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Dumbbell, CheckCircle2, Circle, Clock, Loader2, Moon, Sun, Play } from "lucide-react";
+import { Dumbbell, CheckCircle2, Circle, Clock, Loader2, Moon, Sun, Play, ChevronDown, ChevronUp } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import gradientBg from "@/assets/gradient-bg.jpg";
@@ -18,6 +18,7 @@ const MyWorkouts = () => {
   const { data: sessions, isLoading: sessionsLoading } = useWorkoutSessions();
   const startWorkout = useStartWorkoutSession();
   const [startingRoutineId, setStartingRoutineId] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const completedSessions = sessions?.filter((s) => s.status === "completed") || [];
 
@@ -40,6 +41,18 @@ const MyWorkouts = () => {
     if (lastSession) {
       navigate(`/workouts/history/${lastSession.id}`);
     }
+  };
+
+  const toggleCardExpansion = (routineId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(routineId)) {
+        newSet.delete(routineId);
+      } else {
+        newSet.add(routineId);
+      }
+      return newSet;
+    });
   };
 
   // Transform assignments into workouts format
@@ -201,21 +214,45 @@ const MyWorkouts = () => {
                     />
                   </div>
                   
-                  {/* Exercise Completion List */}
+                  {/* Exercise Completion List - Expandable */}
                   {workout.exerciseList && workout.exerciseList.length > 0 && (
-                    <div className="space-y-1.5 pt-2">
-                      {workout.exerciseList.map((exercise: any) => (
-                        <div key={exercise.id} className="flex items-center gap-2 text-sm">
-                          {exercise.isCompleted ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          ) : (
-                            <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                          )}
-                          <span className={exercise.isCompleted ? "text-foreground" : "text-muted-foreground"}>
-                            {exercise.name}
-                          </span>
+                    <div className="pt-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleCardExpansion(workout.id);
+                        }}
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+                      >
+                        {expandedCards.has(workout.id) ? (
+                          <>
+                            <ChevronUp className="w-4 h-4" />
+                            <span>Hide exercises</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4" />
+                            <span>View exercises</span>
+                          </>
+                        )}
+                      </button>
+                      
+                      {expandedCards.has(workout.id) && (
+                        <div className="space-y-1.5 pt-2 animate-in slide-in-from-top-2">
+                          {workout.exerciseList.map((exercise: any) => (
+                            <div key={exercise.id} className="flex items-center gap-2 text-sm">
+                              {exercise.isCompleted ? (
+                                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              ) : (
+                                <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                              <span className={exercise.isCompleted ? "text-foreground" : "text-muted-foreground"}>
+                                {exercise.name}
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
                 </div>
