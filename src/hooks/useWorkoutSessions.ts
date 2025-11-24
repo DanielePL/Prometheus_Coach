@@ -32,7 +32,8 @@ export const useWorkoutSessions = () => {
               *,
               exercises (*)
             )
-          )
+          ),
+          set_logs (*)
         `)
         .eq("client_id", user.id)
         .order("started_at", { ascending: false });

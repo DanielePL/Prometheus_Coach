@@ -50,6 +50,13 @@ const MyWorkouts = () => {
     const pausedSession = sessions?.find(s => s.routine_id === routine?.id && s.status === "paused");
     const lastCompleted = completedForRoutine[0];
     
+    // Count unique exercises completed in the most recent session
+    let completedExercises = 0;
+    if (lastCompleted?.set_logs) {
+      const uniqueExercises = new Set(lastCompleted.set_logs.map((log: any) => log.exercise_id));
+      completedExercises = uniqueExercises.size;
+    }
+    
     let status = "not_started";
     if (pausedSession) {
       status = "paused";
@@ -62,7 +69,7 @@ const MyWorkouts = () => {
       title: routine?.name || "Untitled Workout",
       description: routine?.description || "No description",
       exercises: exerciseCount,
-      completed: completedForRoutine.length,
+      completed: completedExercises,
       status,
       pausedSessionId: pausedSession?.id,
       assignedDate: assignment.assigned_at || assignment.created_at
@@ -176,11 +183,11 @@ const MyWorkouts = () => {
                       {workout.completed}/{workout.exercises}
                     </span>
                   </div>
-                  <div className="w-full bg-background/50 rounded-full h-2">
+                  <div className="w-full bg-background/50 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-primary rounded-full h-2 transition-all"
+                      className="bg-primary rounded-full h-2 transition-all max-w-full"
                       style={{
-                        width: `${(workout.completed / workout.exercises) * 100}%`,
+                        width: `${Math.min((workout.completed / workout.exercises) * 100, 100)}%`,
                       }}
                     />
                   </div>
