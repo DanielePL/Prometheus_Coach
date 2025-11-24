@@ -13,6 +13,7 @@ import { NotificationBell } from "@/components/Notifications/NotificationBell";
 import { useUnreadMessageParticipants } from "@/hooks/useUnreadMessageParticipants";
 import { useConnectedClients } from "@/hooks/useConnectedClients";
 import { usePendingRequestParticipants } from "@/hooks/usePendingRequestParticipants";
+import { ClientProgressWidget } from "@/components/Dashboard/ClientProgressWidget";
 
 export const CoachDashboard = () => {
   const { theme, setTheme } = useTheme();
@@ -235,12 +236,12 @@ export const CoachDashboard = () => {
         </div>
       </div>
 
-      {/* Exercises and Goals */}
+      {/* Exercises, Goals, and Client Progress */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Exercises */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-1">
           <h2 className="text-2xl font-bold mb-4">Recent Exercises</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="glass rounded-2xl overflow-hidden group cursor-pointer transition-smooth glass-hover" onClick={() => navigate('/explore')}>
               <div className="relative h-48 overflow-hidden">
                 <img 
@@ -363,6 +364,9 @@ export const CoachDashboard = () => {
             ))}
           </div>
         </div>
+
+        {/* Client Progress Widget */}
+        <ClientProgressWidget />
       </div>
     </main>
   );
