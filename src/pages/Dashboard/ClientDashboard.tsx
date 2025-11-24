@@ -13,9 +13,11 @@ import { useClientWeeklyStats } from "@/hooks/useClientWeeklyStats";
 import { useClientRecentActivity } from "@/hooks/useClientRecentActivity";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useUnreadMessageParticipants } from "@/hooks/useUnreadMessageParticipants";
-import { useQuery } from "@tanstack/react-query";
+import { useTodayWorkouts } from "@/hooks/useTodayWorkouts";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 export const ClientDashboard = () => {
   const { theme, setTheme } = useTheme();
@@ -30,24 +32,9 @@ export const ClientDashboard = () => {
   const { activities } = useClientRecentActivity();
   const { pendingRequests } = useDashboardStats();
   const { participants: unreadParticipants } = useUnreadMessageParticipants();
-
-  // Fetch workouts for current user
-  const { data: workouts = [] } = useQuery({
-    queryKey: ["client-workouts-dashboard", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from("client_workouts")
-        .select("*")
-        .eq("client_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user?.id,
-  });
+  const { workouts: todayWorkouts, isLoading: workoutsLoading } = useTodayWorkouts();
+  
+  const queryClient = useQueryClient();
 
   const firstName = profile?.full_name?.split(' ')[0] || 'User';
 
@@ -80,46 +67,91 @@ export const ClientDashboard = () => {
   }, []);
 
   const toggleGoal = async (goalId: string, currentCompleted: boolean) => {
-    await supabase
-      .from("goals")
-      .update({ completed: !currentCompleted })
-      .eq("id", goalId);
-    refetchGoals();
+    try {
+      await supabase
+        .from("goals")
+        .update({ completed: !currentCompleted })
+        .eq("id", goalId);
+      refetchGoals();
+      toast.success(!currentCompleted ? "Goal completed! 🎉" : "Goal marked incomplete");
+    } catch (error) {
+      toast.error("Failed to update goal");
+    }
   };
 
   const addNewGoal = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase
-      .from("goals")
-      .insert({ user_id: user.id, text: "New goal", completed: false })
-      .select()
-      .single();
+    try {
+      const { data } = await supabase
+        .from("goals")
+        .insert({ user_id: user.id, text: "New goal", completed: false })
+        .select()
+        .single();
 
-    if (data) {
-      setEditingGoalId(data.id);
-      setEditingGoalText(data.text);
-      refetchGoals();
+      if (data) {
+        setEditingGoalId(data.id);
+        setEditingGoalText(data.text);
+        refetchGoals();
+      }
+    } catch (error) {
+      toast.error("Failed to add goal");
     }
   };
 
   const deleteGoal = async (goalId: string) => {
-    await supabase.from("goals").delete().eq("id", goalId);
-    refetchGoals();
+    try {
+      await supabase.from("goals").delete().eq("id", goalId);
+      refetchGoals();
+      toast.success("Goal deleted");
+    } catch (error) {
+      toast.error("Failed to delete goal");
+    }
   };
 
   const saveGoalEdit = async (goalId: string) => {
     if (editingGoalText.trim()) {
-      await supabase
-        .from("goals")
-        .update({ text: editingGoalText })
-        .eq("id", goalId);
-      refetchGoals();
+      try {
+        await supabase
+          .from("goals")
+          .update({ text: editingGoalText })
+          .eq("id", goalId);
+        refetchGoals();
+        toast.success("Goal updated");
+      } catch (error) {
+        toast.error("Failed to update goal");
+      }
     }
     setEditingGoalId(null);
     setEditingGoalText("");
   };
+
+  const startWorkout = useMutation({
+    mutationFn: async (routineId: string) => {
+      if (!user?.id) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("workout_sessions")
+        .insert({
+          client_id: user.id,
+          routine_id: routineId,
+          status: "in_progress",
+          started_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (session) => {
+      navigate(`/workouts/session/${session.id}`);
+    },
+    onError: () => {
+      toast.error("Failed to start workout");
+    },
+  });
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { 
@@ -165,8 +197,8 @@ export const ClientDashboard = () => {
     }
   };
 
-  // Today's workouts (workouts assigned for today or incomplete)
-  const todayWorkouts = workouts.filter(w => w.status !== 'completed').slice(0, 3);
+  const completedGoalsCount = dbGoals.filter(g => g.completed).length;
+  const totalGoalsCount = dbGoals.length;
 
   return (
     <main className="lg:ml-20 pb-20 lg:pb-8 pt-8 px-4 lg:px-8">
@@ -544,55 +576,65 @@ export const ClientDashboard = () => {
       {/* Third Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Workouts */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 glass rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Today's Workouts</h2>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
+                <Dumbbell className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Today's Workouts</h2>
+                <p className="text-sm text-muted-foreground">{todayWorkouts.length} assigned</p>
+              </div>
+            </div>
             <Button variant="outline" onClick={() => navigate('/my-workouts')}>
               View All
             </Button>
           </div>
           
-          {todayWorkouts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {todayWorkouts.map((workout) => {
-                const exercises = Array.isArray(workout.exercises) ? workout.exercises : [];
-                const completed = exercises.filter((e: any) => e.completed).length;
-                
-                return (
-                  <div 
-                    key={workout.id}
-                    className="glass rounded-2xl p-6 cursor-pointer transition-smooth glass-hover"
-                    onClick={() => navigate('/my-workouts')}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="font-bold text-lg mb-1">{workout.title}</h3>
-                        <p className="text-sm text-muted-foreground">{exercises.length} exercises</p>
-                      </div>
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Dumbbell className="w-6 h-6 text-primary" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span className="font-semibold">{completed}/{exercises.length}</span>
-                      </div>
-                      <div className="w-full bg-background/50 rounded-full h-2">
-                        <div 
-                          className="bg-primary rounded-full h-2 transition-all"
-                          style={{ width: exercises.length > 0 ? `${(completed / exercises.length) * 100}%` : '0%' }}
-                        />
-                      </div>
+          {workoutsLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading workouts...
+            </div>
+          ) : todayWorkouts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {todayWorkouts.slice(0, 3).map((workout) => (
+                <div 
+                  key={workout.id}
+                  className="relative group rounded-xl overflow-hidden border border-primary/30 cursor-pointer hover:border-primary transition-smooth"
+                  onClick={() => startWorkout.mutate(workout.routine_id)}
+                >
+                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                    <Dumbbell className="w-12 h-12 text-primary" />
+                  </div>
+                  <div className="p-4 bg-background/50 backdrop-blur-sm">
+                    <h3 className="font-semibold mb-1 text-foreground">{workout.routine.name}</h3>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {workout.routine.description || `${workout.exercise_count} exercises`}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-primary">
+                        {workout.completed_count}/{workout.exercise_count}
+                      </span>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-primary hover:text-primary"
+                        disabled={startWorkout.isPending}
+                      >
+                        {startWorkout.isPending ? "Starting..." : "Start →"}
+                      </Button>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="glass rounded-2xl p-12 text-center">
+            <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">No workouts assigned for today</p>
-              <p className="text-sm text-muted-foreground">Take a rest day! 💪</p>
+              <Button onClick={() => navigate('/my-workouts')}>
+                View All Workouts
+              </Button>
             </div>
           )}
         </div>
