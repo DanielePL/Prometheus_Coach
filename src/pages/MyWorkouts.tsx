@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Dumbbell, CheckCircle2, Circle, Clock, Loader2 } from "lucide-react";
+import { Dumbbell, CheckCircle2, Circle, Clock, Loader2, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import gradientBg from "@/assets/gradient-bg.jpg";
@@ -12,7 +12,7 @@ import { useClientRoutineAssignments } from "@/hooks/useRoutineAssignments";
 import { useWorkoutSessions, useStartWorkoutSession } from "@/hooks/useWorkoutSessions";
 
 const MyWorkouts = () => {
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { data: assignments, isLoading: assignmentsLoading } = useClientRoutineAssignments();
   const { data: sessions, isLoading: sessionsLoading } = useWorkoutSessions();
@@ -90,6 +90,22 @@ const MyWorkouts = () => {
     >
       <Sidebar />
       <BottomNav />
+
+      {/* Theme Toggle - Top Right */}
+      <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="glass border-border/50 hover:bg-primary/10"
+        >
+          {theme === "dark" ? (
+            <Sun className="h-5 w-5" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
 
       <main className="lg:ml-20 pb-20 lg:pb-8 pt-8 px-4 lg:px-8">
         {/* Header */}
