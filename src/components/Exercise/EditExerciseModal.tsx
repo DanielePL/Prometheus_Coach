@@ -23,6 +23,7 @@ import {
 import { useUpdateExercise } from "@/hooks/useUpdateExercise";
 import { Exercise, ExerciseCategory } from "@/hooks/useExercises";
 import { Loader2 } from "lucide-react";
+import { MultiSelectAutocomplete, MUSCLE_GROUPS, EQUIPMENT_OPTIONS } from "@/components/ui/multi-select-autocomplete";
 
 const categories: ExerciseCategory[] = [
   "bodybuilding",
@@ -117,6 +118,8 @@ export const EditExerciseModal = ({
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory>(
     exercise.category
   );
+  const [primaryMuscles, setPrimaryMuscles] = useState(exercise.primary_muscles || "");
+  const [equipmentValue, setEquipmentValue] = useState(exercise.equipment || "");
 
   const {
     register,
@@ -155,6 +158,8 @@ export const EditExerciseModal = ({
         common_mistakes: exercise.common_mistakes || "",
       });
       setSelectedCategory(exercise.category);
+      setPrimaryMuscles(exercise.primary_muscles || "");
+      setEquipmentValue(exercise.equipment || "");
     }
   }, [open, exercise, reset]);
 
@@ -164,6 +169,8 @@ export const EditExerciseModal = ({
         exerciseId: exercise.id,
         updates: {
           ...data,
+          primary_muscles: primaryMuscles || null,
+          equipment: equipmentValue || null,
           suggested_sets: data.suggested_sets || null,
         },
       });
@@ -249,31 +256,27 @@ export const EditExerciseModal = ({
           {/* Primary Muscles */}
           <div className="space-y-2">
             <Label htmlFor="primary_muscles">Primary Muscles</Label>
-            <Input
-              id="primary_muscles"
-              {...register("primary_muscles")}
-              placeholder="e.g., Quadriceps, Glutes, Hamstrings"
+            <MultiSelectAutocomplete
+              options={MUSCLE_GROUPS}
+              value={primaryMuscles}
+              onChange={setPrimaryMuscles}
+              placeholder="Select muscle groups..."
+              emptyMessage="No muscle groups found."
+              disabled={isUpdating}
             />
-            {errors.primary_muscles && (
-              <p className="text-sm text-destructive">
-                {errors.primary_muscles.message}
-              </p>
-            )}
           </div>
 
           {/* Equipment */}
           <div className="space-y-2">
             <Label htmlFor="equipment">Equipment</Label>
-            <Input
-              id="equipment"
-              {...register("equipment")}
-              placeholder="e.g., Barbell, Squat Rack"
+            <MultiSelectAutocomplete
+              options={EQUIPMENT_OPTIONS}
+              value={equipmentValue}
+              onChange={setEquipmentValue}
+              placeholder="Select equipment..."
+              emptyMessage="No equipment found."
+              disabled={isUpdating}
             />
-            {errors.equipment && (
-              <p className="text-sm text-destructive">
-                {errors.equipment.message}
-              </p>
-            )}
           </div>
 
           {/* Suggested Program */}

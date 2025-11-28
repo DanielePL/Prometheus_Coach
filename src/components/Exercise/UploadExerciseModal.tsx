@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Upload, Video, Loader2, FileVideo } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { ExerciseCategory } from "@/hooks/useExercises";
+import { MultiSelectAutocomplete, MUSCLE_GROUPS, EQUIPMENT_OPTIONS } from "@/components/ui/multi-select-autocomplete";
 
 interface UploadExerciseModalProps {
   open: boolean;
@@ -433,21 +434,25 @@ export const UploadExerciseModal = ({
             
             <div>
               <Label htmlFor="primaryMuscles">Primary Muscle Groups</Label>
-              <Input
-                id="primaryMuscles"
+              <MultiSelectAutocomplete
+                options={MUSCLE_GROUPS}
                 value={primaryMuscles}
-                onChange={(e) => setPrimaryMuscles(e.target.value)}
-                placeholder="e.g., Quadriceps, Glutes, Hamstrings"
+                onChange={setPrimaryMuscles}
+                placeholder="Select muscle groups..."
+                emptyMessage="No muscle groups found."
+                disabled={uploading}
               />
             </div>
 
             <div>
               <Label htmlFor="equipment">Equipment</Label>
-              <Input
-                id="equipment"
+              <MultiSelectAutocomplete
+                options={EQUIPMENT_OPTIONS}
                 value={equipment}
-                onChange={(e) => setEquipment(e.target.value)}
-                placeholder="e.g., Barbell, Rack"
+                onChange={setEquipment}
+                placeholder="Select equipment..."
+                emptyMessage="No equipment found."
+                disabled={uploading}
               />
             </div>
 
