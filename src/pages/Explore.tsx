@@ -11,7 +11,6 @@ import { ExerciseCard } from "@/components/Exercise/ExerciseCard";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useAuth } from "@/contexts/AuthContext";
 
 const categories = ["all", "bodybuilding", "crossfit", "powerlifting", "weightlifting", "functional", "plyometrics"] as const;
 
@@ -20,19 +19,15 @@ const Explore = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const { isCoach } = useUserRole();
-  const { user } = useAuth();
 
   const { data: exercises = [], isLoading } = useExercises({
     category: selectedCategory === "all" ? undefined : (selectedCategory as ExerciseCategory),
     searchQuery: searchQuery || undefined,
   });
 
-  // Filter exercises based on role
-  // Coaches see: public exercises + their own private uploads
-  // Clients see: only public exercises
-  const filteredExercises = isCoach
-    ? exercises.filter((ex) => ex.visibility === "public" || ex.created_by === user?.id)
-    : exercises.filter((ex) => ex.visibility === "public");
+  // /explore shows public exercises - RLS handles visibility
+  // All users see the same public library
+  const filteredExercises = exercises.filter((ex) => ex.visibility === "public");
 
   const { isFavorite, toggleFavorite } = useFavoriteExercises();
 
