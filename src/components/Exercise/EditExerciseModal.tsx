@@ -260,8 +260,8 @@ export const EditExerciseModal = ({
               options={MUSCLE_GROUPS}
               value={primaryMuscles}
               onChange={setPrimaryMuscles}
-              placeholder="Select muscle groups..."
-              emptyMessage="No muscle groups found."
+              placeholder="Type to search muscles..."
+              emptyMessage="No matching muscles found."
               disabled={isUpdating}
             />
           </div>
@@ -273,8 +273,8 @@ export const EditExerciseModal = ({
               options={EQUIPMENT_OPTIONS}
               value={equipmentValue}
               onChange={setEquipmentValue}
-              placeholder="Select equipment..."
-              emptyMessage="No equipment found."
+              placeholder="Type to search equipment..."
+              emptyMessage="No matching equipment found."
               disabled={isUpdating}
             />
           </div>
