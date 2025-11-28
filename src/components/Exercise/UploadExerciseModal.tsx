@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Upload, Loader2 } from "lucide-react";
 import { ExerciseCategory } from "@/hooks/useExercises";
 import { MultiSelectAutocomplete, MUSCLE_GROUPS, SECONDARY_MUSCLE_GROUPS, EQUIPMENT_OPTIONS } from "@/components/ui/multi-select-autocomplete";
+import { SingleSelectAutocomplete, EXERCISE_NAMES } from "@/components/ui/single-select-autocomplete";
 
 interface UploadExerciseModalProps {
   open: boolean;
@@ -392,12 +393,13 @@ export const UploadExerciseModal = ({
             
             <div>
               <Label htmlFor="title">Exercise Name *</Label>
-              <Input
-                id="title"
+              <SingleSelectAutocomplete
+                options={EXERCISE_NAMES}
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={100}
+                onChange={setTitle}
                 placeholder="e.g., Barbell Back Squat"
+                disabled={uploading}
+                required
               />
             </div>
 
