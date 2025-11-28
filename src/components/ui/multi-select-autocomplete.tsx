@@ -70,18 +70,23 @@ export function MultiSelectAutocomplete({
     return value.split(",").map((v) => v.trim()).filter(Boolean);
   }, [value]);
 
-  // Filter options based on input - only show when typing
+  // Filter options based on input - ONLY show matching options when user types
   const filteredOptions = React.useMemo(() => {
-    if (!inputValue.trim()) return [];
-    const search = inputValue.toLowerCase().trim();
-    return options.filter(
-      (option) =>
-        option.toLowerCase().includes(search) &&
-        !selectedValues.includes(option)
-    );
+    const trimmedInput = inputValue.trim();
+    // Return empty array if no input - don't show any options
+    if (trimmedInput === "") return [];
+    
+    const searchTerm = trimmedInput.toLowerCase();
+    // Filter to ONLY options that contain the search term
+    return options.filter((option) => {
+      const optionLower = option.toLowerCase();
+      const matchesSearch = optionLower.includes(searchTerm);
+      const notAlreadySelected = !selectedValues.includes(option);
+      return matchesSearch && notAlreadySelected;
+    });
   }, [options, inputValue, selectedValues]);
 
-  // Show dropdown only when there's input and matches
+  // Show dropdown ONLY when user has typed something
   const showDropdown = isOpen && inputValue.trim().length > 0;
 
   const handleSelect = (option: string) => {

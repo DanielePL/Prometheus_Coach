@@ -438,8 +438,8 @@ export const UploadExerciseModal = ({
                 options={MUSCLE_GROUPS}
                 value={primaryMuscles}
                 onChange={setPrimaryMuscles}
-                placeholder="Select muscle groups..."
-                emptyMessage="No muscle groups found."
+                placeholder="Type to search muscles..."
+                emptyMessage="No matching muscles found."
                 disabled={uploading}
               />
             </div>
@@ -450,8 +450,8 @@ export const UploadExerciseModal = ({
                 options={EQUIPMENT_OPTIONS}
                 value={equipment}
                 onChange={setEquipment}
-                placeholder="Select equipment..."
-                emptyMessage="No equipment found."
+                placeholder="Type to search equipment..."
+                emptyMessage="No matching equipment found."
                 disabled={uploading}
               />
             </div>
