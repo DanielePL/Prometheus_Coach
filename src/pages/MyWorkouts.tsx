@@ -64,12 +64,12 @@ const MyWorkouts = () => {
     const lastCompleted = completedForRoutine[0];
     
     // Count unique exercises completed in the most recent session
-    let completedExercises = 0;
     const completedExerciseIds = new Set<string>();
     if (lastCompleted?.set_logs) {
       lastCompleted.set_logs.forEach((log: any) => completedExerciseIds.add(log.exercise_id));
-      completedExercises = completedExerciseIds.size;
     }
+    // Cap completed count to never exceed total exercises
+    const completedExercises = Math.min(completedExerciseIds.size, exerciseCount);
     
     // Map exercises with completion status
     const exerciseList = routine?.routine_exercises?.map((re: any) => ({
