@@ -70,21 +70,46 @@ export function MultiSelectAutocomplete({
     return value.split(",").map((v) => v.trim()).filter(Boolean);
   }, [value]);
 
-  // Filter options based on input - ONLY show matching options when user types
+  // Filter options based on input - match only at BEGINNING of words
   const filteredOptions = React.useMemo(() => {
     const trimmedInput = inputValue.trim();
     // Return empty array if no input - don't show any options
     if (trimmedInput === "") return [];
     
     const searchTerm = trimmedInput.toLowerCase();
-    // Filter to ONLY options that contain the search term
+    // Filter to ONLY options where search term matches START of any word
     return options.filter((option) => {
+      if (selectedValues.includes(option)) return false;
+      
       const optionLower = option.toLowerCase();
-      const matchesSearch = optionLower.includes(searchTerm);
-      const notAlreadySelected = !selectedValues.includes(option);
-      return matchesSearch && notAlreadySelected;
+      // Split on spaces, parentheses, commas, slashes to get words
+      const words = optionLower.split(/[\s(),/]+/).filter(Boolean);
+      // Check if any word STARTS with the search term
+      return words.some(word => word.startsWith(searchTerm));
     });
   }, [options, inputValue, selectedValues]);
+
+  // Get autocomplete suggestion (first match for inline display)
+  const autocompleteSuggestion = React.useMemo(() => {
+    if (filteredOptions.length === 0 || !inputValue.trim()) return null;
+    
+    const firstMatch = filteredOptions[0];
+    const searchTerm = inputValue.trim().toLowerCase();
+    const matchLower = firstMatch.toLowerCase();
+    
+    // Find where the match starts in the option
+    const words = matchLower.split(/[\s(),/]+/).filter(Boolean);
+    const matchingWordIndex = words.findIndex(word => word.startsWith(searchTerm));
+    
+    if (matchingWordIndex === -1) return null;
+    
+    // If the search matches the very beginning of the option, show autocomplete
+    if (matchLower.startsWith(searchTerm)) {
+      return firstMatch;
+    }
+    
+    return null;
+  }, [filteredOptions, inputValue]);
 
   // Show dropdown ONLY when user has typed something
   const showDropdown = isOpen && inputValue.trim().length > 0;
@@ -116,6 +141,16 @@ export function MultiSelectAutocomplete({
       return;
     }
 
+    // Handle Tab/Right Arrow to accept autocomplete suggestion
+    if ((e.key === "Tab" || e.key === "ArrowRight") && autocompleteSuggestion && inputValue.trim()) {
+      const cursorAtEnd = (e.target as HTMLInputElement).selectionStart === inputValue.length;
+      if (cursorAtEnd && autocompleteSuggestion.toLowerCase().startsWith(inputValue.toLowerCase())) {
+        e.preventDefault();
+        handleSelect(autocompleteSuggestion);
+        return;
+      }
+    }
+
     if (!showDropdown || filteredOptions.length === 0) return;
 
     switch (e.key) {
@@ -138,9 +173,6 @@ export function MultiSelectAutocomplete({
       case "Escape":
         setIsOpen(false);
         setInputValue("");
-        break;
-      case "Tab":
-        setIsOpen(false);
         break;
     }
   };
@@ -194,21 +226,30 @@ export function MultiSelectAutocomplete({
           </Badge>
         ))}
 
-        {/* Text input */}
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsOpen(true)}
-          placeholder={selectedValues.length === 0 ? placeholder : ""}
-          disabled={disabled}
-          className={cn(
-            "flex-1 min-w-[120px] bg-transparent outline-none placeholder:text-muted-foreground",
-            disabled && "cursor-not-allowed"
+        {/* Text input with inline autocomplete suggestion */}
+        <div className="relative flex-1 min-w-[120px]">
+          {/* Gray autocomplete suggestion overlay */}
+          {autocompleteSuggestion && inputValue.trim() && (
+            <span className="absolute left-0 top-0 pointer-events-none text-muted-foreground/50">
+              {inputValue}
+              <span>{autocompleteSuggestion.slice(inputValue.length)}</span>
+            </span>
           )}
-        />
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsOpen(true)}
+            placeholder={selectedValues.length === 0 ? placeholder : ""}
+            disabled={disabled}
+            className={cn(
+              "w-full bg-transparent outline-none placeholder:text-muted-foreground relative",
+              disabled && "cursor-not-allowed"
+            )}
+          />
+        </div>
       </div>
 
       {/* Dropdown - only shows when typing and has matches or no matches message */}
