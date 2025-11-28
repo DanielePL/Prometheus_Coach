@@ -183,12 +183,14 @@ const MyWorkouts = () => {
             {workouts.map((workout) => (
               <div
                 key={workout.id}
-                className="glass rounded-2xl p-6 transition-smooth hover:shadow-[0_0_30px_rgba(255,107,53,0.3)] hover:bg-white/70 dark:hover:bg-black/60 cursor-pointer"
+                className="glass rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20 hover:border-primary/50 cursor-pointer group"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start gap-3">
-                    {getStatusIcon(workout.status, workout.completed, workout.exercises)}
+                    <div className="transition-transform duration-300 group-hover:scale-110">
+                      {getStatusIcon(workout.status, workout.completed, workout.exercises)}
+                    </div>
                     <div>
                       <h3 className="font-bold text-lg mb-1">{workout.title}</h3>
                       <p className="text-sm text-muted-foreground">{workout.description}</p>
@@ -200,18 +202,21 @@ const MyWorkouts = () => {
                 {/* Progress */}
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Exercises</span>
-                    <span className="font-semibold">
-                      {workout.completed}/{workout.exercises}
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-semibold text-primary">
+                      {workout.exercises > 0 ? Math.round((workout.completed / workout.exercises) * 100) : 0}%
                     </span>
                   </div>
-                  <div className="w-full bg-background/50 rounded-full h-2 overflow-hidden">
+                  <div className="w-full bg-muted/50 rounded-full h-2.5 overflow-hidden">
                     <div
-                      className="bg-primary rounded-full h-2 transition-all max-w-full"
+                      className="bg-gradient-to-r from-primary to-primary/70 rounded-full h-full transition-all duration-500"
                       style={{
                         width: `${Math.min((workout.completed / workout.exercises) * 100, 100)}%`,
                       }}
                     />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{workout.completed}/{workout.exercises} exercises</span>
                   </div>
                   
                   {/* Exercise Completion List - Expandable */}
