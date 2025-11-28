@@ -607,7 +607,7 @@ export const ClientDashboard = () => {
                   <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                     <Dumbbell className="w-12 h-12 text-primary" />
                   </div>
-                  <div className="p-4 bg-background/50 backdrop-blur-sm">
+                  <div className="p-4 bg-background/50 backdrop-blur-sm rounded-b-xl">
                     <h3 className="font-semibold mb-1 text-foreground">{workout.routine.name}</h3>
                     <p className="text-xs text-muted-foreground mb-2">
                       {workout.routine.description || `${workout.exercise_count} exercises`}
