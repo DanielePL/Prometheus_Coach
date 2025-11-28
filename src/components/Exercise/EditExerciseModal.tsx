@@ -23,7 +23,7 @@ import {
 import { useUpdateExercise } from "@/hooks/useUpdateExercise";
 import { Exercise, ExerciseCategory } from "@/hooks/useExercises";
 import { Loader2 } from "lucide-react";
-import { MultiSelectAutocomplete, MUSCLE_GROUPS, EQUIPMENT_OPTIONS } from "@/components/ui/multi-select-autocomplete";
+import { MultiSelectAutocomplete, MUSCLE_GROUPS, SECONDARY_MUSCLE_GROUPS, EQUIPMENT_OPTIONS } from "@/components/ui/multi-select-autocomplete";
 
 const categories: ExerciseCategory[] = [
   "bodybuilding",
@@ -58,6 +58,12 @@ const editExerciseSchema = z.object({
     .string()
     .trim()
     .max(200, { message: "Primary muscles must be less than 200 characters" })
+    .optional()
+    .nullable(),
+  secondary_muscles: z
+    .string()
+    .trim()
+    .max(300, { message: "Secondary muscles must be less than 300 characters" })
     .optional()
     .nullable(),
   equipment: z
@@ -119,6 +125,7 @@ export const EditExerciseModal = ({
     exercise.category
   );
   const [primaryMuscles, setPrimaryMuscles] = useState(exercise.primary_muscles || "");
+  const [secondaryMuscles, setSecondaryMuscles] = useState((exercise as any).secondary_muscles || "");
   const [equipmentValue, setEquipmentValue] = useState(exercise.equipment || "");
 
   const {
@@ -134,6 +141,7 @@ export const EditExerciseModal = ({
       description: exercise.description || "",
       category: exercise.category,
       primary_muscles: exercise.primary_muscles || "",
+      secondary_muscles: (exercise as any).secondary_muscles || "",
       equipment: exercise.equipment || "",
       suggested_sets: exercise.suggested_sets || undefined,
       suggested_reps: exercise.suggested_reps || "",
@@ -150,6 +158,7 @@ export const EditExerciseModal = ({
         description: exercise.description || "",
         category: exercise.category,
         primary_muscles: exercise.primary_muscles || "",
+        secondary_muscles: (exercise as any).secondary_muscles || "",
         equipment: exercise.equipment || "",
         suggested_sets: exercise.suggested_sets || undefined,
         suggested_reps: exercise.suggested_reps || "",
@@ -159,6 +168,7 @@ export const EditExerciseModal = ({
       });
       setSelectedCategory(exercise.category);
       setPrimaryMuscles(exercise.primary_muscles || "");
+      setSecondaryMuscles((exercise as any).secondary_muscles || "");
       setEquipmentValue(exercise.equipment || "");
     }
   }, [open, exercise, reset]);
@@ -170,6 +180,7 @@ export const EditExerciseModal = ({
         updates: {
           ...data,
           primary_muscles: primaryMuscles || null,
+          secondary_muscles: secondaryMuscles || null,
           equipment: equipmentValue || null,
           suggested_sets: data.suggested_sets || null,
         },
@@ -261,6 +272,19 @@ export const EditExerciseModal = ({
               value={primaryMuscles}
               onChange={setPrimaryMuscles}
               placeholder="Type to search muscles..."
+              emptyMessage="No matching muscles found."
+              disabled={isUpdating}
+            />
+          </div>
+
+          {/* Secondary Muscles */}
+          <div className="space-y-2">
+            <Label htmlFor="secondary_muscles">Secondary Muscle Groups</Label>
+            <MultiSelectAutocomplete
+              options={SECONDARY_MUSCLE_GROUPS}
+              value={secondaryMuscles}
+              onChange={setSecondaryMuscles}
+              placeholder="Type to search secondary muscles..."
               emptyMessage="No matching muscles found."
               disabled={isUpdating}
             />

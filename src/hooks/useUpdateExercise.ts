@@ -11,6 +11,7 @@ interface UpdateExerciseData {
     description?: string | null;
     category?: ExerciseCategory;
     primary_muscles?: string | null;
+    secondary_muscles?: string | null;
     equipment?: string | null;
     suggested_sets?: number | null;
     suggested_reps?: string | null;
