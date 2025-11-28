@@ -229,6 +229,19 @@ const ExerciseDetail = () => {
                   }
                   variant="accent"
                 />
+
+                <InfoCard
+                  icon={Activity}
+                  label="Secondary Muscle Groups"
+                  value={
+                    <div className="text-base font-normal">
+                      {(exercise as any).secondary_muscles || (
+                        <span className="text-muted-foreground italic">Not specified</span>
+                      )}
+                    </div>
+                  }
+                  variant="accent"
+                />
                 
                 <InfoCard
                   icon={Zap}
@@ -398,6 +411,19 @@ const ExerciseDetail = () => {
                 value={
                   <div className="text-base font-normal">
                     {exercise.primary_muscles || (
+                      <span className="text-muted-foreground italic">Not specified</span>
+                    )}
+                  </div>
+                }
+                variant="accent"
+              />
+
+              <InfoCard
+                icon={Activity}
+                label="Secondary Muscle Groups"
+                value={
+                  <div className="text-base font-normal">
+                    {(exercise as any).secondary_muscles || (
                       <span className="text-muted-foreground italic">Not specified</span>
                     )}
                   </div>
