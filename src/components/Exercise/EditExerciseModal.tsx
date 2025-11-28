@@ -24,6 +24,7 @@ import { useUpdateExercise } from "@/hooks/useUpdateExercise";
 import { Exercise, ExerciseCategory } from "@/hooks/useExercises";
 import { Loader2 } from "lucide-react";
 import { MultiSelectAutocomplete, MUSCLE_GROUPS, SECONDARY_MUSCLE_GROUPS, EQUIPMENT_OPTIONS } from "@/components/ui/multi-select-autocomplete";
+import { SingleSelectAutocomplete, EXERCISE_NAMES } from "@/components/ui/single-select-autocomplete";
 
 const categories: ExerciseCategory[] = [
   "bodybuilding",
@@ -124,6 +125,7 @@ export const EditExerciseModal = ({
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory>(
     exercise.category
   );
+  const [titleValue, setTitleValue] = useState(exercise.title);
   const [primaryMuscles, setPrimaryMuscles] = useState(exercise.primary_muscles || "");
   const [secondaryMuscles, setSecondaryMuscles] = useState((exercise as any).secondary_muscles || "");
   const [equipmentValue, setEquipmentValue] = useState(exercise.equipment || "");
@@ -167,6 +169,7 @@ export const EditExerciseModal = ({
         common_mistakes: exercise.common_mistakes || "",
       });
       setSelectedCategory(exercise.category);
+      setTitleValue(exercise.title);
       setPrimaryMuscles(exercise.primary_muscles || "");
       setSecondaryMuscles((exercise as any).secondary_muscles || "");
       setEquipmentValue(exercise.equipment || "");
@@ -179,6 +182,7 @@ export const EditExerciseModal = ({
         exerciseId: exercise.id,
         updates: {
           ...data,
+          title: titleValue,
           primary_muscles: primaryMuscles || null,
           secondary_muscles: secondaryMuscles || null,
           equipment: equipmentValue || null,
@@ -206,12 +210,18 @@ export const EditExerciseModal = ({
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">
-              Title <span className="text-destructive">*</span>
+              Exercise Name <span className="text-destructive">*</span>
             </Label>
-            <Input
-              id="title"
-              {...register("title")}
-              placeholder="Enter exercise title"
+            <SingleSelectAutocomplete
+              options={EXERCISE_NAMES}
+              value={titleValue}
+              onChange={(value) => {
+                setTitleValue(value);
+                setValue("title", value);
+              }}
+              placeholder="e.g., Barbell Back Squat"
+              disabled={isUpdating}
+              required
             />
             {errors.title && (
               <p className="text-sm text-destructive">{errors.title.message}</p>
