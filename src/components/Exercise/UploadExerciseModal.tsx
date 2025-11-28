@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Upload, Loader2 } from "lucide-react";
 import { ExerciseCategory } from "@/hooks/useExercises";
-import { MultiSelectAutocomplete, MUSCLE_GROUPS, EQUIPMENT_OPTIONS } from "@/components/ui/multi-select-autocomplete";
+import { MultiSelectAutocomplete, MUSCLE_GROUPS, SECONDARY_MUSCLE_GROUPS, EQUIPMENT_OPTIONS } from "@/components/ui/multi-select-autocomplete";
 
 interface UploadExerciseModalProps {
   open: boolean;
@@ -76,6 +76,7 @@ export const UploadExerciseModal = ({
   const [category, setCategory] = useState<ExerciseCategory | "">("");
   const [description, setDescription] = useState("");
   const [primaryMuscles, setPrimaryMuscles] = useState("");
+  const [secondaryMuscles, setSecondaryMuscles] = useState("");
   const [equipment, setEquipment] = useState("");
   const [keyAspects, setKeyAspects] = useState("");
   const [commonMistakes, setCommonMistakes] = useState("");
@@ -220,6 +221,7 @@ export const UploadExerciseModal = ({
         thumbnail_url: finalThumbnailUrl || null,
         duration: Math.round(videoDuration),
         primary_muscles: primaryMuscles || null,
+        secondary_muscles: secondaryMuscles || null,
         equipment: equipment || null,
         key_aspects: keyAspects || null,
         common_mistakes: commonMistakes || null,
@@ -254,6 +256,7 @@ export const UploadExerciseModal = ({
     setCategory("");
     setDescription("");
     setPrimaryMuscles("");
+    setSecondaryMuscles("");
     setEquipment("");
     setKeyAspects("");
     setCommonMistakes("");
@@ -439,6 +442,18 @@ export const UploadExerciseModal = ({
                 value={primaryMuscles}
                 onChange={setPrimaryMuscles}
                 placeholder="Type to search muscles..."
+                emptyMessage="No matching muscles found."
+                disabled={uploading}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="secondaryMuscles">Secondary Muscle Groups</Label>
+              <MultiSelectAutocomplete
+                options={SECONDARY_MUSCLE_GROUPS}
+                value={secondaryMuscles}
+                onChange={setSecondaryMuscles}
+                placeholder="Type to search secondary muscles..."
                 emptyMessage="No matching muscles found."
                 disabled={uploading}
               />

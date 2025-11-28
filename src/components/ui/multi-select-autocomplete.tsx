@@ -20,6 +20,22 @@ export const MUSCLE_GROUPS = [
   "Hip Flexors",
 ] as const;
 
+export const SECONDARY_MUSCLE_GROUPS = [
+  "Obliques",
+  "Serratus Anterior",
+  "Rhomboids",
+  "Rotator Cuff (Supraspinatus, Infraspinatus, Teres Minor, Subscapularis)",
+  "Teres Major",
+  "Adductors (Inner Thigh)",
+  "Abductors / Glute Medius & Minimus",
+  "Tibialis Anterior",
+  "Soleus (part of calves but often secondary/stabilizer)",
+  "Spinal Stabilizers (Multifidus)",
+  "Hip External Rotators (Piriformis, Gemellus, Obturators)",
+  "Neck Flexors & Extensors",
+  "Grip Muscles (hand intrinsic muscles)",
+] as const;
+
 export const EQUIPMENT_OPTIONS = [
   "Barbell",
   "Dumbbell",

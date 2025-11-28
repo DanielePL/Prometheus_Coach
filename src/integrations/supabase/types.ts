@@ -457,6 +457,7 @@ export type Database = {
           id: string
           key_aspects: string | null
           primary_muscles: string | null
+          secondary_muscles: string | null
           suggested_reps: string | null
           suggested_sets: number | null
           suggested_weight: string | null
@@ -477,6 +478,7 @@ export type Database = {
           id?: string
           key_aspects?: string | null
           primary_muscles?: string | null
+          secondary_muscles?: string | null
           suggested_reps?: string | null
           suggested_sets?: number | null
           suggested_weight?: string | null
@@ -497,6 +499,7 @@ export type Database = {
           id?: string
           key_aspects?: string | null
           primary_muscles?: string | null
+          secondary_muscles?: string | null
           suggested_reps?: string | null
           suggested_sets?: number | null
           suggested_weight?: string | null
