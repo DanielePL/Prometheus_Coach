@@ -598,36 +598,57 @@ export const ClientDashboard = () => {
             </div>
           ) : todayWorkouts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {todayWorkouts.slice(0, 3).map((workout) => (
-                <div 
-                  key={workout.id}
-                  className="relative group rounded-xl overflow-hidden border border-primary/30 cursor-pointer hover:border-primary transition-smooth"
-                  onClick={() => startWorkout.mutate(workout.routine_id)}
-                >
-                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                    <Dumbbell className="w-12 h-12 text-primary" />
-                  </div>
-                  <div className="p-4 bg-background/50 backdrop-blur-sm rounded-b-xl">
-                    <h3 className="font-semibold mb-1 text-foreground">{workout.routine.name}</h3>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {workout.routine.description || `${workout.exercise_count} exercises`}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-primary">
-                        {workout.completed_count}/{workout.exercise_count}
-                      </span>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-primary hover:text-primary"
-                        disabled={startWorkout.isPending}
-                      >
-                        {startWorkout.isPending ? "Starting..." : "Start →"}
-                      </Button>
+              {todayWorkouts.slice(0, 3).map((workout) => {
+                const completionPercent = workout.exercise_count > 0 
+                  ? Math.min(100, Math.round((workout.completed_count / workout.exercise_count) * 100))
+                  : 0;
+                
+                return (
+                  <div 
+                    key={workout.id}
+                    className="relative group rounded-xl overflow-hidden border border-primary/30 cursor-pointer hover:border-primary transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20"
+                    onClick={() => startWorkout.mutate(workout.routine_id)}
+                  >
+                    <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                      <Dumbbell className="w-12 h-12 text-primary transition-transform duration-300 group-hover:scale-110" />
+                    </div>
+                    <div className="p-4 bg-background/50 backdrop-blur-sm rounded-b-xl">
+                      <h3 className="font-semibold mb-1 text-foreground">{workout.routine.name}</h3>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        {workout.routine.description || `${workout.exercise_count} exercises`}
+                      </p>
+                      
+                      {/* Progress Bar */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-muted-foreground">Progress</span>
+                          <span className="text-xs text-primary font-medium">{completionPercent}%</span>
+                        </div>
+                        <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
+                            style={{ width: `${completionPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-primary">
+                          {workout.completed_count}/{workout.exercise_count} exercises
+                        </span>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-primary hover:text-primary"
+                          disabled={startWorkout.isPending}
+                        >
+                          {startWorkout.isPending ? "Starting..." : "Start →"}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">
