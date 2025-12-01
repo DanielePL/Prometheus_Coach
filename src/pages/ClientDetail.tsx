@@ -3,12 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { useTheme } from "next-themes";
-import { ArrowLeft, MessageSquare, Calendar, Dumbbell } from "lucide-react";
+import { ArrowLeft, MessageSquare, Calendar, Dumbbell, MessageSquareOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useConnectedClients } from "@/hooks/useConnectedClients";
+import { useToggleClientChat } from "@/hooks/useToggleClientChat";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import { ClientOverviewTab } from "@/components/Clients/ClientOverviewTab";
@@ -23,6 +26,7 @@ const ClientDetail = () => {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
   const { clients } = useConnectedClients();
+  const { chatEnabled, toggleChat, isToggling } = useToggleClientChat(clientId);
 
   const client = clients.find((c) => c.id === clientId);
 
@@ -118,6 +122,33 @@ const ClientDetail = () => {
                     <Dumbbell className="w-4 h-4 mr-2" />
                     Assign Workout
                   </Button>
+                </div>
+
+                {/* Chat Settings */}
+                <div className="mt-4 pt-4 border-t border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {chatEnabled ? (
+                        <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <MessageSquareOff className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      <Label htmlFor="chat-toggle" className="text-sm font-medium cursor-pointer">
+                        Allow Client Messaging
+                      </Label>
+                    </div>
+                    <Switch
+                      id="chat-toggle"
+                      checked={chatEnabled}
+                      onCheckedChange={toggleChat}
+                      disabled={isToggling}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 ml-6">
+                    {chatEnabled 
+                      ? "Client can send you messages" 
+                      : "Client cannot send messages (you can still message them)"}
+                  </p>
                 </div>
               </div>
             </div>

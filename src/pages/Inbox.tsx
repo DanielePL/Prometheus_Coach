@@ -1,6 +1,6 @@
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Moon, Sun, Search, Send, Loader2, MessageSquarePlus, Pencil, Trash2, Check, X } from "lucide-react";
+import { Moon, Sun, Search, Send, Loader2, MessageSquarePlus, Pencil, Trash2, Check, X, MessageSquareOff } from "lucide-react";
 import { useTheme } from "next-themes";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
+import { useChatStatus } from "@/hooks/useChatStatus";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -45,6 +46,7 @@ const Inbox = () => {
   
   const { conversations, loading: conversationsLoading, error: conversationsError, refetch: refetchConversations } = useConversations();
   const { messages, loading: messagesLoading, sendMessage, editMessage, deleteMessage } = useMessages(selectedConversationId);
+  const { chatEnabled } = useChatStatus(selectedConversationId);
 
   // Safe access to conversations with fallback to empty array
   const safeConversations = conversations || [];
@@ -474,23 +476,32 @@ const Inbox = () => {
 
                   {/* Message Input */}
                   <div className="p-4 border-t border-white/10">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="text"
-                        placeholder="Type a message..."
-                        value={messageInput}
-                        onChange={(e) => setMessageInput(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        className="flex-1 glass border-white/10"
-                      />
-                      <button 
-                        onClick={handleSendMessage}
-                        disabled={!messageInput.trim()}
-                        className="bg-primary text-primary-foreground p-2.5 rounded-xl transition-smooth hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Send className="w-5 h-5" />
-                      </button>
-                    </div>
+                    {chatEnabled ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="text"
+                          placeholder="Type a message..."
+                          value={messageInput}
+                          onChange={(e) => setMessageInput(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          className="flex-1 glass border-white/10"
+                        />
+                        <button 
+                          onClick={handleSendMessage}
+                          disabled={!messageInput.trim()}
+                          className="bg-primary text-primary-foreground p-2.5 rounded-xl transition-smooth hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Send className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border/50">
+                        <MessageSquareOff className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <p className="text-sm text-muted-foreground">
+                          Your coach has disabled messaging. Please contact them directly if needed.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
