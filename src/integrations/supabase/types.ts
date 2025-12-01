@@ -229,6 +229,7 @@ export type Database = {
       }
       coach_client_connections: {
         Row: {
+          chat_enabled: boolean | null
           client_id: string
           coach_id: string
           created_at: string
@@ -239,6 +240,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          chat_enabled?: boolean | null
           client_id: string
           coach_id: string
           created_at?: string
@@ -249,6 +251,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          chat_enabled?: boolean | null
           client_id?: string
           coach_id?: string
           created_at?: string
@@ -1161,6 +1164,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_chat_enabled_for_client: {
+        Args: { _client_id: string; _conversation_id: string }
+        Returns: boolean
+      }
       is_conversation_participant: {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
