@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
+import { SubscriptionRoute } from "./components/SubscriptionRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Explore from "./pages/Explore";
@@ -19,6 +20,8 @@ import Uploads from "./pages/Uploads";
 import MyWorkouts from "./pages/MyWorkouts";
 import MyProgress from "./pages/MyProgress";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import ExerciseDetail from "./pages/ExerciseDetail";
 import Settings from "./pages/Settings";
@@ -30,6 +33,7 @@ import ClientWorkouts from "./pages/ClientWorkouts";
 import WorkoutSession from "./pages/WorkoutSession";
 import WorkoutComplete from "./pages/WorkoutComplete";
 import WorkoutHistoryDetail from "./pages/WorkoutHistoryDetail";
+import Trends from "./pages/Trends";
 
 function App() {
   return (
@@ -40,22 +44,25 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/book/:slug" element={<BookingPage />} />
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
-            <Route path="/saved" element={<ProtectedRoute><Saved /></ProtectedRoute>} />
-            <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
-            <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
-            <Route path="/copy-inbox" element={<ProtectedRoute><CopyInbox /></ProtectedRoute>} />
-            <Route path="/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
-            <Route path="/uploads" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Uploads /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/clients" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Clients /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/clients/:clientId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><ClientDetail /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/routines" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Routines /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/routines/create" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/routines/:routineId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><RoutineDetail /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/routines/:routineId/edit" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><SubscriptionRoute><Dashboard /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><SubscriptionRoute><Dashboard /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/explore" element={<ProtectedRoute><SubscriptionRoute><Explore /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/saved" element={<ProtectedRoute><SubscriptionRoute><Saved /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/calendar" element={<ProtectedRoute><SubscriptionRoute><Calendar /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/inbox" element={<ProtectedRoute><SubscriptionRoute><Inbox /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/copy-inbox" element={<ProtectedRoute><SubscriptionRoute><CopyInbox /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/requests" element={<ProtectedRoute><SubscriptionRoute><Requests /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/uploads" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Uploads /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Clients /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/clients/:clientId" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><ClientDetail /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/trends" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Trends /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/routines" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Routines /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/routines/create" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/routines/:routineId" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><RoutineDetail /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/routines/:routineId/edit" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><ClientWorkouts /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/workouts/session/:sessionId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><WorkoutSession /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/workouts/complete/:sessionId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><WorkoutComplete /></RoleBasedRoute></ProtectedRoute>} />

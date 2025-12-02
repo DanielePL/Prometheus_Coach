@@ -11,8 +11,7 @@ import { AssignExerciseModal } from "@/components/Exercise/AssignExerciseModal";
 import { Bookmark, Share2, Moon, Sun, Flame, Weight, Clock, Heart, Activity, TrendingUp, AlertTriangle, Target, Zap, Trash2, Edit, ArrowLeft } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useLibraryExerciseById, TechniqueSection } from "@/hooks/useExerciseLibrary";
 import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDeleteExercise } from "@/hooks/useDeleteExercise";
@@ -48,20 +47,8 @@ const ExerciseDetail = () => {
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
 
-  const { data: exercise, isLoading, refetch } = useQuery({
-    queryKey: ["exercise", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("exercises")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
+  // Fetch from the Prometheus library (exercises_new)
+  const { data: exercise, isLoading, refetch } = useLibraryExerciseById(id);
 
   const relatedWorkouts = [
     { name: "Front Squat", image: frontSquatImg },
@@ -243,57 +230,53 @@ const ExerciseDetail = () => {
                   variant="accent"
                 />
                 
-                <InfoCard
-                  icon={Zap}
-                  label="Key Aspects"
-                  value={
-                    exercise.key_aspects ? (
-                      <ul className="space-y-1 text-sm">
-                        {exercise.key_aspects.split('\n').map((aspect, idx) => (
-                          <li key={idx}>• {aspect}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="text-sm text-muted-foreground italic">
-                        {canEdit ? "Add key form cues" : "No key aspects listed yet"}
-                      </div>
-                    )
-                  }
-                  variant="accent"
-                />
-                
-                <div>
-                  <p className="text-base font-medium text-foreground mb-3">Suggested Program</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <ProgramTile 
-                      label="Sets" 
-                      value={exercise.suggested_sets?.toString() || "-"} 
-                    />
-                    <ProgramTile 
-                      label="Reps" 
-                      value={exercise.suggested_reps || "-"} 
-                    />
-                    <ProgramTile 
-                      label="Weight" 
-                      value={exercise.suggested_weight || "-"} 
-                    />
+                {/* Technique Guides */}
+                {exercise.technique_sections && exercise.technique_sections.length > 0 ? (
+                  <div className="space-y-4">
+                    <p className="text-base font-medium text-foreground">Technique Guide</p>
+                    {exercise.technique_sections.map((section, idx) => (
+                      <InfoCard
+                        key={idx}
+                        icon={Zap}
+                        label={section.title}
+                        value={
+                          <ul className="space-y-1 text-sm">
+                            {section.bullets.map((bullet, bulletIdx) => (
+                              <li key={bulletIdx}>• {bullet}</li>
+                            ))}
+                          </ul>
+                        }
+                        variant="accent"
+                      />
+                    ))}
                   </div>
-                </div>
-
-                <InfoCard
-                  icon={AlertTriangle}
-                  label="Common Mistakes"
-                  value={
-                    exercise.common_mistakes ? (
-                      <div className="text-sm font-normal">{exercise.common_mistakes}</div>
-                    ) : (
+                ) : (
+                  <InfoCard
+                    icon={Zap}
+                    label="Technique Guide"
+                    value={
                       <div className="text-sm text-muted-foreground italic">
-                        {canEdit ? "Add common mistakes to avoid" : "No common mistakes listed yet"}
+                        No technique guide available yet
                       </div>
-                    )
-                  }
-                  variant="accent"
-                />
+                    }
+                    variant="accent"
+                  />
+                )}
+
+                {/* Training Parameters */}
+                {(exercise.tempo || exercise.rest_time_seconds) && (
+                  <div>
+                    <p className="text-base font-medium text-foreground mb-3">Training Parameters</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {exercise.tempo && (
+                        <ProgramTile label="Tempo" value={exercise.tempo} />
+                      )}
+                      {exercise.rest_time_seconds && (
+                        <ProgramTile label="Rest" value={`${exercise.rest_time_seconds}s`} />
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Workout Metrics */}
                 <div>
@@ -431,59 +414,78 @@ const ExerciseDetail = () => {
                 variant="accent"
               />
               
-              <InfoCard
-                icon={Zap}
-                label="Key Aspects"
-                value={
-                  exercise.key_aspects ? (
-                    <ul className="space-y-1.5 text-sm">
-                      {exercise.key_aspects.split('\n').map((aspect, idx) => (
-                        <li key={idx}>• {aspect}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className="text-sm text-muted-foreground italic">
-                      {canEdit ? "Add key form cues" : "No key aspects listed yet"}
-                    </div>
-                  )
-                }
-                variant="accent"
-              />
-              
-              <div className="lg:mt-[10px] lg:pt-[10px]">
-                <p className="text-base font-medium text-foreground mb-4">Suggested Program</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <ProgramTile 
-                    label="Sets" 
-                    value={exercise.suggested_sets?.toString() || "-"} 
-                  />
-                  <ProgramTile 
-                    label="Reps" 
-                    value={exercise.suggested_reps || "-"} 
-                  />
-                  <ProgramTile 
-                    label="Weight" 
-                    value={exercise.suggested_weight || "-"} 
-                  />
+              {/* Technique Guides - Desktop */}
+              {exercise.technique_sections && exercise.technique_sections.length > 0 ? (
+                <div className="space-y-4">
+                  <p className="text-base font-medium text-foreground">Technique Guide</p>
+                  {exercise.technique_sections.map((section, idx) => (
+                    <InfoCard
+                      key={idx}
+                      icon={Zap}
+                      label={section.title}
+                      value={
+                        <ul className="space-y-1.5 text-sm">
+                          {section.bullets.map((bullet, bulletIdx) => (
+                            <li key={bulletIdx}>• {bullet}</li>
+                          ))}
+                        </ul>
+                      }
+                      variant="accent"
+                    />
+                  ))}
                 </div>
-              </div>
-
-              <InfoCard
-                icon={AlertTriangle}
-                label="Common Mistakes"
-                value={
-                  exercise.common_mistakes ? (
-                    <div className="text-sm font-normal">{exercise.common_mistakes}</div>
-                  ) : (
+              ) : (
+                <InfoCard
+                  icon={Zap}
+                  label="Technique Guide"
+                  value={
                     <div className="text-sm text-muted-foreground italic">
-                      {canEdit ? "Add common mistakes to avoid" : "No common mistakes listed yet"}
+                      No technique guide available yet
                     </div>
-                  )
-                }
-                variant="accent"
-              />
+                  }
+                  variant="accent"
+                />
+              )}
+
+              {/* Training Parameters - Desktop */}
+              {(exercise.tempo || exercise.rest_time_seconds) && (
+                <div className="lg:mt-[10px] lg:pt-[10px]">
+                  <p className="text-base font-medium text-foreground mb-4">Training Parameters</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {exercise.tempo && (
+                      <ProgramTile label="Tempo" value={exercise.tempo} />
+                    )}
+                    {exercise.rest_time_seconds && (
+                      <ProgramTile label="Rest" value={`${exercise.rest_time_seconds}s`} />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* VBT Info - Full Width on Desktop */}
+          {exercise.vbt_enabled && (
+            <div className="hidden lg:block mt-8">
+              <p className="text-base font-medium text-foreground mb-4">Velocity Based Training</p>
+              <div className="grid grid-cols-3 gap-4">
+                <InfoCard
+                  icon={Zap}
+                  label="VBT Category"
+                  value={<div className="text-sm font-normal">{exercise.vbt_category || "General"}</div>}
+                  variant="accent"
+                />
+                {exercise.bartracker_enabled && (
+                  <InfoCard
+                    icon={Activity}
+                    label="Bar Tracker"
+                    value={<div className="text-sm font-normal">Enabled - Track bar path and velocity</div>}
+                    variant="accent"
+                  />
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Workout Metrics - Full Width on Desktop */}
           <div className="hidden lg:block mt-8">

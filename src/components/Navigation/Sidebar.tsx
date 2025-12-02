@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Compass, Bookmark, Calendar, Users, Mail, Settings, LogOut, Upload, Dumbbell, TrendingUp, Loader2, ListOrdered } from "lucide-react";
+import { LayoutDashboard, Compass, Bookmark, Calendar, Users, Mail, Settings, LogOut, Upload, Dumbbell, TrendingUp, Loader2, ListOrdered, BarChart3 } from "lucide-react";
 import { useTheme } from "next-themes";
 import logoFull from "@/assets/logo-full.png";
 import logo from "@/assets/logo.png";
@@ -30,7 +30,7 @@ interface NavItem {
 
 const baseNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: Compass, label: "Explore", path: "/explore" },
+  { icon: Compass, label: "Library", path: "/explore" },
   { icon: Bookmark, label: "Saved", path: "/saved" },
   { icon: Upload, label: "Uploads", path: "/uploads", roleRequired: ["coach", "admin"] },
   { icon: ListOrdered, label: "Routines", path: "/routines", roleRequired: ["coach", "admin"] },
@@ -38,6 +38,7 @@ const baseNavItems: NavItem[] = [
   { icon: TrendingUp, label: "My Progress", path: "/my-progress", roleRequired: ["client"] },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
   { icon: Users, label: "Clients", path: "/clients", roleRequired: ["coach", "admin"] },
+  { icon: BarChart3, label: "Trends", path: "/trends", roleRequired: ["coach", "admin"] },
   { icon: Mail, label: "Inbox", path: "/inbox" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];

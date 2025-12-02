@@ -12,6 +12,7 @@ import { AccountSettings } from "@/components/Settings/AccountSettings";
 import { NotificationSettings } from "@/components/Settings/NotificationSettings";
 import { PrivacySettings } from "@/components/Settings/PrivacySettings";
 import { AppearanceSettings } from "@/components/Settings/AppearanceSettings";
+import { SubscriptionSettings } from "@/components/Settings/SubscriptionSettings";
 import { BusinessHoursSettings } from "@/components/Calendar/BusinessHoursSettings";
 import { AvailabilitySettings } from "@/components/Calendar/AvailabilitySettings";
 import { BookingLinksSettings } from "@/components/Calendar/BookingLinksSettings";
@@ -36,6 +37,8 @@ const Settings = () => {
         return <ProfileSettings />;
       case "account":
         return <AccountSettings />;
+      case "subscription":
+        return isCoach ? <SubscriptionSettings /> : null;
       case "notifications":
         return <NotificationSettings />;
       case "business-hours":

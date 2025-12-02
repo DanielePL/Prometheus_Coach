@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { User, Shield, Bell, Clock, Calendar, Lock, Palette } from "lucide-react";
+import { User, Shield, Bell, Clock, Calendar, Lock, Palette, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SettingsSidebarProps {
@@ -10,6 +10,7 @@ export function SettingsSidebar({ isCoach }: SettingsSidebarProps) {
   const tabs = [
     { id: "profile", label: "Profile", icon: User, visible: true },
     { id: "account", label: "Account", icon: Shield, visible: true },
+    { id: "subscription", label: "Subscription", icon: CreditCard, visible: isCoach },
     { id: "notifications", label: "Notifications", icon: Bell, visible: true },
     { id: "business-hours", label: "Business Hours", icon: Clock, visible: isCoach },
     { id: "booking", label: "Booking Settings", icon: Calendar, visible: isCoach },

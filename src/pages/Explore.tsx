@@ -1,33 +1,39 @@
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Moon, Sun, Search } from "lucide-react";
+import { Moon, Sun, Search, Dumbbell } from "lucide-react";
 import { useTheme } from "next-themes";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import bannerImg from "@/assets/gym-banner.jpg";
-import { useExercises, ExerciseCategory } from "@/hooks/useExercises";
+import { useExerciseLibrary, useExerciseCategories, useExerciseSports, MappedExercise } from "@/hooks/useExerciseLibrary";
 import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 import { ExerciseCard } from "@/components/Exercise/ExerciseCard";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useUserRole } from "@/hooks/useUserRole";
 
-const categories = ["all", "bodybuilding", "crossfit", "powerlifting", "weightlifting", "functional", "plyometrics"] as const;
+// Sports filter options
+const sportFilters = ["all", "Weightlifting", "Powerlifting", "General Strength", "CrossFit", "Hyrox"] as const;
 
 const Explore = () => {
   const { theme, setTheme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedSport, setSelectedSport] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const { isCoach } = useUserRole();
 
-  const { data: exercises = [], isLoading } = useExercises({
-    category: selectedCategory === "all" ? undefined : (selectedCategory as ExerciseCategory),
+  // Fetch from the main Prometheus exercise library (810+ exercises)
+  const { data: exercises = [], isLoading } = useExerciseLibrary({
+    category: selectedCategory === "all" ? undefined : selectedCategory,
     searchQuery: searchQuery || undefined,
+    sport: selectedSport === "all" ? undefined : selectedSport,
   });
 
-  // /explore shows public exercises - RLS handles visibility
-  // All users see the same public library
-  const filteredExercises = exercises.filter((ex) => ex.visibility === "public");
+  // Get unique categories from library
+  const { data: categories = [] } = useExerciseCategories();
+
+  // All library exercises are visible (no visibility filter needed)
+  const filteredExercises = exercises;
 
   const { isFavorite, toggleFavorite } = useFavoriteExercises();
 
@@ -80,23 +86,67 @@ const Explore = () => {
               />
             </div>
 
-            <div className="flex gap-2 flex-wrap">
-              {categories.map((category) => (
+            {/* Sport Filters */}
+            <div className="flex gap-2 flex-wrap items-center">
+              <span className="text-sm text-muted-foreground font-medium mr-2">Sport:</span>
+              {sportFilters.map((sport) => (
                 <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
+                  key={sport}
+                  onClick={() => setSelectedSport(sport)}
                   className={`
-                    capitalize px-4 py-2 rounded-full text-sm font-semibold
+                    px-4 py-2 rounded-full text-sm font-semibold
                     transition-smooth
-                    ${selectedCategory === category 
-                      ? 'bg-gradient-to-r from-primary to-orange-500 text-white shadow-[0_0_20px_rgba(251,146,60,0.4)]' 
+                    ${selectedSport === sport
+                      ? 'bg-gradient-to-r from-primary to-orange-500 text-white shadow-[0_0_20px_rgba(251,146,60,0.4)]'
                       : 'glass hover:bg-white/20 dark:hover:bg-black/30 border border-white/20'
                     }
                   `}
                 >
-                  {category}
+                  {sport === "all" ? "All Sports" : sport}
                 </button>
               ))}
+            </div>
+
+            {/* Category Filters - Dynamic from library */}
+            {categories.length > 0 && (
+              <div className="flex gap-2 flex-wrap items-center">
+                <span className="text-sm text-muted-foreground font-medium mr-2">Muscle:</span>
+                <button
+                  onClick={() => setSelectedCategory("all")}
+                  className={`
+                    px-4 py-2 rounded-full text-sm font-semibold
+                    transition-smooth
+                    ${selectedCategory === "all"
+                      ? 'bg-gradient-to-r from-primary to-orange-500 text-white shadow-[0_0_20px_rgba(251,146,60,0.4)]'
+                      : 'glass hover:bg-white/20 dark:hover:bg-black/30 border border-white/20'
+                    }
+                  `}
+                >
+                  All
+                </button>
+                {categories.slice(0, 10).map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`
+                      capitalize px-4 py-2 rounded-full text-sm font-semibold
+                      transition-smooth
+                      ${selectedCategory === category
+                        ? 'bg-gradient-to-r from-primary to-orange-500 text-white shadow-[0_0_20px_rgba(251,146,60,0.4)]'
+                        : 'glass hover:bg-white/20 dark:hover:bg-black/30 border border-white/20'
+                      }
+                    `}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Results Count */}
+            <div className="text-sm text-muted-foreground">
+              <Dumbbell className="inline-block w-4 h-4 mr-1" />
+              {filteredExercises.length} exercises found
             </div>
           </div>
 
@@ -114,7 +164,7 @@ const Explore = () => {
               {filteredExercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
-                  exercise={exercise}
+                  exercise={exercise as any}
                   isFavorite={isFavorite(exercise.id)}
                   onToggleFavorite={toggleFavorite}
                   showShare={isCoach}

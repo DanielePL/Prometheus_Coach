@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Eye, EyeOff } from 'lucide-react';
 import logoFull from '@/assets/logo-full.png';
 import logoWhite from '@/assets/logo-white.png';
 import gradientBg from '@/assets/gradient-bg.jpg';
@@ -17,8 +18,12 @@ import gradientBgDark from '@/assets/gradient-bg-dark.png';
 const signUpSchema = z.object({
   email: z.string().trim().email({ message: 'Invalid email address' }).max(255),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  confirmPassword: z.string().min(1, { message: 'Please confirm your password' }),
   fullName: z.string().trim().min(2, { message: 'Name must be at least 2 characters' }).max(100),
   role: z.enum(['coach', 'client'], { message: 'Please select a role' }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 const signInSchema = z.object({
@@ -29,13 +34,20 @@ const signInSchema = z.object({
 const Auth = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const { signUp, signIn, user } = useAuth();
+  const { signUp, signIn, signInAsGuest, user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
+
+  // Password visibility states
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Sign up state
   const [signUpData, setSignUpData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     fullName: '',
     role: 'client' as 'coach' | 'client',
   });
@@ -74,7 +86,7 @@ const Auth = () => {
         }
       } else {
         toast.success('Account created! Please check your email to confirm your account.');
-        setSignUpData({ email: '', password: '', fullName: '', role: 'client' });
+        setSignUpData({ email: '', password: '', confirmPassword: '', fullName: '', role: 'client' });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -114,6 +126,25 @@ const Auth = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setGuestLoading(true);
+
+    try {
+      const { error } = await signInAsGuest();
+
+      if (error) {
+        toast.error('Failed to sign in as guest. Please try again.');
+      } else {
+        toast.success('Welcome, Guest!');
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setGuestLoading(false);
     }
   };
 
@@ -162,23 +193,57 @@ const Auth = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signInData.password}
-                    onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
-                    required
-                    className="bg-background/50"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="signin-password"
+                      type={showSignInPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={signInData.password}
+                      onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
+                      required
+                      className="bg-background/50 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignInPassword(!showSignInPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showSignInPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={loading}
+                  disabled={loading || guestLoading}
                 >
                   {loading ? 'Signing in...' : 'Sign In'}
+                </Button>
+
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleGuestLogin}
+                  disabled={loading || guestLoading}
+                >
+                  {guestLoading ? 'Signing in as guest...' : '👤 Continue as Guest'}
                 </Button>
               </form>
             </TabsContent>
@@ -214,15 +279,54 @@ const Auth = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signUpData.password}
-                    onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
-                    required
-                    className="bg-background/50"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="signup-password"
+                      type={showSignUpPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={signUpData.password}
+                      onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
+                      required
+                      className="bg-background/50 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showSignUpPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-confirm-password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={signUpData.confirmPassword}
+                      onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })}
+                      required
+                      className="bg-background/50 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

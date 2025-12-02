@@ -19,6 +19,11 @@ import { ClientWorkoutsTab } from "@/components/Clients/ClientWorkoutsTab";
 import { ClientProgressTab } from "@/components/Clients/ClientProgressTab";
 import { ClientNotesTab } from "@/components/Clients/ClientNotesTab";
 import { ClientHistoryTab } from "@/components/Clients/ClientHistoryTab";
+import { ClientVBTTab } from "@/components/Clients/ClientVBTTab";
+import { ClientNutritionTab } from "@/components/Clients/ClientNutritionTab";
+import { ClientLoadLabTab } from "@/components/Clients/ClientLoadLabTab";
+import { ClientPRsTab } from "@/components/Clients/ClientPRsTab";
+import { ClientInsightsTab } from "@/components/Clients/ClientInsightsTab";
 
 const ClientDetail = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -157,9 +162,14 @@ const ClientDetail = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="glass w-full md:w-auto">
+          <TabsList className="glass w-full md:w-auto flex-wrap">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="workouts">Workouts</TabsTrigger>
+            <TabsTrigger value="vbt">VBT</TabsTrigger>
+            <TabsTrigger value="loadlab">Load Lab</TabsTrigger>
+            <TabsTrigger value="prs">PRs</TabsTrigger>
+            <TabsTrigger value="insights">Insights</TabsTrigger>
+            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
@@ -171,6 +181,26 @@ const ClientDetail = () => {
 
           <TabsContent value="workouts">
             <ClientWorkoutsTab clientId={client.id} />
+          </TabsContent>
+
+          <TabsContent value="vbt">
+            <ClientVBTTab clientId={client.id} />
+          </TabsContent>
+
+          <TabsContent value="loadlab">
+            <ClientLoadLabTab clientId={client.id} />
+          </TabsContent>
+
+          <TabsContent value="prs">
+            <ClientPRsTab clientId={client.id} />
+          </TabsContent>
+
+          <TabsContent value="insights">
+            <ClientInsightsTab clientId={client.id} />
+          </TabsContent>
+
+          <TabsContent value="nutrition">
+            <ClientNutritionTab clientId={client.id} />
           </TabsContent>
 
           <TabsContent value="progress">

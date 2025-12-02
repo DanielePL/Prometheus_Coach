@@ -18,6 +18,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, fullName: string, role: 'coach' | 'client') => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInAsGuest: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -98,8 +99,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, role: 'coach' | 'client') => {
-    const redirectUrl = `${window.location.origin}/`;
-    
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -124,13 +125,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
+  const signInAsGuest = async () => {
+    // Use a predefined guest account
+    const guestEmail = 'guest@prometheus.coach';
+    const guestPassword = 'guest123456';
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email: guestEmail,
+      password: guestPassword,
+    });
+
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate('/auth');
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signInAsGuest, signOut }}>
       {children}
     </AuthContext.Provider>
   );

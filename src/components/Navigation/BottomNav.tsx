@@ -23,7 +23,7 @@ interface NavItem {
 
 const baseNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: Compass, label: "Explore", path: "/explore" },
+  { icon: Compass, label: "Library", path: "/explore" },
   { icon: Bookmark, label: "Saved", path: "/saved" },
   { icon: Upload, label: "Uploads", path: "/uploads", roleRequired: ["coach", "admin"] },
   { icon: Dumbbell, label: "My Workouts", path: "/my-workouts", roleRequired: ["client"] },
