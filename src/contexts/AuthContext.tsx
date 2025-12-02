@@ -18,7 +18,6 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, fullName: string, role: 'coach' | 'client') => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signInAsGuest: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -31,39 +30,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      // Fetch profile data
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .eq('id', userId)
-        .single();
+  // Build profile from user metadata (no extra DB calls needed)
+  const buildProfileFromUser = (authUser: User): Profile => {
+    const metadata = authUser.user_metadata || {};
+    const role = metadata.role || 'coach';
 
-      if (profileError) throw profileError;
-
-      // Fetch user roles from user_roles table
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (rolesError) throw rolesError;
-
-      // Combine data
-      const roles = (rolesData || []).map(r => r.role) as ('client' | 'coach' | 'admin')[];
-      const is_admin = roles.includes('admin');
-
-      setProfile({
-        id: profileData.id,
-        full_name: profileData.full_name,
-        avatar_url: profileData.avatar_url,
-        roles,
-        is_admin
-      });
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
+    return {
+      id: authUser.id,
+      full_name: metadata.full_name || authUser.email?.split('@')[0] || 'User',
+      roles: [role as 'client' | 'coach' | 'admin'],
+      is_admin: role === 'admin',
+      avatar_url: metadata.avatar_url || null,
+    };
   };
 
   useEffect(() => {
@@ -71,15 +49,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
-        setTimeout(() => {
-          fetchProfile(session.user.id);
-        }, 0);
+        setProfile(buildProfileFromUser(session.user));
       } else {
         setProfile(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -87,11 +63,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
-        fetchProfile(session.user.id);
+        setProfile(buildProfileFromUser(session.user));
       }
-      
+
       setLoading(false);
     });
 
@@ -99,13 +75,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, role: 'coach' | 'client') => {
-    const redirectUrl = `${window.location.origin}/auth/callback`;
-
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
           role: role,
@@ -125,26 +98,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
-  const signInAsGuest = async () => {
-    // Use a predefined guest account
-    const guestEmail = 'guest@prometheus.coach';
-    const guestPassword = 'guest123456';
-    
-    const { error } = await supabase.auth.signInWithPassword({
-      email: guestEmail,
-      password: guestPassword,
-    });
-
-    return { error };
-  };
-
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate('/auth');
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signInAsGuest, signOut }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
