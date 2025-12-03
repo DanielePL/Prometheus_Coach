@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -20,7 +19,6 @@ const signUpSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
   confirmPassword: z.string().min(1, { message: 'Please confirm your password' }),
   fullName: z.string().trim().min(2, { message: 'Name must be at least 2 characters' }).max(100),
-  role: z.enum(['coach', 'client'], { message: 'Please select a role' }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -34,22 +32,20 @@ const signInSchema = z.object({
 const Auth = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const { signUp, signIn, signInAsGuest, user } = useAuth();
+  const { signUp, signIn, user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [guestLoading, setGuestLoading] = useState(false);
 
   // Password visibility states
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Sign up state
+  // Sign up state (web platform is coaches only)
   const [signUpData, setSignUpData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     fullName: '',
-    role: 'client' as 'coach' | 'client',
   });
 
   // Sign in state
@@ -71,11 +67,12 @@ const Auth = () => {
     try {
       const validated = signUpSchema.parse(signUpData);
       
+      // Web platform = coaches only
       const { error } = await signUp(
         validated.email,
         validated.password,
         validated.fullName,
-        validated.role
+        'coach'
       );
 
       if (error) {
@@ -86,7 +83,7 @@ const Auth = () => {
         }
       } else {
         toast.success('Account created! Please check your email to confirm your account.');
-        setSignUpData({ email: '', password: '', confirmPassword: '', fullName: '', role: 'client' });
+        setSignUpData({ email: '', password: '', confirmPassword: '', fullName: '' });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -126,25 +123,6 @@ const Auth = () => {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGuestLogin = async () => {
-    setGuestLoading(true);
-
-    try {
-      const { error } = await signInAsGuest();
-
-      if (error) {
-        toast.error('Failed to sign in as guest. Please try again.');
-      } else {
-        toast.success('Welcome, Guest!');
-        navigate('/dashboard');
-      }
-    } catch (error) {
-      toast.error('An unexpected error occurred');
-    } finally {
-      setGuestLoading(false);
     }
   };
 
@@ -220,30 +198,9 @@ const Auth = () => {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={loading || guestLoading}
+                  disabled={loading}
                 >
                   {loading ? 'Signing in...' : 'Sign In'}
-                </Button>
-
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      Or
-                    </span>
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleGuestLogin}
-                  disabled={loading || guestLoading}
-                >
-                  {guestLoading ? 'Signing in as guest...' : '👤 Continue as Guest'}
                 </Button>
               </form>
             </TabsContent>
@@ -327,24 +284,6 @@ const Auth = () => {
                       )}
                     </button>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-role">Role</Label>
-                  <Select
-                    value={signUpData.role}
-                    onValueChange={(value: 'coach' | 'client') =>
-                      setSignUpData({ ...signUpData, role: value })
-                    }
-                  >
-                    <SelectTrigger id="signup-role" className="bg-background/50">
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="coach">Coach</SelectItem>
-                      <SelectItem value="client">Client</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <Button
