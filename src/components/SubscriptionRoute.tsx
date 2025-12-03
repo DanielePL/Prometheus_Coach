@@ -4,6 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { CreditCard, Clock, AlertTriangle } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import gradientBg from '@/assets/gradient-bg.jpg';
+import gradientBgDark from '@/assets/gradient-bg-dark.png';
+import logoFull from '@/assets/logo-full.png';
+import logoWhite from '@/assets/logo-white.png';
 
 interface SubscriptionRouteProps {
   children: ReactNode;
@@ -16,6 +21,7 @@ interface SubscriptionRouteProps {
  */
 export const SubscriptionRoute = ({ children }: SubscriptionRouteProps) => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const { profile, loading: authLoading } = useAuth();
   const { data: subscriptionInfo, isLoading: subLoading } = useSubscription();
 
@@ -47,26 +53,44 @@ export const SubscriptionRoute = ({ children }: SubscriptionRouteProps) => {
     // Trial expired
     if (status === 'none' || !subscriptionInfo?.subscription) {
       return (
-        <div className="min-h-screen w-full flex items-center justify-center p-4">
-          <div className="glass rounded-3xl p-8 max-w-md text-center">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CreditCard className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Start Your Journey</h2>
-            <p className="text-muted-foreground mb-6">
-              Choose a plan to unlock all coaching features and start managing your clients.
-            </p>
-            <div className="space-y-3">
-              <Button
-                onClick={() => navigate('/pricing')}
-                className="w-full"
-                size="lg"
-              >
-                View Plans
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                14-day free trial with full Pro features
+        <div
+          className="min-h-screen w-full flex items-center justify-center p-4"
+          style={{
+            backgroundImage: `url(${theme === 'dark' ? gradientBgDark : gradientBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed',
+          }}
+        >
+          <div className="w-full max-w-md">
+            <div className="glass rounded-3xl p-8 text-center">
+              {/* Logo */}
+              <div className="flex justify-center mb-6">
+                <img
+                  src={theme === 'dark' ? logoWhite : logoFull}
+                  alt="Prometheus Coach"
+                  className="h-10"
+                />
+              </div>
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CreditCard className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Start Your Journey</h2>
+              <p className="text-muted-foreground mb-6">
+                Choose a plan to unlock all coaching features and start managing your clients.
               </p>
+              <div className="space-y-3">
+                <Button
+                  onClick={() => navigate('/pricing')}
+                  className="w-full"
+                  size="lg"
+                >
+                  View Plans
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  14-day free trial with full Pro features
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -76,23 +100,40 @@ export const SubscriptionRoute = ({ children }: SubscriptionRouteProps) => {
     // Past due payment
     if (status === 'past_due' || status === 'unpaid') {
       return (
-        <div className="min-h-screen w-full flex items-center justify-center p-4">
-          <div className="glass rounded-3xl p-8 max-w-md text-center">
-            <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle className="w-8 h-8 text-yellow-500" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Payment Issue</h2>
-            <p className="text-muted-foreground mb-6">
-              There was an issue with your payment. Please update your payment method to continue using the app.
-            </p>
-            <div className="space-y-3">
-              <Button
-                onClick={() => navigate('/settings')}
-                className="w-full"
-                size="lg"
-              >
-                Update Payment
-              </Button>
+        <div
+          className="min-h-screen w-full flex items-center justify-center p-4"
+          style={{
+            backgroundImage: `url(${theme === 'dark' ? gradientBgDark : gradientBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed',
+          }}
+        >
+          <div className="w-full max-w-md">
+            <div className="glass rounded-3xl p-8 text-center">
+              <div className="flex justify-center mb-6">
+                <img
+                  src={theme === 'dark' ? logoWhite : logoFull}
+                  alt="Prometheus Coach"
+                  className="h-10"
+                />
+              </div>
+              <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertTriangle className="w-8 h-8 text-yellow-500" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Payment Issue</h2>
+              <p className="text-muted-foreground mb-6">
+                There was an issue with your payment. Please update your payment method to continue using the app.
+              </p>
+              <div className="space-y-3">
+                <Button
+                  onClick={() => navigate('/settings')}
+                  className="w-full"
+                  size="lg"
+                >
+                  Update Payment
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -102,23 +143,40 @@ export const SubscriptionRoute = ({ children }: SubscriptionRouteProps) => {
     // Subscription canceled
     if (status === 'canceled') {
       return (
-        <div className="min-h-screen w-full flex items-center justify-center p-4">
-          <div className="glass rounded-3xl p-8 max-w-md text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-              <Clock className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Subscription Ended</h2>
-            <p className="text-muted-foreground mb-6">
-              Your subscription has ended. Resubscribe to continue using all coaching features.
-            </p>
-            <div className="space-y-3">
-              <Button
-                onClick={() => navigate('/pricing')}
-                className="w-full"
-                size="lg"
-              >
-                Resubscribe
-              </Button>
+        <div
+          className="min-h-screen w-full flex items-center justify-center p-4"
+          style={{
+            backgroundImage: `url(${theme === 'dark' ? gradientBgDark : gradientBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed',
+          }}
+        >
+          <div className="w-full max-w-md">
+            <div className="glass rounded-3xl p-8 text-center">
+              <div className="flex justify-center mb-6">
+                <img
+                  src={theme === 'dark' ? logoWhite : logoFull}
+                  alt="Prometheus Coach"
+                  className="h-10"
+                />
+              </div>
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                <Clock className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Subscription Ended</h2>
+              <p className="text-muted-foreground mb-6">
+                Your subscription has ended. Resubscribe to continue using all coaching features.
+              </p>
+              <div className="space-y-3">
+                <Button
+                  onClick={() => navigate('/pricing')}
+                  className="w-full"
+                  size="lg"
+                >
+                  Resubscribe
+                </Button>
+              </div>
             </div>
           </div>
         </div>
