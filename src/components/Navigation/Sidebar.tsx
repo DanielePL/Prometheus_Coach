@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Compass, Bookmark, Calendar, Users, Mail, Settings, LogOut, Upload, Dumbbell, TrendingUp, Loader2, ListOrdered, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Compass, Bookmark, Calendar, Users, Mail, Settings, LogOut, Upload, Dumbbell, TrendingUp, Loader2, ListOrdered, BarChart3, Sparkles } from "lucide-react";
 import { useTheme } from "next-themes";
 import logoFull from "@/assets/logo-full.png";
 import logo from "@/assets/logo.png";
@@ -39,6 +39,7 @@ const baseNavItems: NavItem[] = [
   { icon: Calendar, label: "Calendar", path: "/calendar" },
   { icon: Users, label: "Clients", path: "/clients", roleRequired: ["coach", "admin"] },
   { icon: BarChart3, label: "Trends", path: "/trends", roleRequired: ["coach", "admin"] },
+  { icon: Sparkles, label: "AI Assistant", path: "/assistant", roleRequired: ["coach", "admin"] },
   { icon: Mail, label: "Inbox", path: "/inbox" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];

@@ -34,6 +34,7 @@ import WorkoutSession from "./pages/WorkoutSession";
 import WorkoutComplete from "./pages/WorkoutComplete";
 import WorkoutHistoryDetail from "./pages/WorkoutHistoryDetail";
 import Trends from "./pages/Trends";
+import Assistant from "./pages/Assistant";
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
             <Route path="/clients" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Clients /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/clients/:clientId" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><ClientDetail /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/trends" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Trends /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/assistant" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="AI Assistant is for coaches only"><Assistant /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/routines" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Routines /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/routines/create" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/routines/:routineId" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><RoutineDetail /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
