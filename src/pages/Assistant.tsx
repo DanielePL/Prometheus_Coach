@@ -23,15 +23,16 @@ interface Message {
 const WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
-  content: `Hallo! 👋 Ich bin dein AI Coaching Assistant.
+  content: `Hey! 👋 I'm your AI Coaching Assistant.
 
-Ich kann dir helfen mit:
-- **Client Übersicht** - "Wie performt Max diese Woche?"
-- **Performance Analyse** - "Wer braucht gerade Aufmerksamkeit?"
-- **Aktionen** - "Schreibe Lisa eine Motivationsnachricht"
-- **Planung** - "Erstelle einen Termin mit Max für morgen"
+I can help you with:
+- **Client Overview** - "How is Max performing this week?"
+- **Performance Analysis** - "Who needs attention right now?"
+- **Actions** - "Send Lisa a motivation message"
+- **Planning** - "Create a session with Max for tomorrow"
+- **Business Growth** - "How do I get more clients?"
 
-Was kann ich für dich tun?`,
+What can I do for you?`,
   timestamp: new Date(),
 };
 
@@ -200,7 +201,7 @@ const Assistant = () => {
             <div>
               <h1 className="text-xl font-bold">AI Assistant</h1>
               <p className="text-sm text-muted-foreground">
-                Dein intelligenter Coaching-Helfer
+                Your intelligent coaching helper
               </p>
             </div>
           </div>
@@ -208,7 +209,7 @@ const Assistant = () => {
             variant="ghost"
             size="icon"
             onClick={clearChat}
-            title="Chat leeren"
+            title="Clear chat"
           >
             <Trash2 className="w-5 h-5" />
           </Button>
@@ -281,7 +282,7 @@ const Assistant = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Frag mich etwas..."
+              placeholder="Ask me anything..."
               className="min-h-[44px] max-h-[200px] resize-none bg-background/50"
               rows={1}
               disabled={isLoading}
@@ -300,7 +301,7 @@ const Assistant = () => {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            AI kann Fehler machen. Überprüfe wichtige Informationen.
+            AI can make mistakes. Verify important information.
           </p>
         </div>
       </main>
