@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { exerciseLibraryClient } from "@/integrations/supabase/exerciseLibraryClient";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Meal types
@@ -120,7 +120,7 @@ export const useClientNutrition = (clientId: string, days: number = 30) => {
       startDate.setDate(startDate.getDate() - days);
 
       // Get nutrition logs
-      const { data: logs, error: logsError } = await exerciseLibraryClient
+      const { data: logs, error: logsError } = await supabase
         .from("nutrition_logs")
         .select("*")
         .eq("user_id", clientId)
@@ -132,7 +132,7 @@ export const useClientNutrition = (clientId: string, days: number = 30) => {
 
       // Get meals for these logs
       const logIds = logs.map(l => l.id);
-      const { data: meals, error: mealsError } = await exerciseLibraryClient
+      const { data: meals, error: mealsError } = await supabase
         .from("meals")
         .select("*")
         .in("nutrition_log_id", logIds)
@@ -142,7 +142,7 @@ export const useClientNutrition = (clientId: string, days: number = 30) => {
 
       // Get meal items
       const mealIds = (meals || []).map(m => m.id);
-      const { data: items, error: itemsError } = await exerciseLibraryClient
+      const { data: items, error: itemsError } = await supabase
         .from("meal_items")
         .select("*")
         .in("meal_id", mealIds);
@@ -150,7 +150,7 @@ export const useClientNutrition = (clientId: string, days: number = 30) => {
       if (itemsError) throw itemsError;
 
       // Get active nutrition goal
-      const { data: goals } = await exerciseLibraryClient
+      const { data: goals } = await supabase
         .from("nutrition_goals")
         .select("*")
         .eq("user_id", clientId)
@@ -223,7 +223,7 @@ export const useClientNutritionWeekly = (clientId: string) => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 7);
 
-      const { data: logs } = await exerciseLibraryClient
+      const { data: logs } = await supabase
         .from("nutrition_logs")
         .select(`
           id,
@@ -302,14 +302,14 @@ export const useSetClientNutritionGoal = () => {
       targetFat: number;
     }) => {
       // Deactivate existing goals
-      await exerciseLibraryClient
+      await supabase
         .from("nutrition_goals")
         .update({ is_active: false })
         .eq("user_id", clientId)
         .eq("is_active", true);
 
       // Create new goal
-      const { data, error } = await exerciseLibraryClient
+      const { data, error } = await supabase
         .from("nutrition_goals")
         .insert({
           user_id: clientId,
