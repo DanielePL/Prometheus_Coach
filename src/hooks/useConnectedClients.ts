@@ -31,7 +31,7 @@ export const useConnectedClients = () => {
       const clientIds = data.map(d => d.client_id);
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url")
+        .select("id, full_name")
         .in("id", clientIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -42,7 +42,7 @@ export const useConnectedClients = () => {
           id: item.client_id,
           connection_id: item.id,
           full_name: profile?.full_name || "Unknown",
-          avatar_url: profile?.avatar_url,
+          avatar_url: null,
           connected_at: item.responded_at,
         };
       }) as ConnectedClient[];
