@@ -59,30 +59,48 @@ const calculate1RM = (weight: number, reps: number): number => {
 
 /**
  * Fetch enhanced PR data for a single client
+ * Uses exercise_statistics (current PRs) and pr_history (PR timeline) from Mobile App
  */
 export const useClientEnhancedPRs = (clientId: string) => {
   return useQuery({
     queryKey: ["enhanced-prs", clientId],
     queryFn: async () => {
-      // Get PRs from Coach app's Supabase
-      const { data: prs, error: prsError } = await supabase
-        .from("personal_records")
-        .select(`
-          id,
-          client_id,
-          exercise_id,
-          weight_used,
-          reps_completed,
-          achieved_at
-        `)
-        .eq("client_id", clientId)
-        .order("achieved_at", { ascending: false });
+      console.log("Fetching PRs for clientId:", clientId);
 
-      if (prsError) throw prsError;
-      if (!prs || prs.length === 0) return { prs: [], byExercise: new Map() };
+      // Get exercise statistics (contains current PRs per exercise)
+      const { data: stats, error: statsError } = await supabase
+        .from("exercise_statistics")
+        .select("*")
+        .eq("user_id", clientId)
+        .order("estimated_1rm_kg", { ascending: false, nullsFirst: false });
+
+      console.log("exercise_statistics result:", { stats, statsError });
+
+      if (statsError) throw statsError;
+
+      // Get recent PR history
+      const { data: prHistory, error: historyError } = await supabase
+        .from("pr_history")
+        .select("*")
+        .eq("user_id", clientId)
+        .order("achieved_at", { ascending: false })
+        .limit(50);
+
+      console.log("pr_history result:", { prHistory, historyError });
+
+      if (historyError) throw historyError;
+
+      // If no data, return empty
+      if ((!stats || stats.length === 0) && (!prHistory || prHistory.length === 0)) {
+        return { prs: [], byExercise: new Map(), totalPRs: 0, highestEstimated1RM: 0, mostRecentPR: null, prsByMuscleGroup: [] };
+      }
 
       // Get exercise info from Prometheus library
-      const exerciseIds = [...new Set(prs.map(pr => pr.exercise_id))];
+      const exerciseIds = [...new Set([
+        ...(stats || []).map(s => s.exercise_id),
+        ...(prHistory || []).map(p => p.exercise_id)
+      ])];
+
       const { data: exercises } = await exerciseLibraryClient
         .from("exercises_new")
         .select("id, name, main_muscle_group")
@@ -92,22 +110,27 @@ export const useClientEnhancedPRs = (clientId: string) => {
         (exercises || []).map(e => [e.id, { name: e.name, muscleGroup: e.main_muscle_group }])
       );
 
-      // Map PRs with exercise info
-      const enhancedPRs: EnhancedPR[] = prs.map(pr => {
-        const exercise = exerciseMap.get(pr.exercise_id);
-        return {
-          id: pr.id,
-          clientId: pr.client_id,
-          clientName: "", // Not needed for single client view
-          exerciseId: pr.exercise_id,
-          exerciseName: exercise?.name || pr.exercise_id,
-          weightUsed: pr.weight_used,
-          repsCompleted: pr.reps_completed,
-          achievedAt: pr.achieved_at,
-          estimated1RM: calculate1RM(pr.weight_used, pr.reps_completed),
-          muscleGroup: exercise?.muscleGroup || null,
-        };
-      });
+      // Map exercise statistics to EnhancedPR format (best PR per exercise)
+      const enhancedPRs: EnhancedPR[] = (stats || [])
+        .filter(s => s.pr_weight_kg && s.pr_weight_kg > 0)
+        .map(stat => {
+          const exercise = exerciseMap.get(stat.exercise_id);
+          return {
+            id: stat.id,
+            clientId: stat.user_id,
+            clientName: "",
+            exerciseId: stat.exercise_id,
+            exerciseName: exercise?.name || stat.exercise_id,
+            weightUsed: stat.pr_weight_kg || 0,
+            repsCompleted: stat.pr_weight_reps || 0,
+            achievedAt: stat.pr_weight_date || stat.updated_at || "",
+            estimated1RM: stat.estimated_1rm_kg || calculate1RM(stat.pr_weight_kg || 0, stat.pr_weight_reps || 0),
+            muscleGroup: exercise?.muscleGroup || null,
+          };
+        });
+
+      // Sort by estimated 1RM descending
+      enhancedPRs.sort((a, b) => b.estimated1RM - a.estimated1RM);
 
       // Group by exercise for easy access
       const byExercise = new Map<string, EnhancedPR[]>();
@@ -118,15 +141,39 @@ export const useClientEnhancedPRs = (clientId: string) => {
         byExercise.get(pr.exerciseId)!.push(pr);
       });
 
+      // Find most recent PR from pr_history
+      const mostRecentFromHistory = prHistory && prHistory.length > 0 ? prHistory[0] : null;
+      let mostRecentPR: EnhancedPR | null = null;
+
+      if (mostRecentFromHistory) {
+        const exercise = exerciseMap.get(mostRecentFromHistory.exercise_id);
+        mostRecentPR = {
+          id: mostRecentFromHistory.id,
+          clientId: mostRecentFromHistory.user_id,
+          clientName: "",
+          exerciseId: mostRecentFromHistory.exercise_id,
+          exerciseName: exercise?.name || mostRecentFromHistory.exercise_id,
+          weightUsed: mostRecentFromHistory.weight_kg || 0,
+          repsCompleted: mostRecentFromHistory.reps || 0,
+          achievedAt: mostRecentFromHistory.achieved_at,
+          estimated1RM: calculate1RM(mostRecentFromHistory.weight_kg || 0, mostRecentFromHistory.reps || 0),
+          muscleGroup: exercise?.muscleGroup || null,
+        };
+      } else if (enhancedPRs.length > 0) {
+        // Fallback to most recent from stats
+        mostRecentPR = enhancedPRs.reduce((latest, pr) =>
+          new Date(pr.achievedAt) > new Date(latest.achievedAt) ? pr : latest
+        );
+      }
+
       return {
         prs: enhancedPRs,
         byExercise,
-        // Summary stats
         totalPRs: enhancedPRs.length,
         highestEstimated1RM: enhancedPRs.length > 0
           ? Math.max(...enhancedPRs.map(pr => pr.estimated1RM))
           : 0,
-        mostRecentPR: enhancedPRs[0] || null,
+        mostRecentPR,
         prsByMuscleGroup: Array.from(
           enhancedPRs.reduce((acc, pr) => {
             const mg = pr.muscleGroup || "Other";
@@ -248,32 +295,45 @@ export const usePRLeaderboard = (coachId: string) => {
 
 /**
  * Fetch PR history for a specific exercise across time
+ * Uses pr_history table from Mobile App
  */
 export const useExercisePRHistory = (clientId: string, exerciseId: string) => {
   return useQuery({
     queryKey: ["exercise-pr-history", clientId, exerciseId],
     queryFn: async () => {
-      // This would need a pr_history table to track all attempts, not just current best
-      // For now, we'll use workout_sets to show progression
-      const { data: sets, error } = await exerciseLibraryClient
+      // Get PR history for this exercise
+      const { data: history, error: historyError } = await supabase
+        .from("pr_history")
+        .select("*")
+        .eq("user_id", clientId)
+        .eq("exercise_id", exerciseId)
+        .order("achieved_at", { ascending: true });
+
+      if (historyError) throw historyError;
+
+      // Also get workout_sets for more data points
+      const { data: sets, error: setsError } = await supabase
         .from("workout_sets")
         .select(`
           id,
           weight_kg,
           reps,
           created_at,
-          workout_sessions!inner(user_id)
+          workout_sessions!inner(client_id, user_id)
         `)
         .eq("exercise_id", exerciseId)
-        .eq("workout_sessions.user_id", clientId)
         .order("created_at", { ascending: true })
         .limit(100);
 
-      if (error) throw error;
+      // Filter sets for this client
+      const clientSets = (sets || []).filter(s =>
+        s.workout_sessions?.client_id === clientId ||
+        s.workout_sessions?.user_id === clientId
+      );
 
       // Track progressive maxes over time
       let maxEstimated1RM = 0;
-      const progressionData = (sets || []).map(set => {
+      const progressionData = clientSets.map(set => {
         const estimated1RM = calculate1RM(set.weight_kg || 0, set.reps || 0);
         const isNewMax = estimated1RM > maxEstimated1RM;
         if (isNewMax) maxEstimated1RM = estimated1RM;

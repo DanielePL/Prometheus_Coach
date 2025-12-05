@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useWorkoutSessions } from "@/hooks/useWorkoutSessions";
+import { useClientWorkoutSessions } from "@/hooks/useClientWorkoutSessions";
 import { format } from "date-fns";
 import { Clock, Dumbbell, TrendingUp, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -16,10 +16,10 @@ const statusColors = {
 
 export const ClientWorkoutsTab = ({ clientId }: ClientWorkoutsTabProps) => {
   const navigate = useNavigate();
-  const { data: sessions, isLoading } = useWorkoutSessions();
+  const { data: sessions, isLoading } = useClientWorkoutSessions(clientId);
 
   const clientSessions = sessions?.filter(
-    (session: any) => session.client_id === clientId && session.status === "completed"
+    (session) => session.status === "completed"
   ) || [];
 
   const totalWorkouts = clientSessions.length;

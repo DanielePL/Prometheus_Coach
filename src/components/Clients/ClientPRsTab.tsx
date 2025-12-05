@@ -1,28 +1,7 @@
-import { useState } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import {
-  Trophy,
-  TrendingUp,
-  Dumbbell,
-  ChevronRight,
-  Calendar,
-  Medal,
-  Target,
-} from "lucide-react";
+import { Trophy, Calendar, Medal, Dumbbell } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import {
-  useClientEnhancedPRs,
-  useExercisePRHistory,
-} from "@/hooks/useEnhancedPRTracking";
+import { useClientMobilePRs } from "@/hooks/useClientMobilePRs";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface ClientPRsTabProps {
@@ -30,13 +9,7 @@ interface ClientPRsTabProps {
 }
 
 export const ClientPRsTab = ({ clientId }: ClientPRsTabProps) => {
-  const { data, isLoading, error } = useClientEnhancedPRs(clientId);
-  const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
-
-  const { data: prHistory, isLoading: historyLoading } = useExercisePRHistory(
-    clientId,
-    selectedExercise || ""
-  );
+  const { data, isLoading, error } = useClientMobilePRs(clientId);
 
   if (isLoading) {
     return (
@@ -52,21 +25,16 @@ export const ClientPRsTab = ({ clientId }: ClientPRsTabProps) => {
   }
 
   if (error) {
+    console.error("PR loading error:", error);
     return (
       <div className="glass rounded-2xl p-8 text-center">
         <p className="text-red-500">Error loading PR data</p>
+        <p className="text-sm text-muted-foreground mt-2">{String(error)}</p>
       </div>
     );
   }
 
-  const { prs, totalPRs, highestEstimated1RM, mostRecentPR, prsByMuscleGroup } =
-    data || {
-      prs: [],
-      totalPRs: 0,
-      highestEstimated1RM: 0,
-      mostRecentPR: null,
-      prsByMuscleGroup: [],
-    };
+  const { prs, totalPRs } = data || { prs: [], totalPRs: 0 };
 
   if (totalPRs === 0) {
     return (
@@ -74,11 +42,28 @@ export const ClientPRsTab = ({ clientId }: ClientPRsTabProps) => {
         <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
         <h3 className="text-xl font-bold mb-2">No Personal Records Yet</h3>
         <p className="text-muted-foreground">
-          Complete workouts to start tracking personal records.
+          PRs from the mobile app will appear here once recorded.
         </p>
       </div>
     );
   }
+
+  // Find most recent PR
+  const mostRecentPR = prs.reduce((latest, pr) =>
+    pr.achievedAt > latest.achievedAt ? pr : latest
+  );
+
+  // Find highest value PR (assuming kg for weight-based)
+  const highestPR = prs.reduce((highest, pr) =>
+    pr.value > highest.value ? pr : highest
+  );
+
+  // Group by sport
+  const prsBySport = prs.reduce((acc, pr) => {
+    const sport = pr.sport || "Other";
+    acc.set(sport, (acc.get(sport) || 0) + 1);
+    return acc;
+  }, new Map<string, number>());
 
   const summaryStats = [
     {
@@ -88,31 +73,18 @@ export const ClientPRsTab = ({ clientId }: ClientPRsTabProps) => {
       color: "text-yellow-500",
     },
     {
-      icon: Target,
-      label: "Best Est. 1RM",
-      value: `${highestEstimated1RM} kg`,
+      icon: Dumbbell,
+      label: "Highest PR",
+      value: `${highestPR.value} ${highestPR.unit}`,
       color: "text-primary",
     },
     {
       icon: Calendar,
       label: "Latest PR",
-      value: mostRecentPR
-        ? formatDistanceToNow(new Date(mostRecentPR.achievedAt), {
-            addSuffix: true,
-          })
-        : "N/A",
+      value: formatDistanceToNow(mostRecentPR.achievedAt, { addSuffix: true }),
       color: "text-green-500",
     },
   ];
-
-  // Prepare history chart data
-  const historyChartData = prHistory
-    ?.filter((p) => p.isNewMax)
-    .map((p) => ({
-      date: format(new Date(p.date), "MMM d"),
-      weight: p.weight,
-      estimated1RM: p.estimated1RM,
-    }));
 
   return (
     <div className="space-y-6">
@@ -134,58 +106,50 @@ export const ClientPRsTab = ({ clientId }: ClientPRsTabProps) => {
       </div>
 
       {/* Most Recent PR Highlight */}
-      {mostRecentPR && (
-        <div className="glass rounded-2xl p-6 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-              <Trophy className="w-7 h-7 text-yellow-500" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Most Recent PR</p>
-              <h3 className="text-xl font-bold">{mostRecentPR.exerciseName}</h3>
-              <div className="flex items-center gap-4 mt-1">
-                <Badge
-                  variant="outline"
-                  className="bg-yellow-500/10 text-yellow-600 border-yellow-500/50"
-                >
-                  {mostRecentPR.weightUsed} kg x {mostRecentPR.repsCompleted}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
-                  Est. 1RM: {mostRecentPR.estimated1RM} kg
-                </span>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">
-                {format(new Date(mostRecentPR.achievedAt), "MMM d, yyyy")}
-              </p>
+      <div className="glass rounded-2xl p-6 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+            <Trophy className="w-7 h-7 text-yellow-500" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground">Most Recent PR</p>
+            <h3 className="text-xl font-bold">{mostRecentPR.exerciseName}</h3>
+            <div className="flex items-center gap-4 mt-1">
+              <Badge
+                variant="outline"
+                className="bg-yellow-500/10 text-yellow-600 border-yellow-500/50"
+              >
+                {mostRecentPR.value} {mostRecentPR.unit}
+              </Badge>
+              <Badge variant="outline">{mostRecentPR.sport}</Badge>
             </div>
           </div>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">
+              {format(mostRecentPR.achievedAt, "MMM d, yyyy")}
+            </p>
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* PRs by Muscle Group */}
-      {prsByMuscleGroup && prsByMuscleGroup.length > 0 && (
+      {/* PRs by Sport */}
+      {prsBySport.size > 0 && (
         <div className="glass rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
               <Dumbbell className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold">PRs by Muscle Group</h2>
+              <h2 className="text-xl font-bold">PRs by Sport</h2>
               <p className="text-sm text-muted-foreground">
                 Distribution of personal records
               </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            {prsByMuscleGroup.map(([muscleGroup, count]) => (
-              <Badge
-                key={muscleGroup}
-                variant="outline"
-                className="text-base px-4 py-2"
-              >
-                {muscleGroup}: {count}
+            {Array.from(prsBySport.entries()).map(([sport, count]) => (
+              <Badge key={sport} variant="outline" className="text-base px-4 py-2">
+                {sport}: {count}
               </Badge>
             ))}
           </div>
@@ -201,7 +165,7 @@ export const ClientPRsTab = ({ clientId }: ClientPRsTabProps) => {
           <div>
             <h2 className="text-xl font-bold">All Personal Records</h2>
             <p className="text-sm text-muted-foreground">
-              Click to see progression history
+              From {data?.profile?.name || "client"}'s mobile app
             </p>
           </div>
         </div>
@@ -209,17 +173,8 @@ export const ClientPRsTab = ({ clientId }: ClientPRsTabProps) => {
         <div className="space-y-3">
           {prs.map((pr, i) => (
             <div
-              key={pr.id}
-              className={`p-4 rounded-xl bg-background/50 border transition-all cursor-pointer ${
-                selectedExercise === pr.exerciseId
-                  ? "border-primary"
-                  : "border-border/50 hover:border-primary/50"
-              }`}
-              onClick={() =>
-                setSelectedExercise(
-                  selectedExercise === pr.exerciseId ? null : pr.exerciseId
-                )
-              }
+              key={pr.exerciseName}
+              className="p-4 rounded-xl bg-background/50 border border-border/50"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -239,79 +194,16 @@ export const ClientPRsTab = ({ clientId }: ClientPRsTabProps) => {
                   <div>
                     <h4 className="font-semibold">{pr.exerciseName}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {pr.muscleGroup || "General"} ·{" "}
-                      {format(new Date(pr.achievedAt), "MMM d, yyyy")}
+                      {pr.sport} · {format(pr.achievedAt, "MMM d, yyyy")}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="font-bold">
-                      {pr.weightUsed} kg x {pr.repsCompleted}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Est. 1RM: {pr.estimated1RM} kg
-                    </p>
-                  </div>
-                  <ChevronRight
-                    className={`w-5 h-5 text-muted-foreground transition-transform ${
-                      selectedExercise === pr.exerciseId ? "rotate-90" : ""
-                    }`}
-                  />
+                <div className="text-right">
+                  <p className="font-bold text-lg">
+                    {pr.value} {pr.unit}
+                  </p>
                 </div>
               </div>
-
-              {/* Expanded History */}
-              {selectedExercise === pr.exerciseId && (
-                <div className="mt-4 pt-4 border-t border-border/50">
-                  {historyLoading ? (
-                    <Skeleton className="h-[200px]" />
-                  ) : historyChartData && historyChartData.length > 1 ? (
-                    <>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Estimated 1RM Progression
-                      </p>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <LineChart data={historyChartData}>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="hsl(var(--border))"
-                          />
-                          <XAxis
-                            dataKey="date"
-                            stroke="hsl(var(--muted-foreground))"
-                            fontSize={10}
-                          />
-                          <YAxis
-                            stroke="hsl(var(--muted-foreground))"
-                            fontSize={10}
-                            tickFormatter={(v) => `${v}kg`}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--background))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                            }}
-                            formatter={(value: number) => [`${value} kg`, "Est. 1RM"]}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="estimated1RM"
-                            stroke="hsl(var(--primary))"
-                            strokeWidth={2}
-                            dot={{ fill: "hsl(var(--primary))", r: 4 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-4">
-                      Not enough data for progression chart
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           ))}
         </div>

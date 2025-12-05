@@ -521,6 +521,96 @@ export type Database = {
           },
         ]
       }
+      exercise_statistics: {
+        Row: {
+          id: string
+          user_id: string
+          exercise_id: string
+          pr_weight_kg: number | null
+          pr_weight_reps: number | null
+          pr_weight_date: string | null
+          pr_weight_session_id: string | null
+          pr_reps: number | null
+          pr_reps_weight_kg: number | null
+          pr_reps_date: string | null
+          pr_reps_session_id: string | null
+          pr_volume_kg: number | null
+          pr_volume_date: string | null
+          pr_volume_session_id: string | null
+          pr_velocity: number | null
+          pr_velocity_date: string | null
+          pr_velocity_session_id: string | null
+          estimated_1rm_kg: number | null
+          estimated_1rm_date: string | null
+          total_volume_kg: number | null
+          total_sets: number | null
+          total_reps: number | null
+          total_sessions: number | null
+          first_performed_at: string | null
+          last_performed_at: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          exercise_id: string
+          pr_weight_kg?: number | null
+          pr_weight_reps?: number | null
+          pr_weight_date?: string | null
+          pr_weight_session_id?: string | null
+          pr_reps?: number | null
+          pr_reps_weight_kg?: number | null
+          pr_reps_date?: string | null
+          pr_reps_session_id?: string | null
+          pr_volume_kg?: number | null
+          pr_volume_date?: string | null
+          pr_volume_session_id?: string | null
+          pr_velocity?: number | null
+          pr_velocity_date?: string | null
+          pr_velocity_session_id?: string | null
+          estimated_1rm_kg?: number | null
+          estimated_1rm_date?: string | null
+          total_volume_kg?: number | null
+          total_sets?: number | null
+          total_reps?: number | null
+          total_sessions?: number | null
+          first_performed_at?: string | null
+          last_performed_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          exercise_id?: string
+          pr_weight_kg?: number | null
+          pr_weight_reps?: number | null
+          pr_weight_date?: string | null
+          pr_weight_session_id?: string | null
+          pr_reps?: number | null
+          pr_reps_weight_kg?: number | null
+          pr_reps_date?: string | null
+          pr_reps_session_id?: string | null
+          pr_volume_kg?: number | null
+          pr_volume_date?: string | null
+          pr_volume_session_id?: string | null
+          pr_velocity?: number | null
+          pr_velocity_date?: string | null
+          pr_velocity_session_id?: string | null
+          estimated_1rm_kg?: number | null
+          estimated_1rm_date?: string | null
+          total_volume_kg?: number | null
+          total_sets?: number | null
+          total_reps?: number | null
+          total_sessions?: number | null
+          first_performed_at?: string | null
+          last_performed_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           completed: boolean
@@ -733,6 +823,54 @@ export type Database = {
           id?: string
           photo_url?: string
           type?: string | null
+        }
+        Relationships: []
+      }
+      pr_history: {
+        Row: {
+          id: string
+          user_id: string
+          exercise_id: string
+          session_id: string | null
+          pr_type: string
+          weight_kg: number | null
+          reps: number | null
+          volume_kg: number | null
+          velocity: number | null
+          previous_pr_value: number | null
+          improvement_percentage: number | null
+          achieved_at: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          exercise_id: string
+          session_id?: string | null
+          pr_type: string
+          weight_kg?: number | null
+          reps?: number | null
+          volume_kg?: number | null
+          velocity?: number | null
+          previous_pr_value?: number | null
+          improvement_percentage?: number | null
+          achieved_at?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          exercise_id?: string
+          session_id?: string | null
+          pr_type?: string
+          weight_kg?: number | null
+          reps?: number | null
+          volume_kg?: number | null
+          velocity?: number | null
+          previous_pr_value?: number | null
+          improvement_percentage?: number | null
+          achieved_at?: string | null
+          created_at?: string | null
         }
         Relationships: []
       }

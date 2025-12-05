@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { exerciseLibraryClient } from "@/integrations/supabase/exerciseLibraryClient";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * VBT Metrics from velocity_metrics JSONB in workout_sets
@@ -77,19 +77,22 @@ export const useClientVBT = (clientId: string) => {
   return useQuery({
     queryKey: ["client-vbt", clientId],
     queryFn: async () => {
-      // Get workout sessions for this client
-      const { data: sessions, error: sessionsError } = await exerciseLibraryClient
+      // Get workout sessions for this client (check both client_id and user_id for compatibility)
+      const { data: sessions, error: sessionsError } = await supabase
         .from("workout_sessions")
         .select(`
           id,
+          client_id,
           user_id,
           workout_name,
           started_at,
           completed_at,
           duration_minutes,
-          notes
+          duration_seconds,
+          notes,
+          status
         `)
-        .eq("user_id", clientId)
+        .or(`client_id.eq.${clientId},user_id.eq.${clientId}`)
         .order("started_at", { ascending: false })
         .limit(50);
 
@@ -98,7 +101,7 @@ export const useClientVBT = (clientId: string) => {
 
       // Get all sets for these sessions
       const sessionIds = sessions.map(s => s.id);
-      const { data: sets, error: setsError } = await exerciseLibraryClient
+      const { data: sets, error: setsError } = await supabase
         .from("workout_sets")
         .select("*")
         .in("session_id", sessionIds)
@@ -186,7 +189,7 @@ export const useExerciseVelocityTrend = (clientId: string, exerciseId: string) =
   return useQuery({
     queryKey: ["exercise-velocity-trend", clientId, exerciseId],
     queryFn: async () => {
-      const { data, error } = await exerciseLibraryClient
+      const { data, error } = await supabase
         .from("workout_sets")
         .select(`
           id,
@@ -197,7 +200,7 @@ export const useExerciseVelocityTrend = (clientId: string, exerciseId: string) =
           workout_sessions!inner(user_id)
         `)
         .eq("exercise_id", exerciseId)
-        .eq("workout_sessions.user_id", clientId)
+        .eq("workout_sessions.client_id", clientId)
         .not("velocity_metrics", "is", null)
         .order("created_at", { ascending: true })
         .limit(100);
