@@ -9,8 +9,7 @@ export interface ClientWorkoutSession {
   workout_name?: string;
   started_at: string;
   completed_at: string | null;
-  duration_seconds: number | null;
-  duration_minutes?: number | null;
+  duration_minutes: number | null;
   status: string;
   client_notes: string | null;
   notes?: string | null;

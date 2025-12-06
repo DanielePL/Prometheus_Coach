@@ -28,8 +28,8 @@ export const useClientWeeklyStats = () => {
       // Get completed workout sessions this week
       const { data: completedSessions } = await supabase
         .from("workout_sessions")
-        .select("duration_seconds, completed_at")
-        .eq("client_id", user.id)
+        .select("duration_minutes, completed_at")
+        .eq("user_id", user.id)
         .eq("status", "completed")
         .gte("completed_at", startOfWeek.toISOString())
         .lte("completed_at", endOfWeek.toISOString());
@@ -45,7 +45,7 @@ export const useClientWeeklyStats = () => {
 
       // Calculate total minutes from actual workout durations
       const totalMinutes = Math.round(
-        (completedSessions?.reduce((sum, session) => sum + (session.duration_seconds || 0), 0) || 0) / 60
+        completedSessions?.reduce((sum, session) => sum + (session.duration_minutes || 0), 0) || 0
       );
 
       // Get weight change (compare first and last weight of the week)
@@ -65,7 +65,7 @@ export const useClientWeeklyStats = () => {
       const { data: allSessions } = await supabase
         .from("workout_sessions")
         .select("completed_at")
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .eq("status", "completed")
         .not("completed_at", "is", null)
         .order("completed_at", { ascending: false });

@@ -70,9 +70,7 @@ export default function WorkoutHistoryDetail() {
   });
 
   const totalVolume = exerciseGroups.reduce((sum, group) => sum + group.volume, 0);
-  const durationMinutes = session.duration_seconds
-    ? Math.floor(session.duration_seconds / 60)
-    : (session.duration_minutes || 0);
+  const durationMinutes = session.duration_minutes || 0;
 
   return (
     <div

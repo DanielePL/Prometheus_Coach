@@ -30,7 +30,7 @@ export const ClientWorkoutsTab = ({ clientId }: ClientWorkoutsTabProps) => {
   ) || [];
 
   const fallbackTotalWorkouts = clientSessions.length;
-  const fallbackTotalDuration = clientSessions.reduce((sum: number, s: any) => sum + (s.duration_seconds || 0), 0);
+  const fallbackTotalDuration = clientSessions.reduce((sum: number, s: any) => sum + ((s.duration_minutes || 0) * 60), 0);
   const fallbackAvgDuration = fallbackTotalWorkouts > 0 ? Math.floor(fallbackTotalDuration / fallbackTotalWorkouts / 60) : 0;
   const fallbackTotalVolume = clientSessions.reduce((sum: number, session: any) => {
     // Mobile App uses workout_sets, Coach app used set_logs
@@ -224,7 +224,7 @@ export const ClientWorkoutsTab = ({ clientId }: ClientWorkoutsTabProps) => {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      {Math.floor((session.duration_seconds || (session.duration_minutes || 0) * 60 || 0) / 60)} min
+                      {session.duration_minutes || 0} min
                     </span>
                     <span className="flex items-center gap-1">
                       <Dumbbell className="w-4 h-4" />

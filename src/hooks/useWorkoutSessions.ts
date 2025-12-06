@@ -9,7 +9,7 @@ export interface WorkoutSession {
   routine_id: string;
   started_at: string;
   completed_at: string | null;
-  duration_seconds: number | null;
+  duration_minutes: number | null;
   status: string;
   client_notes: string | null;
   created_at: string;
@@ -141,7 +141,7 @@ export const useCompleteWorkoutSession = () => {
           status: "completed",
           completed_at: new Date().toISOString(),
           client_notes: clientNotes,
-          duration_seconds: durationSeconds,
+          duration_minutes: Math.round(durationSeconds / 60),
         })
         .eq("id", sessionId)
         .select()

@@ -29,7 +29,6 @@ export interface WorkoutSet {
   set_number: number;
   reps: number;
   weight_kg: number;
-  duration_seconds: number | null;
   rpe: number | null;
   rest_seconds: number | null;
   velocity_metrics: VelocityMetrics | null;

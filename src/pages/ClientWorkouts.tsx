@@ -181,7 +181,7 @@ export default function ClientWorkouts() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {formatDuration(session.duration_seconds)}
+                          {session.duration_minutes ? `${session.duration_minutes} min` : "N/A"}
                         </span>
                       </div>
                     </div>

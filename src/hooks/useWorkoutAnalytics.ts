@@ -97,14 +97,15 @@ export function useTotalWorkoutTime() {
 
       const { data, error } = await supabase
         .from("workout_sessions")
-        .select("duration_seconds")
+        .select("duration_minutes")
         .eq("user_id", user.id)
         .eq("status", "completed")
-        .not("duration_seconds", "is", null);
+        .not("duration_minutes", "is", null);
 
       if (error) throw error;
 
-      const totalSeconds = data?.reduce((sum, session) => sum + (session.duration_seconds || 0), 0) || 0;
+      const totalMinutes = data?.reduce((sum, session) => sum + (session.duration_minutes || 0), 0) || 0;
+      const totalSeconds = totalMinutes * 60;
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
 
