@@ -99,62 +99,83 @@ export const ClientCard = ({ client }: ClientCardProps) => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex items-center gap-2 pt-4 border-t border-border/50">
-        <Button
-          size="icon"
-          variant="ghost"
-          className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate("/inbox");
-          }}
-        >
-          <MessageSquare className="w-4 h-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate("/calendar");
-          }}
-        >
-          <Calendar className="w-4 h-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate("/explore");
-          }}
-        >
-          <Dumbbell className="w-4 h-4" />
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="glass">
-            <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}`)}>
-              View Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem>View Progress</DropdownMenuItem>
-            <DropdownMenuItem>Session History</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">
-              Disconnect Client
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Quick Actions - 2 Rows */}
+      <div className="pt-4 border-t border-border/50 space-y-2">
+        {/* Row 1: Communication (Chat & Video) */}
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary gap-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate("/inbox");
+            }}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="text-xs">Chat</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="flex-1 h-10 bg-green-500/10 hover:bg-green-500/20 text-green-500 gap-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              // TODO: Implement Zoom meeting creation
+              console.log("Start video call with", client.full_name);
+            }}
+          >
+            <Video className="w-4 h-4" />
+            <span className="text-xs">Video</span>
+          </Button>
+        </div>
+
+        {/* Row 2: Management (Calendar, Training, More) */}
+        <div className="flex items-center gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="flex-1 h-9 bg-primary/10 hover:bg-primary/20 text-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate("/calendar");
+            }}
+          >
+            <Calendar className="w-4 h-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="flex-1 h-9 bg-primary/10 hover:bg-primary/20 text-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate("/explore");
+            }}
+          >
+            <Dumbbell className="w-4 h-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="flex-1 h-9 bg-primary/10 hover:bg-primary/20 text-primary"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="glass">
+              <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}`)}>
+                View Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem>View Progress</DropdownMenuItem>
+              <DropdownMenuItem>Session History</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive">
+                Disconnect Client
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </div>
   );

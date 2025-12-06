@@ -86,9 +86,10 @@ export const useClientVBT = (clientId: string) => {
         .select(`
           id,
           user_id,
+          workout_name,
           started_at,
           completed_at,
-          duration_seconds,
+          duration_minutes,
           status
         `)
         .eq("user_id", clientId)
