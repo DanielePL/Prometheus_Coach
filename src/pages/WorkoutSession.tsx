@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useWorkoutSession, useCompleteWorkoutSession } from "@/hooks/useWorkoutSessions";
 import { usePauseWorkoutSession } from "@/hooks/usePauseWorkoutSession";
-import { useSaveSetLog } from "@/hooks/useSetLogs";
+import { useSaveSetLog } from "@/hooks/useWorkoutSets";
 import { usePreviousPerformance } from "@/hooks/usePreviousPerformance";
 import { usePersonalRecord, useSavePersonalRecord, checkIsPR } from "@/hooks/usePersonalRecords";
 import { useAuth } from "@/contexts/AuthContext";

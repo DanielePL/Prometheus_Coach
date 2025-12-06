@@ -65,14 +65,14 @@ export const useClientInsights = (clientId: string) => {
 
       const sessionIds = (sessions || []).map(s => s.id);
 
-      // Get sets data
+      // Get sets data from Mobile App's workout_sets table
       let sets: any[] = [];
       if (sessionIds.length > 0) {
         const { data: setsData } = await exerciseLibraryClient
-          .from("workout_sets")
+          .from("workout_sets" as any)
           .select("id, session_id, weight_kg, reps, rpe, velocity_metrics, created_at")
           .in("session_id", sessionIds);
-        sets = setsData || [];
+        sets = (setsData || []) as any[];
       }
 
       // Fetch nutrition data

@@ -196,8 +196,8 @@ export const usePRLeaderboard = (coachId: string) => {
     queryFn: async () => {
       // Get connected clients
       const { data: connections, error: connError } = await supabase
-        .from("coach_connections")
-        .select("client_id, profiles!coach_connections_client_id_fkey(id, full_name)")
+        .from("coach_client_connections")
+        .select("client_id, client:profiles!client_id(id, full_name)")
         .eq("coach_id", coachId)
         .eq("status", "accepted");
 
@@ -205,7 +205,7 @@ export const usePRLeaderboard = (coachId: string) => {
       if (!connections || connections.length === 0) return { leaderboard: [], timeline: [] };
 
       const clientMap = new Map(
-        connections.map((c: any) => [c.client_id, c.profiles?.full_name || "Unknown"])
+        connections.map((c: any) => [c.client_id, c.client?.full_name || "Unknown"])
       );
       const clientIds = connections.map((c: any) => c.client_id);
 
@@ -311,25 +311,30 @@ export const useExercisePRHistory = (clientId: string, exerciseId: string) => {
 
       if (historyError) throw historyError;
 
-      // Also get workout_sets for more data points
-      const { data: sets, error: setsError } = await supabase
-        .from("workout_sets")
-        .select(`
-          id,
-          weight_kg,
-          reps,
-          created_at,
-          workout_sessions!inner(client_id, user_id)
-        `)
-        .eq("exercise_id", exerciseId)
-        .order("created_at", { ascending: true })
-        .limit(100);
+      // Get sessions for this client first
+      const { data: sessions } = await supabase
+        .from("workout_sessions" as any)
+        .select("id")
+        .eq("user_id", clientId);
 
-      // Filter sets for this client
-      const clientSets = (sets || []).filter(s =>
-        s.workout_sessions?.client_id === clientId ||
-        s.workout_sessions?.user_id === clientId
-      );
+      const sessionIds = ((sessions || []) as any[]).map(s => s.id);
+
+      // Get workout_sets for this exercise from Mobile App
+      let clientSets: any[] = [];
+      if (sessionIds.length > 0) {
+        const { data: workoutSets, error: setsError } = await supabase
+          .from("workout_sets" as any)
+          .select("id, weight_kg, reps, created_at, session_id")
+          .eq("exercise_id", exerciseId)
+          .in("session_id", sessionIds)
+          .order("created_at", { ascending: true })
+          .limit(100);
+
+        if (setsError) {
+          console.error("Error fetching workout_sets:", setsError);
+        }
+        clientSets = (workoutSets || []) as any[];
+      }
 
       // Track progressive maxes over time
       let maxEstimated1RM = 0;

@@ -1,6 +1,13 @@
+/**
+ * @deprecated This file is deprecated. Use useWorkoutSets.ts instead.
+ * Mobile App uses workout_sets table, not set_logs.
+ */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * @deprecated Use WorkoutSet from useWorkoutSets.ts instead
+ */
 export interface SetLog {
   id?: string;
   session_id: string;

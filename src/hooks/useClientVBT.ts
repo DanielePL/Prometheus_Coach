@@ -77,42 +77,52 @@ export const useClientVBT = (clientId: string) => {
   return useQuery({
     queryKey: ["client-vbt", clientId],
     queryFn: async () => {
-      // Get workout sessions for this client (check both client_id and user_id for compatibility)
-      const { data: sessions, error: sessionsError } = await supabase
-        .from("workout_sessions")
+      // Get workout sessions for this client
+      // Mobile App uses user_id - try that first
+      console.log("Fetching VBT sessions for clientId:", clientId);
+
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from("workout_sessions" as any)
         .select(`
           id,
-          client_id,
           user_id,
-          workout_name,
           started_at,
           completed_at,
-          duration_minutes,
           duration_seconds,
-          notes,
           status
         `)
-        .or(`client_id.eq.${clientId},user_id.eq.${clientId}`)
+        .eq("user_id", clientId)
         .order("started_at", { ascending: false })
         .limit(50);
 
-      if (sessionsError) throw sessionsError;
-      if (!sessions || sessions.length === 0) return { sessions: [], summary: null, exerciseStats: [] };
+      console.log("VBT sessions result:", { sessionsData, sessionsError });
 
-      // Get all sets for these sessions
-      const sessionIds = sessions.map(s => s.id);
-      const { data: sets, error: setsError } = await supabase
-        .from("workout_sets")
+      if (sessionsError) {
+        console.error("Error fetching VBT sessions:", sessionsError);
+        throw sessionsError;
+      }
+
+      const sessions = (sessionsData || []) as any[];
+      if (sessions.length === 0) return { sessions: [], summary: null, exerciseStats: [] };
+
+      // Get all sets for these sessions from Mobile App's workout_sets table
+      const sessionIds = sessions.map((s: any) => s.id);
+      const { data: setsData, error: setsError } = await supabase
+        .from("workout_sets" as any)
         .select("*")
         .in("session_id", sessionIds)
         .order("created_at", { ascending: true });
 
-      if (setsError) throw setsError;
+      if (setsError) {
+        console.error("Error fetching workout_sets:", setsError);
+      }
+
+      const sets = (setsData || []) as any[];
 
       // Attach sets to sessions
-      const sessionsWithSets = sessions.map(session => ({
+      const sessionsWithSets = sessions.map((session: any) => ({
         ...session,
-        workout_sets: (sets || []).filter(s => s.session_id === session.id)
+        workout_sets: sets.filter((s: any) => s.session_id === session.id)
       }));
 
       // Calculate VBT summary
@@ -189,25 +199,37 @@ export const useExerciseVelocityTrend = (clientId: string, exerciseId: string) =
   return useQuery({
     queryKey: ["exercise-velocity-trend", clientId, exerciseId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("workout_sets")
-        .select(`
-          id,
-          weight_kg,
-          reps,
-          velocity_metrics,
-          created_at,
-          workout_sessions!inner(user_id)
-        `)
-        .eq("exercise_id", exerciseId)
-        .eq("workout_sessions.client_id", clientId)
-        .not("velocity_metrics", "is", null)
-        .order("created_at", { ascending: true })
-        .limit(100);
+      // First get sessions for this client
+      const { data: sessions, error: sessionsError } = await supabase
+        .from("workout_sessions" as any)
+        .select("id")
+        .eq("user_id", clientId);
 
-      if (error) throw error;
+      if (sessionsError) throw sessionsError;
+      if (!sessions || sessions.length === 0) return [];
 
-      return (data || []).map(set => ({
+      const sessionIds = sessions.map(s => s.id);
+
+      // Try workout_sets first (Mobile App)
+      let sets: any[] = [];
+      try {
+        const { data: workoutSets, error: setsError } = await supabase
+          .from("workout_sets" as any)
+          .select("*")
+          .eq("exercise_id", exerciseId)
+          .in("session_id", sessionIds)
+          .not("velocity_metrics", "is", null)
+          .order("created_at", { ascending: true })
+          .limit(100);
+
+        if (!setsError && workoutSets) {
+          sets = workoutSets;
+        }
+      } catch (e) {
+        console.log("workout_sets not available for velocity trend");
+      }
+
+      return sets.map(set => ({
         date: set.created_at,
         weight: set.weight_kg,
         reps: set.reps,

@@ -102,16 +102,18 @@ export const useCoachTrends = (coachId: string, daysBack: number = 30) => {
 
       if (sessionsError) throw sessionsError;
 
-      // Get sets for these sessions
+      // Get sets for these sessions from Mobile App's workout_sets table
       const sessionIds = (sessions || []).map((s) => s.id);
       let sets: any[] = [];
       if (sessionIds.length > 0) {
         const { data: setsData, error: setsError } = await exerciseLibraryClient
-          .from("workout_sets")
+          .from("workout_sets" as any)
           .select("id, session_id, reps, weight_kg")
           .in("session_id", sessionIds);
-        if (setsError) throw setsError;
-        sets = setsData || [];
+        if (setsError) {
+          console.error("Error fetching workout_sets:", setsError);
+        }
+        sets = (setsData || []) as any[];
       }
 
       // Get nutrition logs for all clients

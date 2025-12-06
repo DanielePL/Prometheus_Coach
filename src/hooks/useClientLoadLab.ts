@@ -111,10 +111,10 @@ export const useClientLoadLab = (clientId: string, daysBack: number = 56) => {
         };
       }
 
-      // Get all sets for these sessions
+      // Get all sets for these sessions from Mobile App's workout_sets table
       const sessionIds = sessions.map(s => s.id);
-      const { data: sets, error: setsError } = await exerciseLibraryClient
-        .from("workout_sets")
+      const { data: setsData, error: setsError } = await exerciseLibraryClient
+        .from("workout_sets" as any)
         .select(`
           id,
           session_id,
@@ -126,7 +126,10 @@ export const useClientLoadLab = (clientId: string, daysBack: number = 56) => {
         `)
         .in("session_id", sessionIds);
 
-      if (setsError) throw setsError;
+      if (setsError) {
+        console.error("Error fetching workout_sets:", setsError);
+      }
+      const sets = (setsData || []) as any[];
 
       // Get exercise info for muscle groups
       const exerciseIds = [...new Set((sets || []).map(s => s.exercise_id))];
@@ -309,24 +312,31 @@ export const useExerciseLoadProgression = (clientId: string, exerciseId: string)
   return useQuery({
     queryKey: ["exercise-load-progression", clientId, exerciseId],
     queryFn: async () => {
-      const { data, error } = await exerciseLibraryClient
-        .from("workout_sets")
-        .select(`
-          id,
-          weight_kg,
-          reps,
-          rpe,
-          created_at,
-          workout_sessions!inner(user_id)
-        `)
+      // First get sessions for this client
+      const { data: sessions } = await exerciseLibraryClient
+        .from("workout_sessions")
+        .select("id")
+        .eq("user_id", clientId);
+
+      const sessionIds = (sessions || []).map((s: any) => s.id);
+      if (sessionIds.length === 0) return [];
+
+      // Get sets for this exercise from these sessions
+      const { data: setsData, error } = await exerciseLibraryClient
+        .from("workout_sets" as any)
+        .select("id, weight_kg, reps, rpe, created_at, session_id")
         .eq("exercise_id", exerciseId)
-        .eq("workout_sessions.user_id", clientId)
+        .in("session_id", sessionIds)
         .order("created_at", { ascending: true })
         .limit(100);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching workout_sets:", error);
+      }
 
-      return (data || []).map(set => ({
+      const data = (setsData || []) as any[];
+
+      return data.map((set: any) => ({
         date: set.created_at,
         weight: set.weight_kg,
         reps: set.reps,

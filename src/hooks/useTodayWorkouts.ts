@@ -35,7 +35,7 @@ export const useTodayWorkouts = () => {
             description
           )
         `)
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .eq("status", "active")
         .or(`scheduled_date.eq.${today},scheduled_date.is.null`)
         .order("scheduled_date", { ascending: true });
@@ -52,15 +52,16 @@ export const useTodayWorkouts = () => {
             .eq("routine_id", assignment.routine_id);
 
           // Check if there's an active or completed session for this assignment today
+          // Mobile App uses workout_sets instead of set_logs
           const { data: sessionData } = await supabase
             .from("workout_sessions")
             .select(`
               id,
               status,
-              set_logs (exercise_id)
+              workout_sets (exercise_id)
             `)
             .eq("routine_id", assignment.routine_id)
-            .eq("client_id", user.id)
+            .eq("user_id", user.id)
             .gte("started_at", `${today}T00:00:00`)
             .lte("started_at", `${today}T23:59:59`)
             .order("started_at", { ascending: false })
@@ -69,9 +70,9 @@ export const useTodayWorkouts = () => {
 
           // Count unique completed exercises
           let completedCount = 0;
-          if (sessionData?.set_logs) {
+          if (sessionData?.workout_sets) {
             const uniqueExercises = new Set(
-              sessionData.set_logs.map((log: any) => log.exercise_id)
+              (sessionData.workout_sets as any[]).map((set: any) => set.exercise_id)
             );
             completedCount = uniqueExercises.size;
           }

@@ -37,14 +37,20 @@ export default function WorkoutHistoryDetail() {
   }
 
   const routineExercises = session.routines?.routine_exercises || [];
-  const setLogs = session.set_logs || [];
+  // Mobile App uses workout_sets instead of set_logs
+  const workoutSets = session.workout_sets || session.set_logs || [];
 
-  // Group set logs by exercise and check for PRs
+  // Group workout sets by exercise and check for PRs
   const exerciseGroups = routineExercises.map((re: any) => {
-    const logs = setLogs.filter((log: any) => log.exercise_id === re.exercise_id);
-    const exerciseVolume = logs.reduce((sum: number, log: any) => {
-      if (log.completed && log.weight_used && log.reps_completed) {
-        return sum + (log.weight_used * log.reps_completed);
+    const sets = workoutSets.filter((set: any) => set.exercise_id === re.exercise_id);
+    const exerciseVolume = sets.reduce((sum: number, set: any) => {
+      // Mobile App: reps, weight_kg, completed_at
+      // Coach App: reps_completed, weight_used, completed
+      const reps = set.reps ?? set.reps_completed ?? 0;
+      const weight = set.weight_kg ?? set.weight_used ?? 0;
+      const isCompleted = set.completed_at != null || set.completed === true;
+      if (isCompleted && weight && reps) {
+        return sum + (weight * reps);
       }
       return sum;
     }, 0);
@@ -56,7 +62,7 @@ export default function WorkoutHistoryDetail() {
 
     return {
       exercise: re.exercises,
-      logs,
+      sets,
       volume: exerciseVolume,
       isPR: !!exercisePR,
       prDetails: exercisePR,
@@ -66,7 +72,7 @@ export default function WorkoutHistoryDetail() {
   const totalVolume = exerciseGroups.reduce((sum, group) => sum + group.volume, 0);
   const durationMinutes = session.duration_seconds
     ? Math.floor(session.duration_seconds / 60)
-    : 0;
+    : (session.duration_minutes || 0);
 
   return (
     <div
@@ -115,13 +121,13 @@ export default function WorkoutHistoryDetail() {
             </div>
             <div className="glass rounded-xl p-4 text-center">
               <Dumbbell className="w-6 h-6 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{setLogs.length}</p>
+              <p className="text-2xl font-bold">{workoutSets.length}</p>
               <p className="text-sm text-muted-foreground">Sets</p>
             </div>
             <div className="glass rounded-xl p-4 text-center">
               <Trophy className="w-6 h-6 mx-auto mb-2 text-primary" />
               <p className="text-2xl font-bold">{totalVolume.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">lbs Volume</p>
+              <p className="text-sm text-muted-foreground">kg Volume</p>
             </div>
           </div>
 
@@ -150,10 +156,10 @@ export default function WorkoutHistoryDetail() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Volume: {group.volume.toLocaleString()} lbs
+                      Volume: {group.volume.toLocaleString()} kg
                       {group.isPR && group.prDetails && (
                         <span className="ml-2 text-primary font-semibold">
-                          • Best: {group.prDetails.weight_used} lbs × {group.prDetails.reps_completed} reps
+                          • Best: {group.prDetails.weight_kg ?? group.prDetails.weight_used} kg × {group.prDetails.reps ?? group.prDetails.reps_completed} reps
                         </span>
                       )}
                     </p>
@@ -161,22 +167,30 @@ export default function WorkoutHistoryDetail() {
                 </div>
 
                 <div className="space-y-2">
-                  {group.logs.map((log: any, logIndex: number) => (
-                    <div
-                      key={log.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-card border border-border"
-                    >
-                      <span className="font-medium">Set {logIndex + 1}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-muted-foreground">
-                          {log.weight_used} lbs × {log.reps_completed} reps
-                        </span>
-                        {log.completed && (
-                          <span className="text-green-500">✓</span>
-                        )}
+                  {group.sets.map((set: any, setIndex: number) => {
+                    // Mobile App: reps, weight_kg, completed_at
+                    // Coach App: reps_completed, weight_used, completed
+                    const reps = set.reps ?? set.reps_completed ?? 0;
+                    const weight = set.weight_kg ?? set.weight_used ?? 0;
+                    const isCompleted = set.completed_at != null || set.completed === true;
+
+                    return (
+                      <div
+                        key={set.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-card border border-border"
+                      >
+                        <span className="font-medium">Set {setIndex + 1}</span>
+                        <div className="flex items-center gap-4">
+                          <span className="text-muted-foreground">
+                            {weight} kg × {reps} reps
+                          </span>
+                          {isCompleted && (
+                            <span className="text-green-500">✓</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}

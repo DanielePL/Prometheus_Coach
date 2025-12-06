@@ -64,15 +64,24 @@ export default function WorkoutComplete() {
   }
 
   const routineExercises = session.routines?.routine_exercises || [];
-  const setLogs = session.set_logs || [];
-  
-  const exercisesCompleted = new Set(setLogs.map((log: any) => log.exercise_id)).size;
-  const setsCompleted = setLogs.filter((log: any) => log.completed).length;
-  
+  // Mobile App uses workout_sets instead of set_logs
+  const workoutSets = session.workout_sets || session.set_logs || [];
+
+  const exercisesCompleted = new Set(workoutSets.map((set: any) => set.exercise_id)).size;
+  const setsCompleted = workoutSets.filter((set: any) => {
+    // Mobile App: completed_at, Coach App: completed
+    return set.completed_at != null || set.completed === true;
+  }).length;
+
   // Calculate total volume (weight × reps)
-  const totalVolume = setLogs.reduce((sum: number, log: any) => {
-    if (log.completed && log.weight_used && log.reps_completed) {
-      return sum + (log.weight_used * log.reps_completed);
+  const totalVolume = workoutSets.reduce((sum: number, set: any) => {
+    // Mobile App: reps, weight_kg, completed_at
+    // Coach App: reps_completed, weight_used, completed
+    const reps = set.reps ?? set.reps_completed ?? 0;
+    const weight = set.weight_kg ?? set.weight_used ?? 0;
+    const isCompleted = set.completed_at != null || set.completed === true;
+    if (isCompleted && weight && reps) {
+      return sum + (weight * reps);
     }
     return sum;
   }, 0);

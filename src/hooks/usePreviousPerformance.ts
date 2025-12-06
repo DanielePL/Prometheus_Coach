@@ -12,7 +12,7 @@ export const usePreviousPerformance = (exerciseId: string, sessionId: string) =>
       const { data: previousSessions, error: sessionError } = await supabase
         .from("workout_sessions")
         .select("id")
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .eq("status", "completed")
         .neq("id", sessionId)
         .order("completed_at", { ascending: false })
@@ -23,21 +23,21 @@ export const usePreviousPerformance = (exerciseId: string, sessionId: string) =>
 
       const sessionIds = previousSessions.map(s => s.id);
 
-      // Get set logs for this exercise from previous sessions
-      const { data: setLogs, error: logsError } = await supabase
-        .from("set_logs")
+      // Get workout sets for this exercise from previous sessions (Mobile App uses workout_sets)
+      const { data: workoutSets, error: setsError } = await supabase
+        .from("workout_sets" as any)
         .select("*")
         .eq("exercise_id", exerciseId)
         .in("session_id", sessionIds)
         .order("session_id", { ascending: false })
         .order("set_number", { ascending: true });
 
-      if (logsError) throw logsError;
+      if (setsError) throw setsError;
 
-      // Group by session and return the most recent session's logs
-      if (setLogs && setLogs.length > 0) {
-        const mostRecentSessionId = setLogs[0].session_id;
-        return setLogs.filter(log => log.session_id === mostRecentSessionId);
+      // Group by session and return the most recent session's sets
+      if (workoutSets && workoutSets.length > 0) {
+        const mostRecentSessionId = workoutSets[0].session_id;
+        return workoutSets.filter((set: any) => set.session_id === mostRecentSessionId);
       }
 
       return null;

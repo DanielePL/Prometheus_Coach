@@ -41,17 +41,26 @@ export const useClientProgressUpdates = () => {
         .select(`
           id,
           client_id,
+          exercise_id,
           achieved_at,
           weight_used,
-          reps_completed,
-          exercise:exercises(title)
+          reps_completed
         `)
         .in("client_id", clientIds)
         .gte("achieved_at", sevenDaysAgo.toISOString())
         .order("achieved_at", { ascending: false })
         .limit(10);
 
-      if (prs) {
+      if (prs && prs.length > 0) {
+        // Fetch exercise names separately
+        const exerciseIds = [...new Set(prs.map((pr: any) => pr.exercise_id))];
+        const { data: exercises } = await supabase
+          .from("exercises")
+          .select("id, title")
+          .in("id", exerciseIds);
+
+        const exerciseMap = new Map((exercises || []).map((e: any) => [e.id, e.title]));
+
         prs.forEach((pr: any) => {
           const client = connections.find(c => c.client_id === pr.client_id)?.client as any;
           allUpdates.push({
@@ -62,7 +71,7 @@ export const useClientProgressUpdates = () => {
             clientAvatar: client?.avatar_url || null,
             timestamp: pr.achieved_at,
             details: `${pr.weight_used} kg × ${pr.reps_completed} reps`,
-            exerciseName: pr.exercise?.title || 'Unknown Exercise',
+            exerciseName: exerciseMap.get(pr.exercise_id) || 'Unknown Exercise',
           });
         });
       }

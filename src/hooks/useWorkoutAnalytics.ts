@@ -14,7 +14,7 @@ export function useWorkoutStreak() {
       const { data: sessions, error } = await supabase
         .from("workout_sessions")
         .select("completed_at")
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .eq("status", "completed")
         .not("completed_at", "is", null)
         .order("completed_at", { ascending: false });
@@ -61,7 +61,7 @@ export function useMonthlyCompletionRate() {
       const { data: assignments, error: assignmentsError } = await supabase
         .from("routine_assignments")
         .select("id")
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .gte("assigned_at", monthStart)
         .lte("assigned_at", monthEnd);
 
@@ -71,7 +71,7 @@ export function useMonthlyCompletionRate() {
       const { data: completedSessions, error: sessionsError } = await supabase
         .from("workout_sessions")
         .select("id")
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .eq("status", "completed")
         .gte("completed_at", monthStart)
         .lte("completed_at", monthEnd);
@@ -98,7 +98,7 @@ export function useTotalWorkoutTime() {
       const { data, error } = await supabase
         .from("workout_sessions")
         .select("duration_seconds")
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .eq("status", "completed")
         .not("duration_seconds", "is", null);
 
@@ -122,33 +122,29 @@ export function useMostPerformedExercises() {
     queryFn: async () => {
       if (!user?.id) return [];
 
+      // Mobile App uses workout_sets instead of set_logs
       const { data, error } = await supabase
-        .from("set_logs")
+        .from("workout_sets" as any)
         .select(`
           exercise_id,
-          exercises (
-            title,
-            thumbnail_url
-          ),
+          completed_at,
           session:workout_sessions!inner (
-            client_id
+            user_id
           )
         `)
-        .eq("session.client_id", user.id)
-        .eq("completed", true);
+        .eq("session.user_id", user.id)
+        .not("completed_at", "is", null);
 
       if (error) throw error;
 
       // Count exercises
       const exerciseCounts: Record<string, { title: string; count: number; thumbnail?: string }> = {};
-      
-      data?.forEach((log: any) => {
-        const exerciseId = log.exercise_id;
-        const title = log.exercises?.title || "Unknown Exercise";
-        const thumbnail = log.exercises?.thumbnail_url;
-        
+
+      data?.forEach((set: any) => {
+        const exerciseId = set.exercise_id;
+
         if (!exerciseCounts[exerciseId]) {
-          exerciseCounts[exerciseId] = { title, count: 0, thumbnail };
+          exerciseCounts[exerciseId] = { title: exerciseId, count: 0 };
         }
         exerciseCounts[exerciseId].count++;
       });
@@ -170,18 +166,19 @@ export function useVolumeProgression() {
     queryFn: async () => {
       if (!user?.id) return [];
 
+      // Mobile App uses workout_sets instead of set_logs
       const { data: sessions, error: sessionsError } = await supabase
         .from("workout_sessions")
         .select(`
           id,
           completed_at,
-          set_logs (
-            weight_used,
-            reps_completed,
-            completed
+          workout_sets (
+            weight_kg,
+            reps,
+            completed_at
           )
         `)
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .eq("status", "completed")
         .not("completed_at", "is", null)
         .order("completed_at", { ascending: true });
@@ -189,12 +186,15 @@ export function useVolumeProgression() {
       if (sessionsError) throw sessionsError;
 
       return sessions?.map((session: any) => {
-        const totalVolume = session.set_logs?.reduce((sum: number, log: any) => {
-          if (log.completed && log.weight_used && log.reps_completed) {
-            return sum + (log.weight_used * log.reps_completed);
+        // Mobile App: reps, weight_kg, completed_at
+        const sets = session.workout_sets || [];
+        const totalVolume = sets.reduce((sum: number, set: any) => {
+          const isCompleted = set.completed_at != null;
+          if (isCompleted && set.weight_kg && set.reps) {
+            return sum + (set.weight_kg * set.reps);
           }
           return sum;
-        }, 0) || 0;
+        }, 0);
 
         return {
           date: new Date(session.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),

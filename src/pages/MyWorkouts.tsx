@@ -64,10 +64,10 @@ const MyWorkouts = () => {
     const lastCompleted = completedForRoutine[0];
     
     // Count unique exercises completed in the most recent session
+    // Mobile App uses workout_sets instead of set_logs
     const completedExerciseIds = new Set<string>();
-    if (lastCompleted?.set_logs) {
-      lastCompleted.set_logs.forEach((log: any) => completedExerciseIds.add(log.exercise_id));
-    }
+    const sets = lastCompleted?.workout_sets || lastCompleted?.set_logs || [];
+    sets.forEach((set: any) => completedExerciseIds.add(set.exercise_id));
     // Cap completed count to never exceed total exercises
     const completedExercises = Math.min(completedExerciseIds.size, exerciseCount);
     

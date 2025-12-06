@@ -4,7 +4,8 @@ import { toast } from "sonner";
 
 export interface WorkoutSession {
   id: string;
-  client_id: string;
+  user_id: string;
+  client_id?: string; // Deprecated: use user_id
   routine_id: string;
   started_at: string;
   completed_at: string | null;
@@ -33,9 +34,9 @@ export const useWorkoutSessions = () => {
               exercises (*)
             )
           ),
-          set_logs (*)
+          workout_sets (*)
         `)
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .order("started_at", { ascending: false });
 
       if (error) throw error;
@@ -62,7 +63,7 @@ export const useWorkoutSession = (sessionId: string | undefined) => {
               exercises (*)
             )
           ),
-          set_logs (*)
+          workout_sets (*)
         `)
         .eq("id", sessionId)
         .single();
@@ -85,10 +86,11 @@ export const useStartWorkoutSession = () => {
       const { data, error } = await supabase
         .from("workout_sessions")
         .insert({
-          client_id: user.id,
+          user_id: user.id,
+          client_id: user.id, // Keep for backwards compatibility
           routine_id: routineId,
           status: "in_progress",
-        })
+        } as any)
         .select()
         .single();
 
