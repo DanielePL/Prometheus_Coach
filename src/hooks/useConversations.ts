@@ -108,7 +108,7 @@ export const useConversations = () => {
               .eq('conversation_id', conv.id)
               .neq('user_id', user.id)
               .limit(1)
-              .single();
+              .maybeSingle();
 
             if (participantError) {
               console.error(`useConversations: [${index}] ERROR fetching participant:`, {
@@ -120,6 +120,12 @@ export const useConversations = () => {
                 code: participantError.code
               });
               throw participantError;
+            }
+
+            // Skip conversations with no other participant (orphaned data)
+            if (!participantData) {
+              console.warn(`useConversations: [${index}] No other participant found for conversation ${conv.id}, skipping`);
+              return null;
             }
 
             // Fetch profile separately (no FK relationship in conversation_participants)
@@ -198,8 +204,10 @@ export const useConversations = () => {
         })
       );
 
-      console.log('useConversations: Successfully fetched', conversationsWithDetails.length, 'conversations');
-      setConversations(conversationsWithDetails);
+      // Filter out null values (orphaned conversations)
+      const validConversations = conversationsWithDetails.filter((c): c is ConversationWithDetails => c !== null);
+      console.log('useConversations: Successfully fetched', validConversations.length, 'conversations (filtered from', conversationsWithDetails.length, ')');
+      setConversations(validConversations);
       setError(null);
     } catch (error: any) {
       console.error('useConversations: Error fetching conversations:', {
