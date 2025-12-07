@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useClientProgress } from "@/hooks/useClientProgress";
+import { useClientVideoLink } from "@/hooks/useClientVideoLink";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +25,22 @@ interface ClientCardProps {
 export const ClientCard = ({ client }: ClientCardProps) => {
   const navigate = useNavigate();
   const { data: progress } = useClientProgress(client.id);
+  const { data: videoEvent } = useClientVideoLink(client.id);
+
+  const handleVideoCall = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoEvent?.video_link) {
+      window.open(videoEvent.video_link, "_blank");
+    } else {
+      toast.info("No upcoming video call scheduled", {
+        description: "Create a calendar event with a video link for this client.",
+        action: {
+          label: "Go to Calendar",
+          onClick: () => navigate("/calendar"),
+        },
+      });
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -109,7 +127,7 @@ export const ClientCard = ({ client }: ClientCardProps) => {
             className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary gap-2"
             onClick={(e) => {
               e.stopPropagation();
-              navigate("/inbox");
+              navigate(`/inbox?userId=${client.id}`);
             }}
           >
             <MessageSquare className="w-4 h-4" />
@@ -118,15 +136,19 @@ export const ClientCard = ({ client }: ClientCardProps) => {
           <Button
             size="sm"
             variant="ghost"
-            className="flex-1 h-10 bg-green-500/10 hover:bg-green-500/20 text-green-500 gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              // TODO: Implement Zoom meeting creation
-              console.log("Start video call with", client.full_name);
-            }}
+            className={`flex-1 h-10 gap-2 ${
+              videoEvent?.video_link
+                ? "bg-green-500/20 hover:bg-green-500/30 text-green-500"
+                : "bg-green-500/10 hover:bg-green-500/20 text-green-500/60"
+            }`}
+            onClick={handleVideoCall}
+            title={videoEvent?.video_link ? `Join: ${videoEvent.title}` : "No video call scheduled"}
           >
             <Video className="w-4 h-4" />
             <span className="text-xs">Video</span>
+            {videoEvent?.video_link && (
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            )}
           </Button>
         </div>
 
