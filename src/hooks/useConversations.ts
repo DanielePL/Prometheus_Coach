@@ -102,9 +102,9 @@ export const useConversations = () => {
             
             // Get other participant
             console.log(`useConversations: [${index}] Fetching other participant for conversation ${conv.id}`);
-            const { data: participants, error: participantError } = await supabase
+            const { data: participantData, error: participantError } = await supabase
               .from('conversation_participants')
-              .select('user_id, profiles(id, full_name, avatar_url)')
+              .select('user_id')
               .eq('conversation_id', conv.id)
               .neq('user_id', user.id)
               .limit(1)
@@ -121,8 +121,19 @@ export const useConversations = () => {
               });
               throw participantError;
             }
-            
-            console.log(`useConversations: [${index}] Found participant:`, participants);
+
+            // Fetch profile separately (no FK relationship in conversation_participants)
+            let profileData: { id: string; full_name: string; avatar_url?: string | null } | null = null;
+            if (participantData?.user_id) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('id, full_name, avatar_url')
+                .eq('id', participantData.user_id)
+                .single();
+              profileData = profile;
+            }
+
+            console.log(`useConversations: [${index}] Found participant:`, { participantData, profileData });
 
             // Get last message
             console.log(`useConversations: [${index}] Fetching last message for conversation ${conv.id}`);
@@ -162,9 +173,9 @@ export const useConversations = () => {
               id: conv.id,
               updated_at: conv.updated_at,
               other_user: {
-                id: participants?.profiles?.id || '',
-                full_name: participants?.profiles?.full_name || 'Unknown User',
-                avatar_url: participants?.profiles?.avatar_url,
+                id: profileData?.id || participantData?.user_id || '',
+                full_name: profileData?.full_name || 'Unknown User',
+                avatar_url: profileData?.avatar_url,
               },
               last_message: lastMessage || undefined,
               unread_count: unreadCount || 0,
