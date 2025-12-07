@@ -60,9 +60,25 @@ AS $$
   LIMIT 1;
 $$;
 
+-- Function to find a shared conversation between current user and another user
+CREATE OR REPLACE FUNCTION find_shared_conversation(target_user_id UUID)
+RETURNS UUID
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT cp1.conversation_id
+  FROM conversation_participants cp1
+  JOIN conversation_participants cp2 ON cp1.conversation_id = cp2.conversation_id
+  WHERE cp1.user_id = auth.uid()
+  AND cp2.user_id = target_user_id
+  LIMIT 1;
+$$;
+
 -- Grant execute permissions to authenticated users
 GRANT EXECUTE ON FUNCTION get_conversation_participants(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_other_participant(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION find_shared_conversation(UUID) TO authenticated;
 
 -- ═══════════════════════════════════════════════════════════════
 -- VERIFY

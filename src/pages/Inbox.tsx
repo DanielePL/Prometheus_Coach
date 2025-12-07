@@ -62,28 +62,18 @@ const Inbox = () => {
       setSearchParams({});
 
       try {
-        // Check if conversation already exists
-        const { data: myParticipations } = await supabase
-          .from('conversation_participants')
-          .select('conversation_id')
-          .eq('user_id', user.id);
+        // Check if conversation already exists using SECURITY DEFINER function
+        const { data: existingConvId, error: findError } = await supabase
+          .rpc('find_shared_conversation', { target_user_id: targetUserId });
 
-        if (myParticipations && myParticipations.length > 0) {
-          const conversationIds = myParticipations.map(p => p.conversation_id);
+        if (findError) {
+          console.error('Inbox: Error finding shared conversation:', findError);
+        }
 
-          const { data: sharedConversation } = await supabase
-            .from('conversation_participants')
-            .select('conversation_id')
-            .eq('user_id', targetUserId)
-            .in('conversation_id', conversationIds)
-            .limit(1)
-            .maybeSingle();
-
-          if (sharedConversation) {
-            console.log('Inbox: Found existing conversation:', sharedConversation.conversation_id);
-            setSelectedConversationId(sharedConversation.conversation_id);
-            return;
-          }
+        if (existingConvId) {
+          console.log('Inbox: Found existing conversation:', existingConvId);
+          setSelectedConversationId(existingConvId);
+          return;
         }
 
         // Create new conversation
@@ -100,8 +90,8 @@ const Inbox = () => {
         const { error: partError } = await supabase
           .from('conversation_participants')
           .insert([
-            { conversation_id: newConversationId, user_id: user.id },
-            { conversation_id: newConversationId, user_id: targetUserId },
+            { conversation_id: newConversationId, user_id: user.id, role: 'member' },
+            { conversation_id: newConversationId, user_id: targetUserId, role: 'member' },
           ]);
 
         if (partError) throw partError;
