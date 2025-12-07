@@ -62,44 +62,19 @@ const Inbox = () => {
       setSearchParams({});
 
       try {
-        // Check if conversation already exists using SECURITY DEFINER function
-        const { data: existingConvId, error: findError } = await supabase
-          .rpc('find_shared_conversation', { target_user_id: targetUserId });
+        // Use SECURITY DEFINER function to find or create conversation
+        // This bypasses RLS to properly insert both participants
+        const { data: conversationId, error } = await supabase
+          .rpc('find_or_create_conversation', { target_user_id: targetUserId });
 
-        if (findError) {
-          console.error('Inbox: Error finding shared conversation:', findError);
+        if (error) {
+          console.error('Inbox: Error in find_or_create_conversation:', error);
+          throw error;
         }
 
-        if (existingConvId) {
-          console.log('Inbox: Found existing conversation:', existingConvId);
-          setSelectedConversationId(existingConvId);
-          return;
-        }
-
-        // Create new conversation
-        console.log('Inbox: Creating new conversation with user:', targetUserId);
-        const newConversationId = crypto.randomUUID();
-
-        const { error: convError } = await supabase
-          .from('conversations')
-          .insert({ id: newConversationId });
-
-        if (convError) throw convError;
-
-        // Add both participants
-        const { error: partError } = await supabase
-          .from('conversation_participants')
-          .insert([
-            { conversation_id: newConversationId, user_id: user.id, role: 'member' },
-            { conversation_id: newConversationId, user_id: targetUserId, role: 'member' },
-          ]);
-
-        if (partError) throw partError;
-
-        console.log('Inbox: Created conversation:', newConversationId);
-        setSelectedConversationId(newConversationId);
+        console.log('Inbox: Conversation ready:', conversationId);
+        setSelectedConversationId(conversationId);
         refetchConversations();
-        toast.success('Conversation started!');
       } catch (error: any) {
         console.error('Inbox: Error creating conversation:', error);
         toast.error('Failed to start conversation');

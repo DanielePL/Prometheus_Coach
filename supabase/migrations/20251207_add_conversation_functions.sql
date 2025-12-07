@@ -75,10 +75,54 @@ AS $$
   LIMIT 1;
 $$;
 
+-- Function to find OR create a conversation with another user
+-- Returns the conversation ID (existing or newly created)
+CREATE OR REPLACE FUNCTION find_or_create_conversation(target_user_id UUID)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  existing_conv_id UUID;
+  new_conv_id UUID;
+  current_user_id UUID;
+BEGIN
+  current_user_id := auth.uid();
+
+  -- Check for existing conversation
+  SELECT cp1.conversation_id INTO existing_conv_id
+  FROM conversation_participants cp1
+  JOIN conversation_participants cp2 ON cp1.conversation_id = cp2.conversation_id
+  WHERE cp1.user_id = current_user_id
+  AND cp2.user_id = target_user_id
+  LIMIT 1;
+
+  IF existing_conv_id IS NOT NULL THEN
+    RETURN existing_conv_id;
+  END IF;
+
+  -- Create new conversation
+  new_conv_id := gen_random_uuid();
+
+  INSERT INTO conversations (id)
+  VALUES (new_conv_id);
+
+  -- Add both participants (bypasses RLS via SECURITY DEFINER)
+  INSERT INTO conversation_participants (conversation_id, user_id, role)
+  VALUES
+    (new_conv_id, current_user_id, 'member'),
+    (new_conv_id, target_user_id, 'member');
+
+  RETURN new_conv_id;
+END;
+$$;
+
 -- Grant execute permissions to authenticated users
 GRANT EXECUTE ON FUNCTION get_conversation_participants(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_other_participant(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION find_shared_conversation(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION find_or_create_conversation(UUID) TO authenticated;
 
 -- ═══════════════════════════════════════════════════════════════
 -- VERIFY
