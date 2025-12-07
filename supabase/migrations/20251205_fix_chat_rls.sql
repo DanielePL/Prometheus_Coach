@@ -64,17 +64,11 @@ CREATE POLICY "conversations_update" ON public.conversations
 -- CONVERSATION_PARTICIPANTS POLICIES
 -- ═══════════════════════════════════════════════════════════════
 
--- Users can view participants in conversations they're part of
+-- Users can view their own participant records
+-- NOTE: Cannot use recursive query on same table - causes infinite recursion
+-- If you need to see all participants in a conversation, use a SECURITY DEFINER function
 CREATE POLICY "participants_select" ON public.conversation_participants
-    FOR SELECT USING (
-        -- Can see participants if user is also a participant in same conversation
-        EXISTS (
-            SELECT 1 FROM public.conversation_participants cp2
-            WHERE cp2.conversation_id = conversation_id
-            AND cp2.user_id = auth.uid()
-        )
-        OR user_id = auth.uid()
-    );
+    FOR SELECT USING (user_id = auth.uid());
 
 -- Users can add participants (themselves or others when creating)
 CREATE POLICY "participants_insert" ON public.conversation_participants

@@ -1,5 +1,5 @@
-// TEMPORARY SECURITY (DEV ONLY): RLS is disabled on conversations, conversation_participants, and messages.
-// Remember to RE-ENABLE RLS and restore least-privilege policies before production.
+// Chat system with RLS enabled.
+// Uses SECURITY DEFINER functions for cross-participant queries (get_other_participant).
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -100,14 +100,10 @@ export const useConversations = () => {
           try {
             console.log(`useConversations: [${index}] Processing conversation ${conv.id}`);
             
-            // Get other participant
+            // Get other participant using SECURITY DEFINER function (bypasses RLS safely)
             console.log(`useConversations: [${index}] Fetching other participant for conversation ${conv.id}`);
-            const { data: participantData, error: participantError } = await supabase
-              .from('conversation_participants')
-              .select('user_id')
-              .eq('conversation_id', conv.id)
-              .neq('user_id', user.id)
-              .limit(1)
+            const { data: otherParticipant, error: participantError } = await supabase
+              .rpc('get_other_participant', { conv_id: conv.id })
               .maybeSingle();
 
             if (participantError) {
@@ -123,23 +119,19 @@ export const useConversations = () => {
             }
 
             // Skip conversations with no other participant (orphaned data)
-            if (!participantData) {
+            if (!otherParticipant) {
               console.warn(`useConversations: [${index}] No other participant found for conversation ${conv.id}, skipping`);
               return null;
             }
 
-            // Fetch profile separately (no FK relationship in conversation_participants)
-            let profileData: { id: string; full_name: string; avatar_url?: string | null } | null = null;
-            if (participantData?.user_id) {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('id, full_name, avatar_url')
-                .eq('id', participantData.user_id)
-                .single();
-              profileData = profile;
-            }
+            // Profile data comes directly from the function
+            const profileData = {
+              id: otherParticipant.user_id,
+              full_name: otherParticipant.full_name || 'Unknown User',
+              avatar_url: otherParticipant.avatar_url
+            };
 
-            console.log(`useConversations: [${index}] Found participant:`, { participantData, profileData });
+            console.log(`useConversations: [${index}] Found participant:`, { otherParticipant, profileData });
 
             // Get last message
             console.log(`useConversations: [${index}] Fetching last message for conversation ${conv.id}`);
@@ -179,9 +171,9 @@ export const useConversations = () => {
               id: conv.id,
               updated_at: conv.updated_at,
               other_user: {
-                id: profileData?.id || participantData?.user_id || '',
-                full_name: profileData?.full_name || 'Unknown User',
-                avatar_url: profileData?.avatar_url,
+                id: profileData.id,
+                full_name: profileData.full_name,
+                avatar_url: profileData.avatar_url,
               },
               last_message: lastMessage || undefined,
               unread_count: unreadCount || 0,
