@@ -106,7 +106,7 @@ const ClientDetail = () => {
                   <Button
                     size="sm"
                     className="bg-primary hover:bg-primary/90"
-                    onClick={() => navigate("/inbox")}
+                    onClick={() => navigate(`/inbox?userId=${client.id}`)}
                   >
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Message

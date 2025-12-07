@@ -17,7 +17,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { NewMessageDialog } from "@/components/Messaging/NewMessageDialog";
 import { EventMentionParser } from "@/components/Messaging/EventMentionParser";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 const Inbox = () => {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
@@ -42,9 +44,81 @@ const Inbox = () => {
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [autoOpenProcessed, setAutoOpenProcessed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const { conversations, loading: conversationsLoading, error: conversationsError, refetch: refetchConversations } = useConversations();
+
+  // Auto-open conversation when userId is in URL params
+  useEffect(() => {
+    const targetUserId = searchParams.get('userId');
+    if (!targetUserId || !user || autoOpenProcessed || conversationsLoading) return;
+
+    const findOrCreateConversation = async () => {
+      console.log('Inbox: Auto-opening conversation with user:', targetUserId);
+      setAutoOpenProcessed(true);
+
+      // Clear the URL param
+      setSearchParams({});
+
+      try {
+        // Check if conversation already exists
+        const { data: myParticipations } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id')
+          .eq('user_id', user.id);
+
+        if (myParticipations && myParticipations.length > 0) {
+          const conversationIds = myParticipations.map(p => p.conversation_id);
+
+          const { data: sharedConversation } = await supabase
+            .from('conversation_participants')
+            .select('conversation_id')
+            .eq('user_id', targetUserId)
+            .in('conversation_id', conversationIds)
+            .limit(1)
+            .maybeSingle();
+
+          if (sharedConversation) {
+            console.log('Inbox: Found existing conversation:', sharedConversation.conversation_id);
+            setSelectedConversationId(sharedConversation.conversation_id);
+            return;
+          }
+        }
+
+        // Create new conversation
+        console.log('Inbox: Creating new conversation with user:', targetUserId);
+        const newConversationId = crypto.randomUUID();
+
+        const { error: convError } = await supabase
+          .from('conversations')
+          .insert({ id: newConversationId });
+
+        if (convError) throw convError;
+
+        // Add both participants
+        const { error: partError } = await supabase
+          .from('conversation_participants')
+          .insert([
+            { conversation_id: newConversationId, user_id: user.id },
+            { conversation_id: newConversationId, user_id: targetUserId },
+          ]);
+
+        if (partError) throw partError;
+
+        console.log('Inbox: Created conversation:', newConversationId);
+        setSelectedConversationId(newConversationId);
+        refetchConversations();
+        toast.success('Conversation started!');
+      } catch (error: any) {
+        console.error('Inbox: Error creating conversation:', error);
+        toast.error('Failed to start conversation');
+      }
+    };
+
+    findOrCreateConversation();
+  }, [searchParams, user, autoOpenProcessed, conversationsLoading]);
+
   const { messages, loading: messagesLoading, sendMessage, editMessage, deleteMessage } = useMessages(selectedConversationId);
   const { chatEnabled } = useChatStatus(selectedConversationId);
 
