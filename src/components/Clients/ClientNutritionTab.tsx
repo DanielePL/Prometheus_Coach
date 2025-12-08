@@ -51,6 +51,7 @@ import {
   GoalType,
   DailyNutritionSummary,
 } from "@/hooks/useClientNutrition";
+import { ClientFrequentMeals } from "./ClientFrequentMeals";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -485,6 +486,9 @@ export const ClientNutritionTab = ({ clientId }: ClientNutritionTabProps) => {
           </div>
         </div>
       )}
+
+      {/* Quick Add Patterns - Frequent Meals */}
+      <ClientFrequentMeals clientId={clientId} />
 
       {/* Recent Meal Logs */}
       <div className="glass rounded-2xl p-6">

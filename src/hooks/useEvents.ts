@@ -18,6 +18,7 @@ interface DatabaseEvent {
   is_recurring?: boolean;
   parent_event_id?: string | null;
   reminders?: number[];
+  video_link?: string | null;
   creator?: {
     full_name: string;
   };
@@ -38,6 +39,7 @@ const mapDatabaseEventToEvent = (dbEvent: DatabaseEvent): Event => ({
   is_recurring: dbEvent.is_recurring,
   parent_event_id: dbEvent.parent_event_id,
   reminders: dbEvent.reminders || [],
+  video_link: dbEvent.video_link || undefined,
 });
 
 export const useEvents = () => {
@@ -74,6 +76,7 @@ export const useEvents = () => {
         created_by: user.id,
         assigned_to: event.assigned_to || null,
         reminders: event.reminders || [],
+        video_link: event.video_link || null,
       };
 
       // Add recurring fields if applicable
@@ -119,6 +122,7 @@ export const useEvents = () => {
       if (updates.color) updateData.color = updates.color;
       if (updates.assigned_to !== undefined) updateData.assigned_to = updates.assigned_to;
       if (updates.reminders !== undefined) updateData.reminders = updates.reminders;
+      if (updates.video_link !== undefined) updateData.video_link = updates.video_link || null;
 
       const { data, error } = await supabase
         .from("events")

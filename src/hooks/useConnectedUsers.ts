@@ -16,29 +16,25 @@ export const useConnectedUsers = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (!profile) return [];
-
-      // Fetch connections based on user role
+      // Fetch connections where user is either coach or client
       const { data: connections, error: connectionsError } = await supabase
         .from("coach_client_connections")
         .select(`
           client:profiles!client_id(id, full_name, avatar_url),
           coach:profiles!coach_id(id, full_name, avatar_url)
         `)
-        .eq(profile.role === "coach" ? "coach_id" : "client_id", user.id)
+        .or(`coach_id.eq.${user.id},client_id.eq.${user.id}`)
         .eq("status", "accepted");
 
       if (connectionsError) throw connectionsError;
 
       // Extract the other user from each connection
       const connectedUsers = (connections || []).map((conn: any) => {
-        const otherUser = profile.role === "coach" ? conn.client : conn.coach;
+        // If I am the coach, the other is the client. If I am the client, the other is the coach.
+        // We can just check IDs.
+        const isCoach = conn.coach.id === user.id;
+        const otherUser = isCoach ? conn.client : conn.coach;
+        
         return {
           id: otherUser.id,
           full_name: otherUser.full_name,
@@ -46,8 +42,11 @@ export const useConnectedUsers = () => {
         };
       });
 
+      // Remove duplicates (in case of multiple connections, though unlikely)
+      const uniqueUsers = Array.from(new Map(connectedUsers.map(u => [u.id, u])).values());
+
       // Fetch roles for connected users
-      const userIds = connectedUsers.map(u => u.id);
+      const userIds = uniqueUsers.map(u => u.id);
       if (userIds.length === 0) return [];
 
       const { data: rolesData, error: rolesError } = await supabase
@@ -58,7 +57,7 @@ export const useConnectedUsers = () => {
       if (rolesError) throw rolesError;
 
       // Map roles to users
-      const usersWithRoles = connectedUsers.map(user => ({
+      const usersWithRoles = uniqueUsers.map(user => ({
         ...user,
         roles: rolesData
           ?.filter(r => r.user_id === user.id)

@@ -45,6 +45,7 @@ const Inbox = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [autoOpenProcessed, setAutoOpenProcessed] = useState(false);
+  const [isAutoOpening, setIsAutoOpening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { conversations, loading: conversationsLoading, error: conversationsError, refetch: refetchConversations } = useConversations();
@@ -52,10 +53,11 @@ const Inbox = () => {
   // Auto-open conversation when userId is in URL params
   useEffect(() => {
     const targetUserId = searchParams.get('userId');
-    if (!targetUserId || !user || autoOpenProcessed || conversationsLoading) return;
+    if (!targetUserId || !user || autoOpenProcessed) return;
 
     const findOrCreateConversation = async () => {
       console.log('Inbox: Auto-opening conversation with user:', targetUserId);
+      setIsAutoOpening(true);
       setAutoOpenProcessed(true);
 
       // Clear the URL param
@@ -74,15 +76,17 @@ const Inbox = () => {
 
         console.log('Inbox: Conversation ready:', conversationId);
         setSelectedConversationId(conversationId);
-        refetchConversations();
+        await refetchConversations();
       } catch (error: any) {
         console.error('Inbox: Error creating conversation:', error);
         toast.error('Failed to start conversation');
+      } finally {
+        setIsAutoOpening(false);
       }
     };
 
     findOrCreateConversation();
-  }, [searchParams, user, autoOpenProcessed, conversationsLoading]);
+  }, [searchParams, user, autoOpenProcessed, setSearchParams, refetchConversations]);
 
   const { messages, loading: messagesLoading, sendMessage, editMessage, deleteMessage } = useMessages(selectedConversationId);
   const { chatEnabled } = useChatStatus(selectedConversationId);
@@ -90,6 +94,40 @@ const Inbox = () => {
   // Safe access to conversations with fallback to empty array
   const safeConversations = conversations || [];
   const selectedConversation = safeConversations.find(c => c.id === selectedConversationId);
+  
+  // Fallback for when the conversation exists but isn't in the list yet (e.g. just created)
+  const [tempConversation, setTempConversation] = useState<any>(null);
+
+  useEffect(() => {
+    if (selectedConversationId && !selectedConversation && !conversationsLoading) {
+      const fetchTempConversation = async () => {
+        try {
+          const { data: otherParticipant } = await supabase
+              .rpc('get_other_participant', { conv_id: selectedConversationId })
+              .maybeSingle();
+          
+          if (otherParticipant) {
+             setTempConversation({
+                id: selectedConversationId,
+                other_user: {
+                   id: otherParticipant.user_id,
+                   full_name: otherParticipant.full_name,
+                   avatar_url: otherParticipant.avatar_url
+                },
+                unread_count: 0
+             });
+          }
+        } catch (e) {
+          console.error("Error fetching temp conversation", e);
+        }
+      };
+      fetchTempConversation();
+    } else if (selectedConversation) {
+      setTempConversation(null);
+    }
+  }, [selectedConversationId, selectedConversation, conversationsLoading]);
+
+  const activeConversation = selectedConversation || tempConversation;
 
   // Safe filtering with comprehensive null checks
   const filteredConversations = safeConversations.filter((conv) => {
@@ -374,19 +412,23 @@ const Inbox = () => {
 
             {/* Chat Area */}
             <div className="lg:col-span-2 glass rounded-2xl overflow-hidden flex flex-col">
-              {selectedConversation ? (
+              {isAutoOpening ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : activeConversation ? (
                 <>
                   {/* Chat Header */}
                   <div className="p-4 border-b border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <Avatar className="w-10 h-10">
-                          <AvatarImage src={selectedConversation.other_user.avatar_url} alt={selectedConversation.other_user.full_name} />
-                          <AvatarFallback>{selectedConversation.other_user.full_name?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                          <AvatarImage src={activeConversation.other_user.avatar_url} alt={activeConversation.other_user.full_name} />
+                          <AvatarFallback>{activeConversation.other_user.full_name?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                         </Avatar>
                       </div>
                       <div>
-                        <h3 className="font-semibold">{selectedConversation.other_user.full_name}</h3>
+                        <h3 className="font-semibold">{activeConversation.other_user.full_name}</h3>
                         <p className="text-xs text-muted-foreground">Online</p>
                       </div>
                     </div>

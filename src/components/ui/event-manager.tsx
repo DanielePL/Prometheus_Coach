@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Plus, Calendar, Clock, Grid3x3, List, Search, Filter, X, Repeat } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, Calendar, Clock, Grid3x3, List, Search, Filter, X, Repeat, Video } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
@@ -49,6 +49,7 @@ export interface Event {
   parent_event_id?: string | null
   timezone?: string
   reminders?: number[]
+  video_link?: string
 }
 
 export interface EventManagerProps {
@@ -206,6 +207,7 @@ export function EventManager({
       recurrence_interval: newEvent.recurrence_interval,
       recurrence_days: newEvent.recurrence_days,
       recurrence_end_date: newEvent.recurrence_end_date,
+      video_link: newEvent.video_link || undefined,
     }
 
     setEvents((prev) => [...prev, event])
@@ -1190,6 +1192,29 @@ export function EventManager({
                   </p>
                 );
               })()}
+            </div>
+
+            {/* Video Link Field */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Video className="h-4 w-4 text-green-500" />
+                <Label htmlFor="videoLink">Video Call Link (Optional)</Label>
+              </div>
+              <Input
+                id="videoLink"
+                type="url"
+                value={isCreating ? newEvent.video_link || "" : selectedEvent?.video_link || ""}
+                onChange={(e) =>
+                  isCreating
+                    ? setNewEvent((prev) => ({ ...prev, video_link: e.target.value }))
+                    : setSelectedEvent((prev) => (prev ? { ...prev, video_link: e.target.value } : null))
+                }
+                placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                disabled={!isCreating && selectedEvent?.created_by !== currentUserId}
+              />
+              <p className="text-xs text-muted-foreground">
+                Paste your Google Meet, Zoom, or other video call link
+              </p>
             </div>
 
             {isCreating && isCoach && clients.length > 0 && (
