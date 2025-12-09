@@ -1,5 +1,5 @@
 // Chat system with RLS enabled.
-// Uses SECURITY DEFINER functions for cross-participant queries (get_other_participant).
+// Uses SECURITY DEFINER RPC function get_user_conversations() for efficient fetching.
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,7 +35,7 @@ export const useConversations = () => {
       setError(null);
       return;
     }
-    
+
     console.log('useConversations: Fetching conversations for user', user.id);
 
     // Set timeout to prevent infinite loading
@@ -46,32 +46,84 @@ export const useConversations = () => {
     }, 8000);
 
     try {
+      // Use the SECURITY DEFINER RPC function that bypasses RLS
+      // This returns all conversations with other_user info, last_message, and unread_count
+      console.log('useConversations: Calling get_user_conversations RPC...');
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_user_conversations');
+
+      if (rpcError) {
+        console.error('useConversations: RPC error:', rpcError.code, rpcError.message, rpcError);
+        // Fallback to legacy method if RPC doesn't exist
+        if (rpcError.code === '42883' || rpcError.message?.includes('does not exist')) {
+          console.log('useConversations: RPC not found, using legacy method...');
+          await fetchConversationsLegacy();
+          return;
+        }
+        throw rpcError;
+      }
+
+      console.log('useConversations: RPC SUCCESS - returned', rpcData?.length || 0, 'conversations');
+      if (rpcData && rpcData.length > 0) {
+        console.log('useConversations: First conversation:', JSON.stringify(rpcData[0], null, 2));
+      }
+
+      // Map RPC response to ConversationWithDetails format
+      const mappedConversations: ConversationWithDetails[] = (rpcData || [])
+        .filter((conv: any) => conv.other_user_id) // Filter out conversations without other user
+        .map((conv: any) => ({
+          id: conv.conversation_id,
+          updated_at: conv.updated_at || new Date().toISOString(),
+          other_user: {
+            id: conv.other_user_id,
+            full_name: conv.other_user_name || 'Unknown User',
+            avatar_url: conv.other_user_avatar,
+          },
+          last_message: conv.last_message_content ? {
+            content: conv.last_message_content,
+            created_at: conv.last_message_at,
+            sender_id: conv.last_message_sender_id,
+          } : undefined,
+          unread_count: Number(conv.unread_count) || 0,
+        }));
+
+      console.log('useConversations: Mapped', mappedConversations.length, 'valid conversations');
+      setConversations(mappedConversations);
+      setError(null);
+    } catch (error: any) {
+      console.error('useConversations: Error fetching conversations:', error);
+      setConversations([]);
+
+      let errorMessage = 'Failed to load conversations';
+      if (error?.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      setError(errorMessage);
+    } finally {
+      clearTimeout(timeoutId);
+      setLoading(false);
+    }
+  };
+
+  // Legacy method as fallback (in case RPC doesn't exist yet)
+  const fetchConversationsLegacy = async () => {
+    if (!user) return;
+
+    try {
       // Get all conversations where user is a participant
       const { data: participantData, error: participantError } = await supabase
         .from('conversation_participants')
         .select('conversation_id, last_read_at')
         .eq('user_id', user.id);
 
-      if (participantError) {
-        console.error('useConversations: Error fetching participant data:', {
-          message: participantError.message,
-          details: participantError.details,
-          hint: participantError.hint,
-          code: participantError.code
-        });
-        throw participantError;
-      }
+      if (participantError) throw participantError;
 
       if (!participantData || participantData.length === 0) {
-        console.log('useConversations: No participant data found, user has no conversations');
         setConversations([]);
         setError(null);
-        clearTimeout(timeoutId);
         setLoading(false);
         return;
       }
-      
-      console.log('useConversations: Found', participantData.length, 'conversation participations');
 
       const conversationIds = participantData.map(p => p.conversation_id);
 
@@ -82,60 +134,21 @@ export const useConversations = () => {
         .in('id', conversationIds)
         .order('updated_at', { ascending: false });
 
-      if (conversationsError) {
-        console.error('useConversations: Error fetching conversations data:', {
-          message: conversationsError.message,
-          details: conversationsError.details,
-          hint: conversationsError.hint,
-          code: conversationsError.code
-        });
-        throw conversationsError;
-      }
+      if (conversationsError) throw conversationsError;
 
       // For each conversation, get the other participant and last message
-      console.log('useConversations: Processing', conversationsData?.length || 0, 'conversations');
-      
       const conversationsWithDetails = await Promise.all(
-        (conversationsData || []).map(async (conv, index) => {
+        (conversationsData || []).map(async (conv) => {
           try {
-            console.log(`useConversations: [${index}] Processing conversation ${conv.id}`);
-            
-            // Get other participant using SECURITY DEFINER function (bypasses RLS safely)
-            console.log(`useConversations: [${index}] Fetching other participant for conversation ${conv.id}`);
-            const { data: otherParticipant, error: participantError } = await supabase
+            // Get other participant using SECURITY DEFINER function
+            const { data: otherParticipant } = await supabase
               .rpc('get_other_participant', { conv_id: conv.id })
               .maybeSingle();
 
-            if (participantError) {
-              console.error(`useConversations: [${index}] ERROR fetching participant:`, {
-                conversation_id: conv.id,
-                error: participantError,
-                message: participantError.message,
-                details: participantError.details,
-                hint: participantError.hint,
-                code: participantError.code
-              });
-              throw participantError;
-            }
-
-            // Skip conversations with no other participant (orphaned data)
-            if (!otherParticipant) {
-              console.warn(`useConversations: [${index}] No other participant found for conversation ${conv.id}, skipping`);
-              return null;
-            }
-
-            // Profile data comes directly from the function
-            const profileData = {
-              id: otherParticipant.user_id,
-              full_name: otherParticipant.full_name || 'Unknown User',
-              avatar_url: otherParticipant.avatar_url
-            };
-
-            console.log(`useConversations: [${index}] Found participant:`, { otherParticipant, profileData });
+            if (!otherParticipant) return null;
 
             // Get last message
-            console.log(`useConversations: [${index}] Fetching last message for conversation ${conv.id}`);
-            const { data: lastMessage, error: messageError } = await supabase
+            const { data: lastMessage } = await supabase
               .from('messages')
               .select('content, created_at, sender_id')
               .eq('conversation_id', conv.id)
@@ -143,88 +156,40 @@ export const useConversations = () => {
               .limit(1)
               .maybeSingle();
 
-            if (messageError) {
-              console.error(`useConversations: [${index}] ERROR fetching last message:`, {
-                conversation_id: conv.id,
-                error: messageError
-              });
-            }
-
             // Count unread messages
-            console.log(`useConversations: [${index}] Counting unread messages for conversation ${conv.id}`);
             const participant = participantData.find(p => p.conversation_id === conv.id);
-            const { count: unreadCount, error: countError } = await supabase
+            const { count: unreadCount } = await supabase
               .from('messages')
               .select('*', { count: 'exact', head: true })
               .eq('conversation_id', conv.id)
               .neq('sender_id', user.id)
               .gt('created_at', participant?.last_read_at || new Date(0).toISOString());
 
-            if (countError) {
-              console.error(`useConversations: [${index}] ERROR counting unread messages:`, {
-                conversation_id: conv.id,
-                error: countError
-              });
-            }
-
-            const result = {
+            return {
               id: conv.id,
               updated_at: conv.updated_at,
               other_user: {
-                id: profileData.id,
-                full_name: profileData.full_name,
-                avatar_url: profileData.avatar_url,
+                id: otherParticipant.user_id,
+                full_name: otherParticipant.full_name || 'Unknown User',
+                avatar_url: otherParticipant.avatar_url,
               },
               last_message: lastMessage || undefined,
               unread_count: unreadCount || 0,
             };
-            
-            console.log(`useConversations: [${index}] Successfully processed conversation ${conv.id}`);
-            return result;
-          } catch (convError: any) {
-            console.error(`useConversations: [${index}] CRITICAL ERROR processing conversation ${conv.id}:`, {
-              error: convError,
-              message: convError?.message,
-              details: convError?.details,
-              hint: convError?.hint,
-              code: convError?.code,
-              stack: convError?.stack
-            });
-            // Re-throw to stop processing and show error to user
-            throw convError;
+          } catch {
+            return null;
           }
         })
       );
 
-      // Filter out null values (orphaned conversations)
       const validConversations = conversationsWithDetails.filter((c): c is ConversationWithDetails => c !== null);
-      console.log('useConversations: Successfully fetched', validConversations.length, 'conversations (filtered from', conversationsWithDetails.length, ')');
       setConversations(validConversations);
       setError(null);
     } catch (error: any) {
-      console.error('useConversations: Error fetching conversations:', {
-        error,
-        message: error?.message,
-        details: error?.details,
-        hint: error?.hint,
-        code: error?.code,
-        stack: error?.stack
-      });
-      // Ensure conversations is set to empty array on error, not left as undefined
+      console.error('useConversations: Legacy fetch error:', error);
       setConversations([]);
-      
-      // Set a more descriptive error message
-      let errorMessage = 'Failed to load conversations';
-      if (error?.message) {
-        errorMessage += `: ${error.message}`;
-      }
-      if (error?.hint) {
-        errorMessage += ` (${error.hint})`;
-      }
-      
-      setError(errorMessage);
+      setError('Failed to load conversations');
     } finally {
-      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
