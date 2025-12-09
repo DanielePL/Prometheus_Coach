@@ -33,10 +33,9 @@ export const useWorkoutSessions = () => {
               *,
               exercises (*)
             )
-          ),
-          workout_sets (*)
+          )
         `)
-        .eq("user_id", user.id)
+        .eq("client_id", user.id)
         .order("started_at", { ascending: false });
 
       if (error) throw error;
@@ -51,6 +50,7 @@ export const useWorkoutSession = (sessionId: string | undefined) => {
     queryFn: async () => {
       if (!sessionId) return null;
 
+      // Fetch session with routines
       const { data, error } = await supabase
         .from("workout_sessions")
         .select(`
@@ -62,14 +62,27 @@ export const useWorkoutSession = (sessionId: string | undefined) => {
               *,
               exercises (*)
             )
-          ),
-          workout_sets (*)
+          )
         `)
         .eq("id", sessionId)
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Fetch workout_sets separately (Mobile App table)
+      const { data: workoutSets, error: setsError } = await supabase
+        .from("workout_sets" as any)
+        .select("*")
+        .eq("session_id", sessionId);
+
+      if (setsError) {
+        console.warn("Could not fetch workout_sets:", setsError.message);
+      }
+
+      return {
+        ...data,
+        workout_sets: workoutSets || [],
+      };
     },
     enabled: !!sessionId,
   });
@@ -86,11 +99,10 @@ export const useStartWorkoutSession = () => {
       const { data, error } = await supabase
         .from("workout_sessions")
         .insert({
-          user_id: user.id,
-          client_id: user.id, // Keep for backwards compatibility
+          client_id: user.id,
           routine_id: routineId,
           status: "in_progress",
-        } as any)
+        })
         .select()
         .single();
 
