@@ -11,6 +11,9 @@ export interface Message {
   content: string;
   created_at: string;
   edited_at: string | null;
+  file_url: string | null;
+  file_type: string | null;
+  file_name: string | null;
   sender: {
     id: string;
     full_name: string;
@@ -48,6 +51,9 @@ export const useMessages = (conversationId: string | null) => {
         content: msg.content,
         created_at: msg.created_at,
         edited_at: msg.edited_at,
+        file_url: msg.file_url || null,
+        file_type: msg.file_type || null,
+        file_name: msg.file_name || null,
         sender: {
           id: msg.profiles?.id || '',
           full_name: msg.profiles?.full_name || 'Unknown User',
@@ -77,6 +83,49 @@ export const useMessages = (conversationId: string | null) => {
       if (error) throw error;
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error;
+    }
+  };
+
+  const sendMessageWithFile = async (content: string, file: File) => {
+    if (!conversationId || !user) return;
+
+    try {
+      // 1. Upload file to storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}_${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-files')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Get public URL
+      const { data: urlData } = supabase.storage
+        .from('chat-files')
+        .getPublicUrl(fileName);
+
+      const fileUrl = urlData.publicUrl;
+
+      // 3. Determine file type
+      const fileType = file.type.startsWith('image/') ? 'image' : 'pdf';
+
+      // 4. Create message with file info
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: content.trim() || file.name,
+          file_url: fileUrl,
+          file_type: fileType,
+          file_name: file.name,
+        });
+
+      if (messageError) throw messageError;
+    } catch (error) {
+      console.error('Error sending message with file:', error);
       throw error;
     }
   };
@@ -169,5 +218,5 @@ export const useMessages = (conversationId: string | null) => {
     };
   }, [conversationId, user]);
 
-  return { messages, loading, sendMessage, editMessage, deleteMessage, refetch: fetchMessages };
+  return { messages, loading, sendMessage, sendMessageWithFile, editMessage, deleteMessage, refetch: fetchMessages };
 };

@@ -1,6 +1,6 @@
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
-import { Moon, Sun, Search, Send, Loader2, MessageSquarePlus, Pencil, Trash2, Check, X, MessageSquareOff } from "lucide-react";
+import { Moon, Sun, Search, Send, Loader2, MessageSquarePlus, Pencil, Trash2, Check, X, MessageSquareOff, Paperclip, FileText, Image as ImageIcon, Download } from "lucide-react";
 import { useTheme } from "next-themes";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
@@ -46,7 +46,10 @@ const Inbox = () => {
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [autoOpenProcessed, setAutoOpenProcessed] = useState(false);
   const [isAutoOpening, setIsAutoOpening] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { conversations, loading: conversationsLoading, error: conversationsError, refetch: refetchConversations } = useConversations();
 
@@ -88,7 +91,7 @@ const Inbox = () => {
     findOrCreateConversation();
   }, [searchParams, user, autoOpenProcessed, setSearchParams, refetchConversations]);
 
-  const { messages, loading: messagesLoading, sendMessage, editMessage, deleteMessage } = useMessages(selectedConversationId);
+  const { messages, loading: messagesLoading, sendMessage, sendMessageWithFile, editMessage, deleteMessage } = useMessages(selectedConversationId);
   const { chatEnabled } = useChatStatus(selectedConversationId);
 
   // Safe access to conversations with fallback to empty array
@@ -228,6 +231,42 @@ const Inbox = () => {
     } finally {
       setDeleteDialogOpen(false);
       setMessageToDelete(null);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleSendWithFile = async () => {
+    if (!selectedFile) return;
+
+    setIsUploadingFile(true);
+    try {
+      await sendMessageWithFile(messageInput, selectedFile);
+      setSelectedFile(null);
+      setMessageInput("");
+      toast.success("File sent successfully");
+    } catch (error) {
+      console.error("Error sending file:", error);
+      toast.error("Failed to send file");
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -510,9 +549,37 @@ const Inbox = () => {
                                 </div>
                               ) : (
                                 <>
-                                  <div className="text-sm">
-                                    <EventMentionParser content={message.content} />
-                                  </div>
+                                  {/* File Attachment */}
+                                  {message.file_url && (
+                                    <div className="mb-2">
+                                      {message.file_type === 'image' ? (
+                                        <a href={message.file_url} target="_blank" rel="noopener noreferrer">
+                                          <img
+                                            src={message.file_url}
+                                            alt={message.file_name || 'Attachment'}
+                                            className="max-w-full rounded-lg max-h-48 object-contain"
+                                          />
+                                        </a>
+                                      ) : (
+                                        <a
+                                          href={message.file_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 p-2 bg-primary-foreground/10 rounded-lg hover:bg-primary-foreground/20 transition-colors"
+                                        >
+                                          <FileText className="w-5 h-5" />
+                                          <span className="text-sm truncate">{message.file_name || 'Document'}</span>
+                                          <Download className="w-4 h-4 ml-auto" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
+                                  {/* Text Content */}
+                                  {message.content && message.content !== message.file_name && (
+                                    <div className="text-sm">
+                                      <EventMentionParser content={message.content} />
+                                    </div>
+                                  )}
                                   <div className="flex items-center justify-end gap-2 mt-1">
                                     <span className="text-xs opacity-80">
                                       {formatMessageTime(message.created_at)}
@@ -530,13 +597,41 @@ const Inbox = () => {
                         ) : (
                           <div key={message.id} className="flex items-start gap-2">
                             <Avatar className="w-8 h-8">
-                              <AvatarImage src={selectedConversation.other_user.avatar_url} alt={message.sender.full_name} />
-                              <AvatarFallback>{message.sender.full_name[0]}</AvatarFallback>
+                              <AvatarImage src={activeConversation?.other_user?.avatar_url} alt={message.sender.full_name} />
+                              <AvatarFallback>{message.sender.full_name?.[0] || '?'}</AvatarFallback>
                             </Avatar>
                             <div className="glass rounded-2xl rounded-tl-sm px-4 py-2 max-w-[70%]">
-                              <div className="text-sm">
-                                <EventMentionParser content={message.content} />
-                              </div>
+                              {/* File Attachment */}
+                              {message.file_url && (
+                                <div className="mb-2">
+                                  {message.file_type === 'image' ? (
+                                    <a href={message.file_url} target="_blank" rel="noopener noreferrer">
+                                      <img
+                                        src={message.file_url}
+                                        alt={message.file_name || 'Attachment'}
+                                        className="max-w-full rounded-lg max-h-48 object-contain"
+                                      />
+                                    </a>
+                                  ) : (
+                                    <a
+                                      href={message.file_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+                                    >
+                                      <FileText className="w-5 h-5 text-primary" />
+                                      <span className="text-sm truncate">{message.file_name || 'Document'}</span>
+                                      <Download className="w-4 h-4 ml-auto text-primary" />
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+                              {/* Text Content */}
+                              {message.content && message.content !== message.file_name && (
+                                <div className="text-sm">
+                                  <EventMentionParser content={message.content} />
+                                </div>
+                              )}
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs text-muted-foreground">
                                   {formatMessageTime(message.created_at)}
@@ -558,22 +653,65 @@ const Inbox = () => {
                   {/* Message Input */}
                   <div className="p-4 border-t border-white/10">
                     {chatEnabled ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="text"
-                          placeholder="Type a message..."
-                          value={messageInput}
-                          onChange={(e) => setMessageInput(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          className="flex-1 glass border-white/10"
-                        />
-                        <button 
-                          onClick={handleSendMessage}
-                          disabled={!messageInput.trim()}
-                          className="bg-primary text-primary-foreground p-2.5 rounded-xl transition-smooth hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Send className="w-5 h-5" />
-                        </button>
+                      <div className="space-y-2">
+                        {/* File Preview */}
+                        {selectedFile && (
+                          <div className="flex items-center gap-2 p-2 glass rounded-lg">
+                            {selectedFile.type.startsWith('image/') ? (
+                              <ImageIcon className="w-5 h-5 text-primary" />
+                            ) : (
+                              <FileText className="w-5 h-5 text-primary" />
+                            )}
+                            <span className="text-sm truncate flex-1">{selectedFile.name}</span>
+                            <button
+                              onClick={handleClearFile}
+                              className="p-1 hover:bg-white/10 rounded transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2">
+                          {/* File Input (hidden) */}
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileSelect}
+                            accept="image/*,.pdf"
+                            className="hidden"
+                          />
+
+                          {/* Attach Button */}
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="glass p-2.5 rounded-xl transition-smooth hover:bg-white/10"
+                            title="Attach file"
+                          >
+                            <Paperclip className="w-5 h-5" />
+                          </button>
+
+                          <Input
+                            type="text"
+                            placeholder="Type a message..."
+                            value={messageInput}
+                            onChange={(e) => setMessageInput(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            className="flex-1 glass border-white/10"
+                          />
+
+                          <button
+                            onClick={selectedFile ? handleSendWithFile : handleSendMessage}
+                            disabled={isUploadingFile || (!messageInput.trim() && !selectedFile)}
+                            className="bg-primary text-primary-foreground p-2.5 rounded-xl transition-smooth hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isUploadingFile ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <Send className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border/50">
