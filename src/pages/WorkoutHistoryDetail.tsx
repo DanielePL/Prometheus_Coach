@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useWorkoutSession } from "@/hooks/useWorkoutSessions";
 import { useClientPersonalRecords } from "@/hooks/usePersonalRecords";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, Clock, Dumbbell, Trophy } from "lucide-react";
+import { Loader2, ArrowLeft, Clock, Dumbbell, Trophy, Play } from "lucide-react";
+import { VideoPlayerModal } from "@/components/Exercise/VideoPlayerModal";
 import { useTheme } from "next-themes";
 import { format } from "date-fns";
 import gradientBg from "@/assets/gradient-bg.jpg";
@@ -19,6 +21,9 @@ export default function WorkoutHistoryDetail() {
   const { user } = useAuth();
   const { data: session, isLoading } = useWorkoutSession(sessionId);
   const { data: personalRecords } = useClientPersonalRecords(session?.client_id || "");
+
+  // Video modal state
+  const [selectedVideo, setSelectedVideo] = useState<{ url: string; title: string } | null>(null);
 
   if (isLoading || !session) {
     return (
@@ -171,6 +176,7 @@ export default function WorkoutHistoryDetail() {
                     const reps = set.reps ?? set.reps_completed ?? 0;
                     const weight = set.weight_kg ?? set.weight_used ?? 0;
                     const isCompleted = set.completed_at != null || set.completed === true;
+                    const hasVideo = !!set.video_url;
 
                     return (
                       <div
@@ -184,6 +190,18 @@ export default function WorkoutHistoryDetail() {
                           </span>
                           {isCompleted && (
                             <span className="text-green-500">✓</span>
+                          )}
+                          {hasVideo && (
+                            <button
+                              onClick={() => setSelectedVideo({
+                                url: set.video_url,
+                                title: `${group.exercise.title} - Set ${setIndex + 1}`
+                              })}
+                              className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                              title="Watch video"
+                            >
+                              <Play className="w-4 h-4 text-primary" />
+                            </button>
                           )}
                         </div>
                       </div>
@@ -203,6 +221,14 @@ export default function WorkoutHistoryDetail() {
           )}
         </div>
       </main>
+
+      {/* Video Player Modal */}
+      <VideoPlayerModal
+        isOpen={!!selectedVideo}
+        onClose={() => setSelectedVideo(null)}
+        videoUrl={selectedVideo?.url || ""}
+        title={selectedVideo?.title || ""}
+      />
     </div>
   );
 }
