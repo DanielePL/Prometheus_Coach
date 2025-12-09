@@ -24,6 +24,7 @@ import { ClientNutritionTab } from "@/components/Clients/ClientNutritionTab";
 import { ClientLoadLabTab } from "@/components/Clients/ClientLoadLabTab";
 import { ClientPRsTab } from "@/components/Clients/ClientPRsTab";
 import { ClientInsightsTab } from "@/components/Clients/ClientInsightsTab";
+import { ClientExerciseStatsTab } from "@/components/Clients/ClientExerciseStatsTab";
 
 const ClientDetail = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -168,6 +169,7 @@ const ClientDetail = () => {
             <TabsTrigger value="vbt">VBT</TabsTrigger>
             <TabsTrigger value="loadlab">Load Lab</TabsTrigger>
             <TabsTrigger value="prs">PRs</TabsTrigger>
+            <TabsTrigger value="exercises">Exercises</TabsTrigger>
             <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
@@ -193,6 +195,10 @@ const ClientDetail = () => {
 
           <TabsContent value="prs">
             <ClientPRsTab clientId={client.id} />
+          </TabsContent>
+
+          <TabsContent value="exercises">
+            <ClientExerciseStatsTab clientId={client.id} />
           </TabsContent>
 
           <TabsContent value="insights">
