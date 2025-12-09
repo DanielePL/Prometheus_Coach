@@ -30,7 +30,7 @@ interface NavItem {
 
 const baseNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: Compass, label: "Library", path: "/explore" },
+  { icon: Compass, label: "Library", path: "/library" },
   { icon: Bookmark, label: "Saved", path: "/saved" },
   { icon: Upload, label: "Uploads", path: "/uploads", roleRequired: ["coach", "admin"] },
   { icon: ListOrdered, label: "Routines", path: "/routines", roleRequired: ["coach", "admin"] },

@@ -1,13 +1,14 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import { SubscriptionRoute } from "./components/SubscriptionRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import Library from "./pages/Library";
 import Explore from "./pages/Explore";
 import Saved from "./pages/Saved";
 import Calendar from "./pages/Calendar";
@@ -50,7 +51,8 @@ function App() {
             <Route path="/book/:slug" element={<BookingPage />} />
             <Route path="/" element={<ProtectedRoute><SubscriptionRoute><Dashboard /></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><SubscriptionRoute><Dashboard /></SubscriptionRoute></ProtectedRoute>} />
-            <Route path="/explore" element={<ProtectedRoute><SubscriptionRoute><Explore /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/library" element={<ProtectedRoute><SubscriptionRoute><Library /></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/explore" element={<Navigate to="/library" replace />} />
             <Route path="/saved" element={<ProtectedRoute><SubscriptionRoute><Saved /></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/calendar" element={<ProtectedRoute><SubscriptionRoute><Calendar /></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/inbox" element={<ProtectedRoute><SubscriptionRoute><Inbox /></SubscriptionRoute></ProtectedRoute>} />
