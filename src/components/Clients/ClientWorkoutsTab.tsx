@@ -2,8 +2,17 @@ import { useNavigate } from "react-router-dom";
 import { useClientWorkoutSessions } from "@/hooks/useClientWorkoutSessions";
 import { useClientTrainingSummary, useClientWorkoutHistory } from "@/hooks/useClientMobileWorkouts";
 import { format } from "date-fns";
-import { Clock, Dumbbell, TrendingUp, Loader2, Flame, Trophy, Calendar, Target } from "lucide-react";
+import { Clock, Dumbbell, TrendingUp, Loader2, Flame, Trophy, Calendar, Target, Play, Zap, Heart, Award } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface ClientWorkoutsTabProps {
   clientId: string;
@@ -53,9 +62,25 @@ export const ClientWorkoutsTab = ({ clientId }: ClientWorkoutsTabProps) => {
   const avgDuration = trainingSummary?.avg_workout_duration_minutes ?? fallbackAvgDuration;
   const totalVolume = trainingSummary?.total_volume_kg ?? fallbackTotalVolume;
   const currentStreak = trainingSummary?.current_streak_days ?? 0;
+  const longestStreak = trainingSummary?.longest_streak_days ?? 0;
   const totalPRs = trainingSummary?.total_prs ?? 0;
   const weekWorkouts = trainingSummary?.week_workouts ?? 0;
   const monthWorkouts = trainingSummary?.month_workouts ?? 0;
+  const avgWorkoutsPerWeek = trainingSummary?.avg_workouts_per_week ?? 0;
+  const yearWorkouts = trainingSummary?.year_workouts ?? 0;
+  const yearPRs = trainingSummary?.year_prs ?? 0;
+
+  // Build volume trend data from workout history
+  const volumeTrendData = hasWorkoutHistory
+    ? [...workoutHistory]
+        .reverse()
+        .slice(-12)
+        .map((entry) => ({
+          date: format(new Date(entry.completed_at), "MMM d"),
+          volume: Math.round(entry.total_volume_kg),
+          duration: entry.duration_minutes || 0,
+        }))
+    : [];
 
   if (isLoading) {
     return (
@@ -99,27 +124,101 @@ export const ClientWorkoutsTab = ({ clientId }: ClientWorkoutsTabProps) => {
 
       {/* Additional Stats from Mobile App */}
       {trainingSummary && (
-        <div className="grid grid-cols-4 gap-3">
-          <div className="glass rounded-xl p-3 text-center">
-            <Flame className="w-5 h-5 mx-auto mb-1 text-orange-500" />
-            <p className="text-xl font-bold">{currentStreak}</p>
-            <p className="text-xs text-muted-foreground">Day Streak</p>
+        <>
+          <div className="grid grid-cols-4 gap-3">
+            <div className="glass rounded-xl p-3 text-center">
+              <Flame className="w-5 h-5 mx-auto mb-1 text-orange-500" />
+              <p className="text-xl font-bold">{currentStreak}</p>
+              <p className="text-xs text-muted-foreground">Day Streak</p>
+            </div>
+            <div className="glass rounded-xl p-3 text-center">
+              <Trophy className="w-5 h-5 mx-auto mb-1 text-yellow-500" />
+              <p className="text-xl font-bold">{totalPRs}</p>
+              <p className="text-xs text-muted-foreground">Total PRs</p>
+            </div>
+            <div className="glass rounded-xl p-3 text-center">
+              <Calendar className="w-5 h-5 mx-auto mb-1 text-blue-500" />
+              <p className="text-xl font-bold">{weekWorkouts}</p>
+              <p className="text-xs text-muted-foreground">This Week</p>
+            </div>
+            <div className="glass rounded-xl p-3 text-center">
+              <Target className="w-5 h-5 mx-auto mb-1 text-green-500" />
+              <p className="text-xl font-bold">{monthWorkouts}</p>
+              <p className="text-xs text-muted-foreground">This Month</p>
+            </div>
           </div>
-          <div className="glass rounded-xl p-3 text-center">
-            <Trophy className="w-5 h-5 mx-auto mb-1 text-yellow-500" />
-            <p className="text-xl font-bold">{totalPRs}</p>
-            <p className="text-xs text-muted-foreground">Total PRs</p>
+
+          {/* Extended Stats Row */}
+          <div className="grid grid-cols-4 gap-3">
+            <div className="glass rounded-xl p-3 text-center">
+              <Award className="w-5 h-5 mx-auto mb-1 text-purple-500" />
+              <p className="text-xl font-bold">{longestStreak}</p>
+              <p className="text-xs text-muted-foreground">Best Streak</p>
+            </div>
+            <div className="glass rounded-xl p-3 text-center">
+              <Zap className="w-5 h-5 mx-auto mb-1 text-cyan-500" />
+              <p className="text-xl font-bold">{avgWorkoutsPerWeek?.toFixed(1) || "0"}</p>
+              <p className="text-xs text-muted-foreground">Avg/Week</p>
+            </div>
+            <div className="glass rounded-xl p-3 text-center">
+              <Dumbbell className="w-5 h-5 mx-auto mb-1 text-indigo-500" />
+              <p className="text-xl font-bold">{yearWorkouts}</p>
+              <p className="text-xs text-muted-foreground">This Year</p>
+            </div>
+            <div className="glass rounded-xl p-3 text-center">
+              <Trophy className="w-5 h-5 mx-auto mb-1 text-amber-500" />
+              <p className="text-xl font-bold">{yearPRs}</p>
+              <p className="text-xs text-muted-foreground">PRs This Year</p>
+            </div>
           </div>
-          <div className="glass rounded-xl p-3 text-center">
-            <Calendar className="w-5 h-5 mx-auto mb-1 text-blue-500" />
-            <p className="text-xl font-bold">{weekWorkouts}</p>
-            <p className="text-xs text-muted-foreground">This Week</p>
+        </>
+      )}
+
+      {/* Volume Trend Chart */}
+      {volumeTrendData.length > 2 && (
+        <div className="glass rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold">Volume Trend</h3>
           </div>
-          <div className="glass rounded-xl p-3 text-center">
-            <Target className="w-5 h-5 mx-auto mb-1 text-green-500" />
-            <p className="text-xl font-bold">{monthWorkouts}</p>
-            <p className="text-xs text-muted-foreground">This Month</p>
-          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={volumeTrendData}>
+              <defs>
+                <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis
+                dataKey="date"
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={11}
+                tickLine={false}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={11}
+                tickLine={false}
+                tickFormatter={(v) => `${(v / 1000).toFixed(1)}k`}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--background))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
+                }}
+                formatter={(value: number) => [`${value.toLocaleString()} kg`, "Volume"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="volume"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                fill="url(#volumeGradient)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       )}
 
@@ -175,6 +274,23 @@ export const ClientWorkoutsTab = ({ clientId }: ClientWorkoutsTabProps) => {
                     </span>
                   )}
                 </div>
+                {/* Mood & Energy Ratings */}
+                {(entry.mood_rating || entry.energy_rating) && (
+                  <div className="flex items-center gap-3 mt-2">
+                    {entry.mood_rating && (
+                      <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400">
+                        <Heart className="w-3 h-3" />
+                        Mood: {entry.mood_rating}/5
+                      </span>
+                    )}
+                    {entry.energy_rating && (
+                      <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
+                        <Zap className="w-3 h-3" />
+                        Energy: {entry.energy_rating}/5
+                      </span>
+                    )}
+                  </div>
+                )}
                 {entry.notes && (
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
                     "{entry.notes}"
