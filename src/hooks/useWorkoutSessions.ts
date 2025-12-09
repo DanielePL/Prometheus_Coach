@@ -35,7 +35,7 @@ export const useWorkoutSessions = () => {
             )
           )
         `)
-        .eq("client_id", user.id)
+        .eq("user_id", user.id)
         .order("started_at", { ascending: false });
 
       if (error) throw error;
@@ -99,10 +99,10 @@ export const useStartWorkoutSession = () => {
       const { data, error } = await supabase
         .from("workout_sessions")
         .insert({
-          client_id: user.id,
+          user_id: user.id,
           routine_id: routineId,
           status: "in_progress",
-        })
+        } as any)
         .select()
         .single();
 
