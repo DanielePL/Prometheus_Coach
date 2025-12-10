@@ -5,11 +5,13 @@ import { toast } from "sonner";
 
 interface MeasurementData {
   date: string;
+  neck?: number;
   chest?: number;
   waist?: number;
   hips?: number;
   arms?: number;
   legs?: number;
+  glutes?: number;
 }
 
 export function useBodyMeasurements() {
@@ -58,15 +60,81 @@ export function useLatestMeasurements() {
       return {
         current: latest,
         changes: previous ? {
+          neck: latest.neck && previous.neck ? latest.neck - previous.neck : null,
           chest: latest.chest && previous.chest ? latest.chest - previous.chest : null,
           waist: latest.waist && previous.waist ? latest.waist - previous.waist : null,
           hips: latest.hips && previous.hips ? latest.hips - previous.hips : null,
           arms: latest.arms && previous.arms ? latest.arms - previous.arms : null,
           legs: latest.legs && previous.legs ? latest.legs - previous.legs : null,
+          glutes: latest.glutes && previous.glutes ? latest.glutes - previous.glutes : null,
         } : null,
       };
     },
     enabled: !!user?.id,
+  });
+}
+
+/**
+ * Hook for coaches to get client body measurements
+ */
+export function useClientBodyMeasurements(clientId: string) {
+  return useQuery({
+    queryKey: ["clientBodyMeasurements", clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+
+      const { data, error } = await supabase
+        .from("body_measurements")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
+}
+
+/**
+ * Hook for coaches to get client's latest measurements with changes
+ */
+export function useClientLatestMeasurements(clientId: string) {
+  return useQuery({
+    queryKey: ["clientLatestMeasurements", clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+
+      const { data, error } = await supabase
+        .from("body_measurements")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("date", { ascending: false })
+        .limit(2);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) return null;
+
+      const latest = data[0];
+      const previous = data[1];
+
+      return {
+        current: latest,
+        previous: previous || null,
+        changes: previous ? {
+          neck: latest.neck && previous.neck ? latest.neck - previous.neck : null,
+          chest: latest.chest && previous.chest ? latest.chest - previous.chest : null,
+          waist: latest.waist && previous.waist ? latest.waist - previous.waist : null,
+          hips: latest.hips && previous.hips ? latest.hips - previous.hips : null,
+          arms: latest.arms && previous.arms ? latest.arms - previous.arms : null,
+          legs: latest.legs && previous.legs ? latest.legs - previous.legs : null,
+          glutes: latest.glutes && previous.glutes ? latest.glutes - previous.glutes : null,
+        } : null,
+        lastUpdated: latest.date,
+      };
+    },
+    enabled: !!clientId,
   });
 }
 
@@ -81,11 +149,13 @@ export function useSaveMeasurement() {
       const { error } = await supabase.from("body_measurements").insert({
         client_id: user.id,
         date: data.date,
+        neck: data.neck,
         chest: data.chest,
         waist: data.waist,
         hips: data.hips,
         arms: data.arms,
         legs: data.legs,
+        glutes: data.glutes,
       });
 
       if (error) throw error;
