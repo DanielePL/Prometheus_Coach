@@ -5,8 +5,6 @@ import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import legcurlImg from "@/assets/legcurl.jpg";
-import highkneesImg from "@/assets/highknees.jpg";
 import { Button } from "@/components/ui/button";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { NotificationBell } from "@/components/Notifications/NotificationBell";
@@ -14,6 +12,10 @@ import { useUnreadMessageParticipants } from "@/hooks/useUnreadMessageParticipan
 import { useConnectedClients } from "@/hooks/useConnectedClients";
 import { usePendingRequestParticipants } from "@/hooks/usePendingRequestParticipants";
 import { ClientProgressWidget } from "@/components/Dashboard/ClientProgressWidget";
+import { useCoachGoals, useAddCoachGoal, useUpdateCoachGoal, useDeleteCoachGoal } from "@/hooks/useCoachGoals";
+import { useTodaySchedule, useWeeklySessionCount, useRecentExercises } from "@/hooks/useDashboardData";
+import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const CoachDashboard = () => {
   const { theme, setTheme } = useTheme();
@@ -25,6 +27,19 @@ export const CoachDashboard = () => {
   const { clients: connectedClients } = useConnectedClients();
   const { participants: pendingRequestUsers } = usePendingRequestParticipants();
 
+  // Real data hooks
+  const { data: goals = [], isLoading: goalsLoading } = useCoachGoals();
+  const { data: todaySchedule = [], isLoading: scheduleLoading } = useTodaySchedule();
+  const { data: weeklySessionCount = 0, isLoading: sessionsLoading } = useWeeklySessionCount();
+  const { data: recentExercises = [], isLoading: exercisesLoading } = useRecentExercises(2);
+
+  const addGoal = useAddCoachGoal();
+  const updateGoal = useUpdateCoachGoal();
+  const deleteGoal = useDeleteCoachGoal();
+
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [editingGoalText, setEditingGoalText] = useState("");
+
   const firstName = profile?.full_name?.split(' ')[0] || 'Coach';
 
   useEffect(() => {
@@ -35,53 +50,30 @@ export const CoachDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const scheduleItems = [
-    { time: "9:00 AM", title: "Client Session - John D." },
-    { time: "11:30 AM", title: "Team Meeting" },
-    { time: "2:00 PM", title: "Client Session - Sarah M." },
-    { time: "4:00 PM", title: "Client Session - Jessica T." },
-  ];
-
-  const [goals, setGoals] = useState([
-    { id: 1, text: "Review 3 client progress reports", completed: true },
-    { id: 2, text: "Update training programs for Team Alpha", completed: false },
-    { id: 3, text: "Follow up with new client onboarding", completed: false },
-    { id: 4, text: "Record new exercise demonstration video", completed: false },
-  ]);
-  const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
-  const [editingGoalText, setEditingGoalText] = useState("");
-
-  const toggleGoal = (goalId: number) => {
-    setGoals(goals.map(goal => 
-      goal.id === goalId ? { ...goal, completed: !goal.completed } : goal
-    ));
+  const toggleGoal = (goalId: string, currentCompleted: boolean) => {
+    updateGoal.mutate({ id: goalId, completed: !currentCompleted });
   };
 
-  const addNewGoal = () => {
-    const newGoal = {
-      id: goals.length + 1,
-      text: "New goal",
-      completed: false
-    };
-    setGoals([...goals, newGoal]);
-    setEditingGoalId(newGoal.id);
-    setEditingGoalText(newGoal.text);
+  const addNewGoal = async () => {
+    const result = await addGoal.mutateAsync({ text: "New goal" });
+    if (result) {
+      setEditingGoalId(result.id);
+      setEditingGoalText("New goal");
+    }
   };
 
-  const deleteGoal = (goalId: number) => {
-    setGoals(goals.filter(goal => goal.id !== goalId));
+  const handleDeleteGoal = (goalId: string) => {
+    deleteGoal.mutate(goalId);
   };
 
-  const startEditingGoal = (goalId: number, currentText: string) => {
+  const startEditingGoal = (goalId: string, currentText: string) => {
     setEditingGoalId(goalId);
     setEditingGoalText(currentText);
   };
 
-  const saveGoalEdit = (goalId: number) => {
+  const saveGoalEdit = (goalId: string) => {
     if (editingGoalText.trim()) {
-      setGoals(goals.map(goal => 
-        goal.id === goalId ? { ...goal, text: editingGoalText } : goal
-      ));
+      updateGoal.mutate({ id: goalId, text: editingGoalText });
     }
     setEditingGoalId(null);
     setEditingGoalText("");
@@ -93,17 +85,17 @@ export const CoachDashboard = () => {
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
       day: 'numeric',
       year: 'numeric'
     });
@@ -116,6 +108,10 @@ export const CoachDashboard = () => {
     return "Good Evening";
   };
 
+  const formatEventTime = (dateStr: string) => {
+    return format(new Date(dateStr), "h:mm a");
+  };
+
   return (
     <main className="lg:ml-20 pb-20 lg:pb-8 pt-8 px-4 lg:px-8">
       {/* Header */}
@@ -126,7 +122,7 @@ export const CoachDashboard = () => {
           </h1>
           <p className="text-muted-foreground text-lg">Ready to elevate your athletes today?</p>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -136,13 +132,13 @@ export const CoachDashboard = () => {
           >
             {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </Button>
-          
+
           <Button variant="ghost" size="icon" className="glass rounded-xl">
             <Search className="w-5 h-5" />
           </Button>
-          
+
           <NotificationBell />
-          
+
           <div className="glass rounded-2xl px-6 py-3 hidden lg:block">
             <div className="text-right">
               <p className="text-4xl font-bold">{formatTime(currentTime)}</p>
@@ -170,17 +166,50 @@ export const CoachDashboard = () => {
             </div>
             <div>
               <h2 className="text-xl font-bold">Today's Schedule</h2>
-              <p className="text-sm text-muted-foreground">{scheduleItems.length} sessions</p>
+              <p className="text-sm text-muted-foreground">
+                {scheduleLoading ? "..." : `${todaySchedule.length} sessions`}
+              </p>
             </div>
           </div>
-          
+
           <div className="space-y-4">
-            {scheduleItems.map((item, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 rounded-xl bg-background/50 dark:border dark:border-primary">
-                <span className="text-primary font-semibold text-sm whitespace-nowrap">{item.time}</span>
-                <span className="text-foreground text-sm">{item.title}</span>
+            {scheduleLoading ? (
+              <>
+                <Skeleton className="h-14 rounded-xl" />
+                <Skeleton className="h-14 rounded-xl" />
+                <Skeleton className="h-14 rounded-xl" />
+              </>
+            ) : todaySchedule.length > 0 ? (
+              todaySchedule.map((event: any) => (
+                <div
+                  key={event.id}
+                  className="flex items-start gap-3 p-3 rounded-xl bg-background/50 dark:border dark:border-primary cursor-pointer hover:bg-background/70 transition-colors"
+                  onClick={() => navigate('/calendar')}
+                >
+                  <span className="text-primary font-semibold text-sm whitespace-nowrap">
+                    {formatEventTime(event.start_time)}
+                  </span>
+                  <div className="flex-1">
+                    <span className="text-foreground text-sm">{event.title}</span>
+                    {event.profiles?.full_name && (
+                      <p className="text-xs text-muted-foreground">{event.profiles.full_name}</p>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No sessions scheduled today</p>
+                <Button
+                  variant="link"
+                  className="text-primary p-0 h-auto mt-1"
+                  onClick={() => navigate('/calendar')}
+                >
+                  Add session
+                </Button>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -194,11 +223,11 @@ export const CoachDashboard = () => {
               <div className="flex-1">
                 <p className="text-xl font-medium text-foreground dark:text-primary mb-2 dark:group-hover:text-white transition-smooth">This Week's Sessions</p>
                 <div className="text-3xl lg:text-4xl font-bold text-foreground group-hover:text-primary transition-smooth">
-                  42
+                  {sessionsLoading ? "..." : weeklySessionCount}
                 </div>
               </div>
             </div>
-            <ShinyButton 
+            <ShinyButton
               className="w-full font-poppins dark:border dark:border-primary"
               onClick={() => navigate('/calendar')}
             >
@@ -242,41 +271,57 @@ export const CoachDashboard = () => {
         <div className="lg:col-span-1">
           <h2 className="text-2xl font-bold mb-4">Recent Exercises</h2>
           <div className="grid grid-cols-1 gap-4">
-            <div className="glass rounded-2xl overflow-hidden group cursor-pointer transition-smooth glass-hover" onClick={() => navigate('/explore')}>
-              <div className="relative h-48 overflow-hidden">
-                <img 
-                  src={legcurlImg} 
-                  alt="Leg Curl Machine - Lying"
-                  className="w-full h-full object-cover transition-all duration-500 group-hover:grayscale group-hover:scale-125"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
-                    bodybuilding
-                  </span>
+            {exercisesLoading ? (
+              <>
+                <Skeleton className="h-64 rounded-2xl" />
+                <Skeleton className="h-64 rounded-2xl" />
+              </>
+            ) : recentExercises.length > 0 ? (
+              recentExercises.map((exercise: any) => (
+                <div
+                  key={exercise.id}
+                  className="glass rounded-2xl overflow-hidden group cursor-pointer transition-smooth glass-hover"
+                  onClick={() => navigate(`/exercises/${exercise.id}`)}
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    {exercise.thumbnail_url ? (
+                      <img
+                        src={exercise.thumbnail_url}
+                        alt={exercise.title}
+                        className="w-full h-full object-cover transition-all duration-500 group-hover:grayscale group-hover:scale-125"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                        <span className="text-4xl font-bold text-primary/30">
+                          {exercise.title?.charAt(0) || "E"}
+                        </span>
+                      </div>
+                    )}
+                    {exercise.category && (
+                      <div className="absolute top-3 left-3">
+                        <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
+                          {exercise.category}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-lg">{exercise.title}</h3>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="glass rounded-2xl p-8 text-center">
+                <p className="text-muted-foreground mb-2">No recent exercises</p>
+                <Button
+                  variant="link"
+                  className="text-primary"
+                  onClick={() => navigate('/exercises')}
+                >
+                  Browse Exercises
+                </Button>
               </div>
-              <div className="p-4">
-                <h3 className="font-bold text-lg">Leg Curl Machine - Lying</h3>
-              </div>
-            </div>
-
-            <div className="glass rounded-2xl overflow-hidden group cursor-pointer transition-smooth glass-hover" onClick={() => navigate('/explore')}>
-              <div className="relative h-48 overflow-hidden">
-                <img 
-                  src={highkneesImg} 
-                  alt="Walking High Knees"
-                  className="w-full h-full object-cover transition-all duration-500 group-hover:grayscale group-hover:scale-125"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
-                    crossfit
-                  </span>
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-lg">Walking High Knees</h3>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -291,77 +336,98 @@ export const CoachDashboard = () => {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground">
-                {goals.filter(g => g.completed).length} of {goals.length}
+                {goalsLoading ? "..." : `${goals.filter((g: any) => g.completed).length} of ${goals.length}`}
               </span>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={addNewGoal}
+                disabled={addGoal.isPending}
                 className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20"
               >
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-3">
-            {goals.map((goal) => (
-              <div 
-                key={goal.id} 
-                className="group flex items-start gap-3 p-3 rounded-xl bg-background/50 hover:bg-background/70 transition-smooth"
-              >
-                <div 
-                  onClick={() => toggleGoal(goal.id)}
-                  className={`
-                    w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer
-                    ${goal.completed 
-                      ? 'bg-primary border-primary' 
-                      : 'border-muted-foreground'
-                    }
-                  `}>
-                  {goal.completed && (
-                    <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
+            {goalsLoading ? (
+              <>
+                <Skeleton className="h-12 rounded-xl" />
+                <Skeleton className="h-12 rounded-xl" />
+                <Skeleton className="h-12 rounded-xl" />
+              </>
+            ) : goals.length > 0 ? (
+              goals.map((goal: any) => (
+                <div
+                  key={goal.id}
+                  className="group flex items-start gap-3 p-3 rounded-xl bg-background/50 hover:bg-background/70 transition-smooth"
+                >
+                  <div
+                    onClick={() => toggleGoal(goal.id, goal.completed)}
+                    className={`
+                      w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer
+                      ${goal.completed
+                        ? 'bg-primary border-primary'
+                        : 'border-muted-foreground'
+                      }
+                    `}>
+                    {goal.completed && (
+                      <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+
+                  {editingGoalId === goal.id ? (
+                    <input
+                      type="text"
+                      value={editingGoalText}
+                      onChange={(e) => setEditingGoalText(e.target.value)}
+                      onBlur={() => saveGoalEdit(goal.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveGoalEdit(goal.id);
+                        if (e.key === 'Escape') cancelGoalEdit();
+                      }}
+                      autoFocus
+                      className="flex-1 text-sm bg-transparent border-b border-primary focus:outline-none text-foreground"
+                    />
+                  ) : (
+                    <>
+                      <span
+                        onClick={() => startEditingGoal(goal.id, goal.text)}
+                        className={`flex-1 text-sm cursor-pointer ${goal.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+                      >
+                        {goal.text}
+                      </span>
+
+                      {goal.completed && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteGoal(goal.id)}
+                          className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
-                
-                {editingGoalId === goal.id ? (
-                  <input
-                    type="text"
-                    value={editingGoalText}
-                    onChange={(e) => setEditingGoalText(e.target.value)}
-                    onBlur={() => saveGoalEdit(goal.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveGoalEdit(goal.id);
-                      if (e.key === 'Escape') cancelGoalEdit();
-                    }}
-                    autoFocus
-                    className="flex-1 text-sm bg-transparent border-b border-primary focus:outline-none text-foreground"
-                  />
-                ) : (
-                  <>
-                    <span 
-                      onClick={() => startEditingGoal(goal.id, goal.text)}
-                      className={`flex-1 text-sm cursor-pointer ${goal.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}
-                    >
-                      {goal.text}
-                    </span>
-                    
-                    {goal.completed && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteGoal(goal.id)}
-                        className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </>
-                )}
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Target className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No goals for today</p>
+                <Button
+                  variant="link"
+                  className="text-primary p-0 h-auto mt-1"
+                  onClick={addNewGoal}
+                >
+                  Add your first goal
+                </Button>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
