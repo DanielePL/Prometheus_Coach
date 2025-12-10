@@ -6,12 +6,15 @@ import { toast } from "sonner";
 interface MeasurementData {
   date: string;
   neck?: number;
+  shoulders?: number;
   chest?: number;
   waist?: number;
   hips?: number;
-  arms?: number;
-  legs?: number;
   glutes?: number;
+  arms?: number;
+  forearms?: number;
+  legs?: number;
+  calves?: number;
 }
 
 export function useBodyMeasurements() {
@@ -61,12 +64,15 @@ export function useLatestMeasurements() {
         current: latest,
         changes: previous ? {
           neck: latest.neck && previous.neck ? latest.neck - previous.neck : null,
+          shoulders: latest.shoulders && previous.shoulders ? latest.shoulders - previous.shoulders : null,
           chest: latest.chest && previous.chest ? latest.chest - previous.chest : null,
           waist: latest.waist && previous.waist ? latest.waist - previous.waist : null,
           hips: latest.hips && previous.hips ? latest.hips - previous.hips : null,
-          arms: latest.arms && previous.arms ? latest.arms - previous.arms : null,
-          legs: latest.legs && previous.legs ? latest.legs - previous.legs : null,
           glutes: latest.glutes && previous.glutes ? latest.glutes - previous.glutes : null,
+          arms: latest.arms && previous.arms ? latest.arms - previous.arms : null,
+          forearms: latest.forearms && previous.forearms ? latest.forearms - previous.forearms : null,
+          legs: latest.legs && previous.legs ? latest.legs - previous.legs : null,
+          calves: latest.calves && previous.calves ? latest.calves - previous.calves : null,
         } : null,
       };
     },
@@ -124,12 +130,15 @@ export function useClientLatestMeasurements(clientId: string) {
         previous: previous || null,
         changes: previous ? {
           neck: latest.neck && previous.neck ? latest.neck - previous.neck : null,
+          shoulders: latest.shoulders && previous.shoulders ? latest.shoulders - previous.shoulders : null,
           chest: latest.chest && previous.chest ? latest.chest - previous.chest : null,
           waist: latest.waist && previous.waist ? latest.waist - previous.waist : null,
           hips: latest.hips && previous.hips ? latest.hips - previous.hips : null,
-          arms: latest.arms && previous.arms ? latest.arms - previous.arms : null,
-          legs: latest.legs && previous.legs ? latest.legs - previous.legs : null,
           glutes: latest.glutes && previous.glutes ? latest.glutes - previous.glutes : null,
+          arms: latest.arms && previous.arms ? latest.arms - previous.arms : null,
+          forearms: latest.forearms && previous.forearms ? latest.forearms - previous.forearms : null,
+          legs: latest.legs && previous.legs ? latest.legs - previous.legs : null,
+          calves: latest.calves && previous.calves ? latest.calves - previous.calves : null,
         } : null,
         lastUpdated: latest.date,
       };
@@ -150,12 +159,15 @@ export function useSaveMeasurement() {
         client_id: user.id,
         date: data.date,
         neck: data.neck,
+        shoulders: data.shoulders,
         chest: data.chest,
         waist: data.waist,
         hips: data.hips,
-        arms: data.arms,
-        legs: data.legs,
         glutes: data.glutes,
+        arms: data.arms,
+        forearms: data.forearms,
+        legs: data.legs,
+        calves: data.calves,
       });
 
       if (error) throw error;

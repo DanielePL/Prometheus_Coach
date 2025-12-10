@@ -134,12 +134,15 @@ export const ClientProgressTab = ({ clientId }: ClientProgressTabProps) => {
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: "Neck", value: latestMeasurements.current.neck, change: latestMeasurements.changes?.neck },
+                    { label: "Shoulders", value: latestMeasurements.current.shoulders, change: latestMeasurements.changes?.shoulders },
                     { label: "Chest", value: latestMeasurements.current.chest, change: latestMeasurements.changes?.chest },
                     { label: "Arms", value: latestMeasurements.current.arms, change: latestMeasurements.changes?.arms },
+                    { label: "Forearms", value: latestMeasurements.current.forearms, change: latestMeasurements.changes?.forearms },
                     { label: "Waist", value: latestMeasurements.current.waist, change: latestMeasurements.changes?.waist },
                     { label: "Hips", value: latestMeasurements.current.hips, change: latestMeasurements.changes?.hips },
                     { label: "Glutes", value: latestMeasurements.current.glutes, change: latestMeasurements.changes?.glutes },
                     { label: "Thighs", value: latestMeasurements.current.legs, change: latestMeasurements.changes?.legs },
+                    { label: "Calves", value: latestMeasurements.current.calves, change: latestMeasurements.changes?.calves },
                   ]
                     .filter((m) => m.value)
                     .map((measurement) => (
@@ -202,10 +205,16 @@ export const ClientProgressTab = ({ clientId }: ClientProgressTabProps) => {
                         )}
                       </div>
                       <div className="flex gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                        {entry.neck && <span>Neck: {entry.neck}cm</span>}
+                        {entry.shoulders && <span>Shoulders: {entry.shoulders}cm</span>}
                         {entry.chest && <span>Chest: {entry.chest}cm</span>}
-                        {entry.waist && <span>Waist: {entry.waist}cm</span>}
                         {entry.arms && <span>Arms: {entry.arms}cm</span>}
+                        {entry.forearms && <span>Forearms: {entry.forearms}cm</span>}
+                        {entry.waist && <span>Waist: {entry.waist}cm</span>}
+                        {entry.hips && <span>Hips: {entry.hips}cm</span>}
+                        {entry.glutes && <span>Glutes: {entry.glutes}cm</span>}
                         {entry.legs && <span>Thighs: {entry.legs}cm</span>}
+                        {entry.calves && <span>Calves: {entry.calves}cm</span>}
                       </div>
                     </div>
                   ))}

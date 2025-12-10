@@ -2,22 +2,28 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface MeasurementData {
   neck?: number | null;
+  shoulders?: number | null;
   chest?: number | null;
   waist?: number | null;
   hips?: number | null;
-  arms?: number | null;
-  legs?: number | null;
   glutes?: number | null;
+  arms?: number | null;
+  forearms?: number | null;
+  legs?: number | null;
+  calves?: number | null;
 }
 
 interface MeasurementChanges {
   neck?: number | null;
+  shoulders?: number | null;
   chest?: number | null;
   waist?: number | null;
   hips?: number | null;
-  arms?: number | null;
-  legs?: number | null;
   glutes?: number | null;
+  arms?: number | null;
+  forearms?: number | null;
+  legs?: number | null;
+  calves?: number | null;
 }
 
 interface BodySilhouetteProps {
@@ -269,13 +275,25 @@ export const BodySilhouette = ({
         {measurements?.neck && (
           <circle cx="100" cy="62" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
         )}
+        {measurements?.shoulders && (
+          <>
+            <circle cx="55" cy="85" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+            <circle cx="145" cy="85" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+          </>
+        )}
         {measurements?.chest && (
           <circle cx="100" cy="115" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
         )}
         {measurements?.arms && (
           <>
-            <circle cx="35" cy="160" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
-            <circle cx="165" cy="160" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+            <circle cx="35" cy="150" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+            <circle cx="165" cy="150" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+          </>
+        )}
+        {measurements?.forearms && (
+          <>
+            <circle cx="28" cy="200" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+            <circle cx="172" cy="200" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
           </>
         )}
         {measurements?.waist && (
@@ -289,8 +307,14 @@ export const BodySilhouette = ({
         )}
         {measurements?.legs && (
           <>
-            <circle cx="75" cy="340" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
-            <circle cx="125" cy="340" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+            <circle cx="75" cy="320" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+            <circle cx="125" cy="320" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+          </>
+        )}
+        {measurements?.calves && (
+          <>
+            <circle cx="70" cy="365" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
+            <circle cx="130" cy="365" r="3" fill="hsl(var(--primary))" className="animate-pulse" />
           </>
         )}
       </svg>
@@ -349,8 +373,32 @@ export const BodySilhouette = ({
         value={measurements?.legs}
         change={changes?.legs}
         position="right"
-        top="82%"
+        top="78%"
         lineLength={35}
+      />
+      <MeasurementLabel
+        label="Calves"
+        value={measurements?.calves}
+        change={changes?.calves}
+        position="left"
+        top="90%"
+        lineLength={40}
+      />
+      <MeasurementLabel
+        label="Shoulders"
+        value={measurements?.shoulders}
+        change={changes?.shoulders}
+        position="right"
+        top="19%"
+        lineLength={50}
+      />
+      <MeasurementLabel
+        label="Forearms"
+        value={measurements?.forearms}
+        change={changes?.forearms}
+        position="left"
+        top="50%"
+        lineLength={45}
       />
 
       {/* No data message */}
