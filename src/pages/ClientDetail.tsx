@@ -166,10 +166,10 @@ const ClientDetail = () => {
           <TabsList className="glass w-full md:w-auto flex-wrap">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="workouts">Workouts</TabsTrigger>
+            <TabsTrigger value="exercises">Exercises</TabsTrigger>
             <TabsTrigger value="vbt">VBT</TabsTrigger>
             <TabsTrigger value="loadlab">Load Lab</TabsTrigger>
             <TabsTrigger value="prs">PRs</TabsTrigger>
-            <TabsTrigger value="exercises">Exercises</TabsTrigger>
             <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
