@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRoutines, useDeleteRoutine } from "@/hooks/useRoutines";
+import { useCoachWorkouts, useDeleteCoachWorkout } from "@/hooks/useCoachWorkouts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -15,39 +15,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AssignRoutineModal } from "@/components/Routines/AssignRoutineModal";
+import { AssignWorkoutModal } from "@/components/Workouts/AssignWorkoutModal";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { useTheme } from "next-themes";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 
-export default function Routines() {
+export default function Workouts() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { data: routines, isLoading } = useRoutines();
-  const deleteRoutine = useDeleteRoutine();
-  
+  const { data: workouts, isLoading } = useCoachWorkouts();
+  const deleteWorkout = useDeleteCoachWorkout();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [routineToDelete, setRoutineToDelete] = useState<string | null>(null);
+  const [workoutToDelete, setWorkoutToDelete] = useState<string | null>(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
-  const [routineToAssign, setRoutineToAssign] = useState<{ id: string; name: string } | null>(null);
+  const [workoutToAssign, setWorkoutToAssign] = useState<{ id: string; name: string } | null>(null);
 
-  const filteredRoutines = routines?.filter((routine) =>
-    routine.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredWorkouts = workouts?.filter((workout) =>
+    workout.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleDelete = (id: string) => {
-    setRoutineToDelete(id);
+    setWorkoutToDelete(id);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (routineToDelete) {
-      await deleteRoutine.mutateAsync(routineToDelete);
+    if (workoutToDelete) {
+      await deleteWorkout.mutateAsync(workoutToDelete);
       setDeleteDialogOpen(false);
-      setRoutineToDelete(null);
+      setWorkoutToDelete(null);
     }
   };
 
@@ -81,15 +81,15 @@ export default function Routines() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">My Routines</h1>
-          <p className="text-muted-foreground mt-1">Create and manage workout routines</p>
+          <h1 className="text-3xl font-bold text-foreground">My Workouts</h1>
+          <p className="text-muted-foreground mt-1">Create and manage workouts</p>
         </div>
         <Button
-          onClick={() => navigate("/routines/create")}
+          onClick={() => navigate("/workouts/create")}
           className="gap-2"
         >
           <Plus className="w-4 h-4" />
-          Create New Routine
+          Create New Workout
         </Button>
       </div>
 
@@ -97,34 +97,34 @@ export default function Routines() {
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Search routines..."
+          placeholder="Search workouts..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9"
         />
       </div>
 
-      {/* Routines Grid */}
+      {/* Workouts Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      ) : filteredRoutines && filteredRoutines.length > 0 ? (
+      ) : filteredWorkouts && filteredWorkouts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRoutines.map((routine) => (
+          {filteredWorkouts.map((workout) => (
             <Card
-              key={routine.id}
+              key={workout.id}
               className="p-6 bg-card border-border hover:border-primary/50 transition-all cursor-pointer group"
-              onClick={() => navigate(`/routines/${routine.id}`)}
+              onClick={() => navigate(`/workouts/${workout.id}`)}
             >
               <div className="space-y-4">
                 <div>
                   <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {routine.name}
+                    {workout.name}
                   </h3>
-                  {routine.description && (
+                  {workout.description && (
                     <p className="text-muted-foreground text-sm mt-2 line-clamp-2">
-                      {routine.description}
+                      {workout.description}
                     </p>
                   )}
                 </div>
@@ -135,7 +135,7 @@ export default function Routines() {
                     exercises
                   </span>
                   <span>
-                    {new Date(routine.created_at).toLocaleDateString()}
+                    {new Date(workout.created_at).toLocaleDateString()}
                   </span>
                 </div>
 
@@ -144,7 +144,7 @@ export default function Routines() {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => navigate(`/routines/${routine.id}/edit`)}
+                    onClick={() => navigate(`/workouts/${workout.id}/edit`)}
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     Edit
@@ -154,7 +154,7 @@ export default function Routines() {
                     size="sm"
                     className="flex-1"
                     onClick={() => {
-                      setRoutineToAssign({ id: routine.id, name: routine.name });
+                      setWorkoutToAssign({ id: workout.id, name: workout.name });
                       setAssignModalOpen(true);
                     }}
                   >
@@ -164,7 +164,7 @@ export default function Routines() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDelete(routine.id)}
+                    onClick={() => handleDelete(workout.id)}
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -177,11 +177,11 @@ export default function Routines() {
       ) : (
         <div className="text-center py-12 bg-card border border-border rounded-lg">
           <p className="text-muted-foreground mb-4">
-            {searchQuery ? "No routines found matching your search" : "No routines yet. Create your first routine to get started!"}
+            {searchQuery ? "No workouts found matching your search" : "No workouts yet. Create your first workout to get started!"}
           </p>
-          <Button onClick={() => navigate("/routines/create")}>
+          <Button onClick={() => navigate("/workouts/create")}>
             <Plus className="w-4 h-4 mr-2" />
-            Create First Routine
+            Create First Workout
           </Button>
         </div>
       )}
@@ -192,9 +192,9 @@ export default function Routines() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Routine</AlertDialogTitle>
+            <AlertDialogTitle>Delete Workout</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this routine? This action cannot be undone.
+              Are you sure you want to delete this workout? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -206,13 +206,13 @@ export default function Routines() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Assign Routine Modal */}
-      {routineToAssign && (
-        <AssignRoutineModal
+      {/* Assign Workout Modal */}
+      {workoutToAssign && (
+        <AssignWorkoutModal
           open={assignModalOpen}
           onOpenChange={setAssignModalOpen}
-          routineId={routineToAssign.id}
-          routineName={routineToAssign.name}
+          workoutId={workoutToAssign.id}
+          workoutName={workoutToAssign.name}
         />
       )}
     </div>

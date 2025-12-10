@@ -9,31 +9,31 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useConnectedClients } from "@/hooks/useConnectedClients";
-import { useAssignRoutine } from "@/hooks/useRoutineAssignments";
+import { useAssignWorkout } from "@/hooks/useWorkoutAssignments";
 import { Search, CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-interface AssignRoutineModalProps {
+interface AssignWorkoutModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  routineId: string;
-  routineName: string;
+  workoutId: string;
+  workoutName: string;
 }
 
-export function AssignRoutineModal({
+export function AssignWorkoutModal({
   open,
   onOpenChange,
-  routineId,
-  routineName,
-}: AssignRoutineModalProps) {
+  workoutId,
+  workoutName,
+}: AssignWorkoutModalProps) {
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
   const [notes, setNotes] = useState("");
 
   const { clients, isLoading: loadingClients } = useConnectedClients();
-  const assignRoutine = useAssignRoutine();
+  const assignWorkout = useAssignWorkout();
 
   const filteredClients = clients.filter((client) =>
     client.full_name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -58,8 +58,8 @@ export function AssignRoutineModal({
   const handleAssign = async () => {
     if (selectedClients.length === 0) return;
 
-    await assignRoutine.mutateAsync({
-      routineId,
+    await assignWorkout.mutateAsync({
+      routineId: workoutId,
       clientIds: selectedClients,
       scheduledDate: scheduledDate ? format(scheduledDate, "yyyy-MM-dd") : undefined,
       notes: notes || undefined,
@@ -77,7 +77,7 @@ export function AssignRoutineModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col bg-background">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Assign {routineName} to Clients</DialogTitle>
+          <DialogTitle className="text-2xl">Assign {workoutName} to Clients</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-auto space-y-4">
@@ -187,16 +187,16 @@ export function AssignRoutineModal({
             variant="outline"
             onClick={() => onOpenChange(false)}
             className="flex-1"
-            disabled={assignRoutine.isPending}
+            disabled={assignWorkout.isPending}
           >
             Cancel
           </Button>
           <Button
             onClick={handleAssign}
             className="flex-1 bg-primary hover:bg-primary/90"
-            disabled={selectedClients.length === 0 || assignRoutine.isPending}
+            disabled={selectedClients.length === 0 || assignWorkout.isPending}
           >
-            {assignRoutine.isPending ? (
+            {assignWorkout.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Assigning...

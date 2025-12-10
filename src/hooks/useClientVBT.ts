@@ -119,6 +119,21 @@ export const useClientVBT = (clientId: string) => {
 
       const sets = (setsData || []) as any[];
 
+      // Fetch exercise names for all unique exercise IDs
+      const uniqueExerciseIds = [...new Set(sets.map((s: any) => s.exercise_id))];
+      const exerciseNameMap = new Map<string, string>();
+
+      if (uniqueExerciseIds.length > 0) {
+        const { data: exercisesData } = await supabase
+          .from("exercises")
+          .select("id, title")
+          .in("id", uniqueExerciseIds);
+
+        (exercisesData || []).forEach((ex: any) => {
+          exerciseNameMap.set(ex.id, ex.title);
+        });
+      }
+
       // Attach sets to sessions
       const sessionsWithSets = sessions.map((session: any) => ({
         ...session,
@@ -150,7 +165,8 @@ export const useClientVBT = (clientId: string) => {
       const exerciseMap = new Map<string, { sets: WorkoutSet[], name: string }>();
       for (const set of allSets) {
         if (!exerciseMap.has(set.exercise_id)) {
-          exerciseMap.set(set.exercise_id, { sets: [], name: set.exercise_id });
+          const exerciseName = exerciseNameMap.get(set.exercise_id) || set.exercise_id;
+          exerciseMap.set(set.exercise_id, { sets: [], name: exerciseName });
         }
         exerciseMap.get(set.exercise_id)!.sets.push(set);
       }

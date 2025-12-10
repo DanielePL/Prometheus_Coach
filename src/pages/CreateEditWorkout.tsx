@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useRoutine, useCreateRoutine, useUpdateRoutine } from "@/hooks/useRoutines";
-import { useSaveRoutineExercises, RoutineExercise } from "@/hooks/useRoutineExercises";
+import { useCoachWorkout, useCreateCoachWorkout, useUpdateCoachWorkout } from "@/hooks/useCoachWorkouts";
+import { useSaveWorkoutExercises, WorkoutExercise } from "@/hooks/useWorkoutExercises";
 import { useExercises } from "@/hooks/useExercises";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 
-interface ExerciseInRoutine extends RoutineExercise {
+interface ExerciseInWorkout extends WorkoutExercise {
   exercise?: {
     id: string;
     title: string;
@@ -29,8 +29,8 @@ interface ExerciseInRoutine extends RoutineExercise {
 }
 
 function SortableExerciseCard({ exercise, onUpdate, onRemove, index }: {
-  exercise: ExerciseInRoutine;
-  onUpdate: (updates: Partial<RoutineExercise>) => void;
+  exercise: ExerciseInWorkout;
+  onUpdate: (updates: Partial<WorkoutExercise>) => void;
   onRemove: () => void;
   index: number;
 }) {
@@ -153,21 +153,21 @@ function SortableExerciseCard({ exercise, onUpdate, onRemove, index }: {
   );
 }
 
-export default function CreateEditRoutine() {
-  const { routineId } = useParams();
+export default function CreateEditWorkout() {
+  const { workoutId } = useParams();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const isEditing = !!routineId;
+  const isEditing = !!workoutId;
 
-  const { data: routine, isLoading: routineLoading } = useRoutine(routineId);
-  const createRoutine = useCreateRoutine();
-  const updateRoutine = useUpdateRoutine();
-  const saveExercises = useSaveRoutineExercises();
+  const { data: workout, isLoading: workoutLoading } = useCoachWorkout(workoutId);
+  const createWorkout = useCreateCoachWorkout();
+  const updateWorkout = useUpdateCoachWorkout();
+  const saveExercises = useSaveWorkoutExercises();
   const { data: allExercises } = useExercises({});
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [exercises, setExercises] = useState<ExerciseInRoutine[]>([]);
+  const [exercises, setExercises] = useState<ExerciseInWorkout[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -180,16 +180,16 @@ export default function CreateEditRoutine() {
   );
 
   useEffect(() => {
-    if (routine && isEditing) {
-      console.log("Populating edit form with routine:", routine);
-      setName(routine.name || "");
-      setDescription(routine.description || "");
-      
-      if (routine.routine_exercises && Array.isArray(routine.routine_exercises)) {
-        const exercisesList = routine.routine_exercises
+    if (workout && isEditing) {
+      console.log("Populating edit form with workout:", workout);
+      setName(workout.name || "");
+      setDescription(workout.description || "");
+
+      if (workout.routine_exercises && Array.isArray(workout.routine_exercises)) {
+        const exercisesList = workout.routine_exercises
           .sort((a: any, b: any) => a.order_index - b.order_index)
           .map((re: any) => ({
-            routine_id: routine.id,
+            routine_id: workout.id,
             exercise_id: re.exercise_id,
             order_index: re.order_index,
             sets: re.sets || 3,
@@ -199,12 +199,12 @@ export default function CreateEditRoutine() {
             notes: re.notes || null,
             exercise: re.exercises,
           }));
-        
+
         console.log("Setting exercises:", exercisesList);
         setExercises(exercisesList);
       }
     }
-  }, [routine, isEditing]);
+  }, [workout, isEditing]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -224,7 +224,7 @@ export default function CreateEditRoutine() {
     setExercises((prev) => [
       ...prev,
       {
-        routine_id: routineId || "",
+        routine_id: workoutId || "",
         exercise_id: exerciseId,
         order_index: prev.length,
         sets: 3,
@@ -243,7 +243,7 @@ export default function CreateEditRoutine() {
     setSearchQuery("");
   };
 
-  const updateExercise = (index: number, updates: Partial<RoutineExercise>) => {
+  const updateExercise = (index: number, updates: Partial<WorkoutExercise>) => {
     setExercises((prev) =>
       prev.map((ex, i) => (i === index ? { ...ex, ...updates } : ex))
     );
@@ -255,59 +255,59 @@ export default function CreateEditRoutine() {
 
   const handleSave = async () => {
     console.log("=== HANDLE SAVE STARTED ===");
-    console.log("Routine name:", name);
-    console.log("Routine description:", description);
+    console.log("Workout name:", name);
+    console.log("Workout description:", description);
     console.log("Number of exercises:", exercises.length);
     console.log("Exercises to save:", JSON.stringify(exercises, null, 2));
     console.log("Is editing:", isEditing);
-    console.log("Routine ID (if editing):", routineId);
+    console.log("Workout ID (if editing):", workoutId);
 
     if (!name.trim()) {
-      console.error("❌ Validation failed: Name is empty");
-      toast.error("Routine name is required");
+      console.error("Validation failed: Name is empty");
+      toast.error("Workout name is required");
       return;
     }
 
     setIsSaving(true);
     try {
-      let finalRoutineId = routineId;
+      let finalWorkoutId = workoutId;
 
       if (isEditing) {
-        console.log("Updating existing routine...");
-        await updateRoutine.mutateAsync({ id: routineId!, name, description });
-        console.log("✅ Routine updated");
+        console.log("Updating existing workout...");
+        await updateWorkout.mutateAsync({ id: workoutId!, name, description });
+        console.log("Workout updated");
       } else {
-        console.log("Creating new routine...");
-        const newRoutine = await createRoutine.mutateAsync({ name, description });
-        finalRoutineId = newRoutine.id;
-        console.log("✅ New routine created with ID:", finalRoutineId);
+        console.log("Creating new workout...");
+        const newWorkout = await createWorkout.mutateAsync({ name, description });
+        finalWorkoutId = newWorkout.id;
+        console.log("New workout created with ID:", finalWorkoutId);
       }
 
-      if (finalRoutineId) {
+      if (finalWorkoutId) {
         const exercisesToSave = exercises.map((ex, index) => ({
           ...ex,
-          routine_id: finalRoutineId!,
+          routine_id: finalWorkoutId!,
           order_index: index,
         }));
 
-        console.log("Saving exercises for routine:", finalRoutineId);
+        console.log("Saving exercises for workout:", finalWorkoutId);
         console.log("Exercises payload:", JSON.stringify(exercisesToSave, null, 2));
 
         await saveExercises.mutateAsync({
-          routineId: finalRoutineId,
+          routineId: finalWorkoutId,
           exercises: exercisesToSave,
         });
-        console.log("✅ Exercises saved successfully");
+        console.log("Exercises saved successfully");
       } else {
-        console.error("❌ No routine ID available to save exercises");
+        console.error("No workout ID available to save exercises");
       }
 
       console.log("=== SAVE COMPLETED SUCCESSFULLY ===");
-      navigate("/routines");
+      navigate("/workouts");
     } catch (error) {
-      console.error("❌ Failed to save routine:", error);
+      console.error("Failed to save workout:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
-      toast.error("Failed to save routine. Check console for details.");
+      toast.error("Failed to save workout. Check console for details.");
     } finally {
       setIsSaving(false);
     }
@@ -318,7 +318,7 @@ export default function CreateEditRoutine() {
     !exercises.find((e) => e.exercise_id === ex.id)
   );
 
-  if (routineLoading) {
+  if (workoutLoading) {
     return (
       <div 
         className="min-h-screen flex w-full items-center justify-center"
@@ -361,23 +361,23 @@ export default function CreateEditRoutine() {
             )}
           </button>
 
-          <Button variant="ghost" onClick={() => navigate("/routines")} className="mb-6">
+          <Button variant="ghost" onClick={() => navigate("/workouts")} className="mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Routines
+            Back to Workouts
           </Button>
 
       <h1 className="text-3xl font-bold text-foreground mb-8">
-        {isEditing ? "Edit Routine" : "Create New Routine"}
+        {isEditing ? "Edit Workout" : "Create New Workout"}
       </h1>
 
       <div className="space-y-6">
         <div>
-          <Label htmlFor="name">Routine Name *</Label>
+          <Label htmlFor="name">Workout Name *</Label>
           <Input
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., Full Body Workout"
+            placeholder="e.g., Full Body"
             className="mt-1"
           />
         </div>
@@ -388,7 +388,7 @@ export default function CreateEditRoutine() {
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe this routine..."
+            placeholder="Describe this workout..."
             className="mt-1 resize-none h-24"
           />
         </div>
@@ -437,7 +437,7 @@ export default function CreateEditRoutine() {
         </div>
 
         <div className="flex gap-3 pt-4">
-          <Button variant="outline" onClick={() => navigate("/routines")} className="flex-1">
+          <Button variant="outline" onClick={() => navigate("/workouts")} className="flex-1">
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={!name.trim() || isSaving} className="flex-1">
@@ -447,7 +447,7 @@ export default function CreateEditRoutine() {
                 Saving...
               </>
             ) : (
-              "Save Routine"
+              "Save Workout"
             )}
           </Button>
         </div>

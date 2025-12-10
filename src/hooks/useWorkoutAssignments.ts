@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export interface RoutineAssignment {
+export interface WorkoutAssignment {
   id: string;
   routine_id: string;
   coach_id: string;
@@ -13,9 +13,12 @@ export interface RoutineAssignment {
   status: string;
 }
 
-export const useClientRoutineAssignments = () => {
+// Backwards compatible alias
+export type RoutineAssignment = WorkoutAssignment;
+
+export const useClientWorkoutAssignments = () => {
   return useQuery({
-    queryKey: ["client-routine-assignments"],
+    queryKey: ["client-workout-assignments"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -47,7 +50,7 @@ export const useClientRoutineAssignments = () => {
   });
 };
 
-export const useAssignRoutine = () => {
+export const useAssignWorkout = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -65,8 +68,8 @@ export const useAssignRoutine = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Get routine name for notification
-      const { data: routine } = await supabase
+      // Get workout name for notification
+      const { data: workout } = await supabase
         .from("routines")
         .select("name")
         .eq("id", routineId)
@@ -90,7 +93,7 @@ export const useAssignRoutine = () => {
       // Create notifications for each client
       const notifications = clientIds.map((clientId) => ({
         user_id: clientId,
-        message: `Your coach assigned you a new workout routine${routine ? `: ${routine.name}` : ''}`,
+        message: `Your coach assigned you a new workout${workout ? `: ${workout.name}` : ''}`,
       }));
 
       await supabase.from("notifications").insert(notifications);
@@ -98,12 +101,12 @@ export const useAssignRoutine = () => {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["routine-assignments"] });
-      toast.success(`Routine assigned to ${variables.clientIds.length} client${variables.clientIds.length !== 1 ? 's' : ''}`);
+      queryClient.invalidateQueries({ queryKey: ["workout-assignments"] });
+      toast.success(`Workout assigned to ${variables.clientIds.length} client${variables.clientIds.length !== 1 ? 's' : ''}`);
     },
     onError: (error) => {
-      console.error("Failed to assign routine:", error);
-      toast.error("Failed to assign routine");
+      console.error("Failed to assign workout:", error);
+      toast.error("Failed to assign workout");
     },
   });
 };

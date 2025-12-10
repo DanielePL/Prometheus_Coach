@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useClientRoutineAssignments } from "@/hooks/useRoutineAssignments";
+import { useClientWorkoutAssignments } from "@/hooks/useWorkoutAssignments";
 import { useWorkoutSessions, useStartWorkoutSession } from "@/hooks/useWorkoutSessions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 
 export default function ClientWorkouts() {
   const navigate = useNavigate();
-  const { data: assignments, isLoading: assignmentsLoading } = useClientRoutineAssignments();
+  const { data: assignments, isLoading: assignmentsLoading } = useClientWorkoutAssignments();
   const { data: sessions, isLoading: sessionsLoading } = useWorkoutSessions();
   const startWorkout = useStartWorkoutSession();
 

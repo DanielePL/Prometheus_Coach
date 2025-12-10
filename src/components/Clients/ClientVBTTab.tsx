@@ -257,7 +257,7 @@ export const ClientVBTTab = ({ clientId }: ClientVBTTabProps) => {
                     </Badge>
                     {exercise.estimated1RM && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Est. 1RM: {exercise.estimated1RM.toFixed(1)} kg
+                        Est. 1RM: {exercise.estimated1RM.toFixed(2)} kg
                       </p>
                     )}
                   </div>

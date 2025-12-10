@@ -27,9 +27,9 @@ import NotFound from "./pages/NotFound";
 import ExerciseDetail from "./pages/ExerciseDetail";
 import Settings from "./pages/Settings";
 import BookingPage from "./pages/BookingPage";
-import Routines from "./pages/Routines";
-import CreateEditRoutine from "./pages/CreateEditRoutine";
-import RoutineDetail from "./pages/RoutineDetail";
+import Workouts from "./pages/Workouts";
+import CreateEditWorkout from "./pages/CreateEditWorkout";
+import WorkoutDetail from "./pages/WorkoutDetail";
 import ClientWorkouts from "./pages/ClientWorkouts";
 import WorkoutSession from "./pages/WorkoutSession";
 import WorkoutComplete from "./pages/WorkoutComplete";
@@ -63,14 +63,16 @@ function App() {
             <Route path="/clients/:clientId" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><ClientDetail /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/trends" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Trends /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
             <Route path="/assistant" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="AI Assistant is for coaches only"><Assistant /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
-            <Route path="/routines" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Routines /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
-            <Route path="/routines/create" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
-            <Route path="/routines/:routineId" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><RoutineDetail /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
-            <Route path="/routines/:routineId/edit" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditRoutine /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
-            <Route path="/workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><ClientWorkouts /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/workouts/session/:sessionId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><WorkoutSession /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/workouts/complete/:sessionId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><WorkoutComplete /></RoleBasedRoute></ProtectedRoute>} />
-            <Route path="/workouts/history/:sessionId" element={<ProtectedRoute><WorkoutHistoryDetail /></ProtectedRoute>} />
+            <Route path="/workouts" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><Workouts /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/workouts/create" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditWorkout /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/workouts/:workoutId" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><WorkoutDetail /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/workouts/:workoutId/edit" element={<ProtectedRoute><SubscriptionRoute><RoleBasedRoute allowedRoles={['coach', 'admin']} message="This feature is for coaches only"><CreateEditWorkout /></RoleBasedRoute></SubscriptionRoute></ProtectedRoute>} />
+            <Route path="/routines" element={<Navigate to="/workouts" replace />} />
+            <Route path="/routines/*" element={<Navigate to="/workouts" replace />} />
+            <Route path="/client-workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><ClientWorkouts /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/client-workouts/session/:sessionId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><WorkoutSession /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/client-workouts/complete/:sessionId" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><WorkoutComplete /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/client-workouts/history/:sessionId" element={<ProtectedRoute><WorkoutHistoryDetail /></ProtectedRoute>} />
             <Route path="/my-workouts" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><MyWorkouts /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/my-progress" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['client']} message="This page is for clients only"><MyProgress /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

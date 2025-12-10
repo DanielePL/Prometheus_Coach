@@ -22,19 +22,10 @@ export const useWorkoutSessions = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Fetch sessions without routines join (Mobile App standard)
       const { data, error } = await supabase
         .from("workout_sessions")
-        .select(`
-          *,
-          routines (
-            name,
-            description,
-            routine_exercises (
-              *,
-              exercises (*)
-            )
-          )
-        `)
+        .select("*")
         .eq("user_id", user.id)
         .order("started_at", { ascending: false });
 

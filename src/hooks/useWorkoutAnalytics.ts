@@ -150,6 +150,22 @@ export function useMostPerformedExercises() {
         exerciseCounts[exerciseId].count++;
       });
 
+      // Fetch exercise names for all exercise IDs
+      const exerciseIds = Object.keys(exerciseCounts);
+      if (exerciseIds.length > 0) {
+        const { data: exercisesData } = await supabase
+          .from("exercises")
+          .select("id, title, thumbnail_url")
+          .in("id", exerciseIds);
+
+        (exercisesData || []).forEach((ex: any) => {
+          if (exerciseCounts[ex.id]) {
+            exerciseCounts[ex.id].title = ex.title;
+            exerciseCounts[ex.id].thumbnail = ex.thumbnail_url;
+          }
+        });
+      }
+
       // Sort and take top 5
       return Object.values(exerciseCounts)
         .sort((a, b) => b.count - a.count)

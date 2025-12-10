@@ -61,21 +61,10 @@ export const useClientWorkoutSessions = (clientId: string) => {
   return useQuery({
     queryKey: ["client-workout-sessions", clientId],
     queryFn: async () => {
-      // First, get sessions with routines
-      // Use user_id (Mobile App standard)
+      // Fetch sessions - Mobile App uses user_id, no routines join
       const { data: sessions, error: sessionsError } = await supabase
         .from("workout_sessions")
-        .select(`
-          *,
-          routines (
-            name,
-            description,
-            routine_exercises (
-              *,
-              exercises (*)
-            )
-          )
-        `)
+        .select("*")
         .eq("user_id", clientId)
         .order("started_at", { ascending: false });
 

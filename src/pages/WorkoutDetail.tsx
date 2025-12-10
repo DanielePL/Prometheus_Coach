@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useRoutine } from "@/hooks/useRoutines";
+import { useCoachWorkout } from "@/hooks/useCoachWorkouts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Edit, Users, Loader2, Moon, Sun } from "lucide-react";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { useTheme } from "next-themes";
-import { AssignRoutineModal } from "@/components/Routines/AssignRoutineModal";
+import { AssignWorkoutModal } from "@/components/Workouts/AssignWorkoutModal";
 import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 
-export default function RoutineDetail() {
-  const { routineId } = useParams();
+export default function WorkoutDetail() {
+  const { workoutId } = useParams();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { data: routine, isLoading } = useRoutine(routineId);
+  const { data: workout, isLoading } = useCoachWorkout(workoutId);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   if (isLoading) {
@@ -34,10 +34,10 @@ export default function RoutineDetail() {
     );
   }
 
-  if (!routine && !isLoading) {
-    console.error("Routine not found for ID:", routineId);
+  if (!workout && !isLoading) {
+    console.error("Workout not found for ID:", workoutId);
     return (
-      <div 
+      <div
         className="min-h-screen flex w-full items-center justify-center"
         style={{
           backgroundImage: `url(${theme === "dark" ? gradientBgDark : gradientBg})`,
@@ -47,10 +47,10 @@ export default function RoutineDetail() {
         }}
       >
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Routine not found</h2>
-          <p className="text-muted-foreground mb-4">The routine you're looking for doesn't exist or you don't have permission to view it.</p>
-          <Button onClick={() => navigate("/routines")} variant="outline" className="mt-4">
-            Back to Routines
+          <h2 className="text-2xl font-bold text-foreground mb-2">Workout not found</h2>
+          <p className="text-muted-foreground mb-4">The workout you're looking for doesn't exist or you don't have permission to view it.</p>
+          <Button onClick={() => navigate("/workouts")} variant="outline" className="mt-4">
+            Back to Workouts
           </Button>
         </div>
       </div>
@@ -84,27 +84,27 @@ export default function RoutineDetail() {
             )}
           </button>
 
-          <Button variant="ghost" onClick={() => navigate("/routines")} className="mb-6">
+          <Button variant="ghost" onClick={() => navigate("/workouts")} className="mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Routines
+            Back to Workouts
           </Button>
 
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{routine.name}</h1>
-          {routine.description && (
-            <p className="text-muted-foreground mt-2">{routine.description}</p>
+          <h1 className="text-3xl font-bold text-foreground">{workout.name}</h1>
+          {workout.description && (
+            <p className="text-muted-foreground mt-2">{workout.description}</p>
           )}
         </div>
         <div className="flex gap-2">
-          <Button 
+          <Button
             variant="outline"
             onClick={() => setAssignModalOpen(true)}
           >
             <Users className="w-4 h-4 mr-2" />
             Assign to Clients
           </Button>
-          <Button onClick={() => navigate(`/routines/${routineId}/edit`)}>
+          <Button onClick={() => navigate(`/workouts/${workoutId}/edit`)}>
             <Edit className="w-4 h-4 mr-2" />
             Edit
           </Button>
@@ -112,18 +112,18 @@ export default function RoutineDetail() {
 
       </div>
 
-      {/* Assign Routine Modal */}
-      <AssignRoutineModal
+      {/* Assign Workout Modal */}
+      <AssignWorkoutModal
         open={assignModalOpen}
         onOpenChange={setAssignModalOpen}
-        routineId={routineId!}
-        routineName={routine.name}
+        workoutId={workoutId!}
+        workoutName={workout.name}
       />
 
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">Exercises</h2>
-        {routine.routine_exercises && routine.routine_exercises.length > 0 ? (
-          routine.routine_exercises.map((re: any, index: number) => (
+        {workout.routine_exercises && workout.routine_exercises.length > 0 ? (
+          workout.routine_exercises.map((re: any, index: number) => (
             <Card key={re.id} className="p-4 bg-card border-border">
               <div className="flex gap-4">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
@@ -158,7 +158,7 @@ export default function RoutineDetail() {
           ))
         ) : (
           <Card className="p-8 text-center border-dashed">
-            <p className="text-muted-foreground">No exercises in this routine</p>
+            <p className="text-muted-foreground">No exercises in this workout</p>
           </Card>
         )}
       </div>

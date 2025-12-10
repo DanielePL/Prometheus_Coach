@@ -23,11 +23,11 @@ interface NavItem {
 
 const baseNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: Compass, label: "Library", path: "/library" },
-  { icon: Bookmark, label: "Saved", path: "/saved" },
-  { icon: Upload, label: "Uploads", path: "/uploads", roleRequired: ["coach", "admin"] },
+  { icon: Compass, label: "Exercises", path: "/library" },
   { icon: Dumbbell, label: "My Workouts", path: "/my-workouts", roleRequired: ["client"] },
   { icon: TrendingUp, label: "My Progress", path: "/my-progress", roleRequired: ["client"] },
+  { icon: Upload, label: "Uploads", path: "/uploads", roleRequired: ["coach", "admin"] },
+  { icon: Bookmark, label: "Saved", path: "/saved" },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
   { icon: Users, label: "Clients", path: "/clients", roleRequired: ["coach", "admin"] },
   { icon: Mail, label: "Inbox", path: "/inbox" },

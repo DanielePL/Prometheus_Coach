@@ -8,13 +8,13 @@ import gradientBg from "@/assets/gradient-bg.jpg";
 import gradientBgDark from "@/assets/gradient-bg-dark.png";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useClientRoutineAssignments } from "@/hooks/useRoutineAssignments";
+import { useClientWorkoutAssignments } from "@/hooks/useWorkoutAssignments";
 import { useWorkoutSessions, useStartWorkoutSession } from "@/hooks/useWorkoutSessions";
 
 const MyWorkouts = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const { data: assignments, isLoading: assignmentsLoading } = useClientRoutineAssignments();
+  const { data: assignments, isLoading: assignmentsLoading } = useClientWorkoutAssignments();
   const { data: sessions, isLoading: sessionsLoading } = useWorkoutSessions();
   const startWorkout = useStartWorkoutSession();
   const [startingRoutineId, setStartingRoutineId] = useState<string | null>(null);

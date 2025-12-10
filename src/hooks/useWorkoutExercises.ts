@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export interface RoutineExercise {
+export interface WorkoutExercise {
   id?: string;
   routine_id: string;
   exercise_id: string;
@@ -14,17 +14,20 @@ export interface RoutineExercise {
   notes: string | null;
 }
 
-export const useSaveRoutineExercises = () => {
+// Backwards compatible alias
+export type RoutineExercise = WorkoutExercise;
+
+export const useSaveWorkoutExercises = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ routineId, exercises }: { routineId: string; exercises: RoutineExercise[] }) => {
-      console.log("=== SAVING ROUTINE EXERCISES ===");
-      console.log("Routine ID:", routineId);
+    mutationFn: async ({ routineId, exercises }: { routineId: string; exercises: WorkoutExercise[] }) => {
+      console.log("=== SAVING WORKOUT EXERCISES ===");
+      console.log("Workout ID:", routineId);
       console.log("Number of exercises to save:", exercises.length);
       console.log("Exercises data:", JSON.stringify(exercises, null, 2));
 
-      // First, delete existing exercises for this routine
+      // First, delete existing exercises for this workout
       console.log("Step 1: Deleting existing exercises...");
       const { error: deleteError } = await supabase
         .from("routine_exercises")
@@ -32,10 +35,10 @@ export const useSaveRoutineExercises = () => {
         .eq("routine_id", routineId);
 
       if (deleteError) {
-        console.error("❌ Delete error:", deleteError);
+        console.error("Delete error:", deleteError);
         throw deleteError;
       }
-      console.log("✅ Existing exercises deleted successfully");
+      console.log("Existing exercises deleted successfully");
 
       // Then insert the new exercises
       if (exercises.length > 0) {
@@ -59,23 +62,23 @@ export const useSaveRoutineExercises = () => {
           .select();
 
         if (insertError) {
-          console.error("❌ Insert error:", insertError);
+          console.error("Insert error:", insertError);
           throw insertError;
         }
 
-        console.log("✅ Exercises inserted successfully:", data);
+        console.log("Exercises inserted successfully:", data);
         console.log("Number of exercises inserted:", data?.length);
         return data;
       } else {
-        console.log("⚠️ No exercises to insert");
+        console.log("No exercises to insert");
       }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["routine", variables.routineId] });
-      toast.success("Routine exercises saved");
+      toast.success("Workout exercises saved");
     },
     onError: (error) => {
-      console.error("Failed to save routine exercises:", error);
+      console.error("Failed to save workout exercises:", error);
       toast.error("Failed to save exercises");
     },
   });

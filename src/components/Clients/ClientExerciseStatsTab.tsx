@@ -320,7 +320,7 @@ export const ClientExerciseStatsTab = ({ clientId }: ClientExerciseStatsTabProps
                     )}
                     {stat.estimated_1rm_kg && (
                       <div className="text-center">
-                        <p className="font-bold">{stat.estimated_1rm_kg} kg</p>
+                        <p className="font-bold">{stat.estimated_1rm_kg.toFixed(2)} kg</p>
                         <p className="text-xs text-muted-foreground">Est. 1RM</p>
                       </div>
                     )}
@@ -404,7 +404,7 @@ export const ClientExerciseStatsTab = ({ clientId }: ClientExerciseStatsTabProps
                           <Activity className="w-4 h-4 text-purple-500" />
                           <span className="text-xs text-muted-foreground">Est. 1RM</span>
                         </div>
-                        <p className="text-lg font-bold">{stat.estimated_1rm_kg} kg</p>
+                        <p className="text-lg font-bold">{stat.estimated_1rm_kg.toFixed(2)} kg</p>
                         {stat.estimated_1rm_date && (
                           <p className="text-xs text-muted-foreground mt-1">
                             {format(new Date(stat.estimated_1rm_date), "MMM d, yyyy")}
