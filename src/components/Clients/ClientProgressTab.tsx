@@ -7,7 +7,6 @@ import { useClientPersonalRecords } from "@/hooks/usePersonalRecords";
 import { useClientLatestMeasurements, useClientBodyMeasurements } from "@/hooks/useBodyMeasurements";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { BodySilhouette } from "@/components/Progress/BodySilhouette";
 
 interface ClientProgressTabProps {
   clientId: string;
@@ -97,7 +96,7 @@ export const ClientProgressTab = ({ clientId }: ClientProgressTabProps) => {
         )}
       </div>
 
-      {/* Body Measurements with Silhouette */}
+      {/* Body Measurements */}
       <div className="glass rounded-2xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -115,72 +114,46 @@ export const ClientProgressTab = ({ clientId }: ClientProgressTabProps) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Body Silhouette */}
-          <div className="flex items-center justify-center">
-            <BodySilhouette
-              measurements={latestMeasurements?.current}
-              changes={latestMeasurements?.changes}
-              className="py-4"
-            />
-          </div>
-
-          {/* Measurements Summary & History */}
+        {latestMeasurements ? (
           <div className="space-y-6">
-            {/* Current Measurements Cards */}
-            {latestMeasurements ? (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Current Measurements</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: "Neck", value: latestMeasurements.current.neck, change: latestMeasurements.changes?.neck },
-                    { label: "Shoulders", value: latestMeasurements.current.shoulders, change: latestMeasurements.changes?.shoulders },
-                    { label: "Chest", value: latestMeasurements.current.chest, change: latestMeasurements.changes?.chest },
-                    { label: "Arms", value: latestMeasurements.current.arms, change: latestMeasurements.changes?.arms },
-                    { label: "Forearms", value: latestMeasurements.current.forearms, change: latestMeasurements.changes?.forearms },
-                    { label: "Waist", value: latestMeasurements.current.waist, change: latestMeasurements.changes?.waist },
-                    { label: "Hips", value: latestMeasurements.current.hips, change: latestMeasurements.changes?.hips },
-                    { label: "Glutes", value: latestMeasurements.current.glutes, change: latestMeasurements.changes?.glutes },
-                    { label: "Thighs", value: latestMeasurements.current.legs, change: latestMeasurements.changes?.legs },
-                    { label: "Calves", value: latestMeasurements.current.calves, change: latestMeasurements.changes?.calves },
-                  ]
-                    .filter((m) => m.value)
-                    .map((measurement) => (
-                      <div
-                        key={measurement.label}
-                        className="p-3 rounded-xl bg-background/50 border border-border/50"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-muted-foreground">{measurement.label}</span>
-                          {measurement.change !== null && measurement.change !== undefined && (
-                            <div className={`flex items-center gap-0.5 text-xs ${
-                              measurement.label === "Waist"
-                                ? (measurement.change < 0 ? "text-green-500" : "text-red-500")
-                                : (measurement.change > 0 ? "text-green-500" : "text-red-500")
-                            }`}>
-                              {measurement.change > 0 ? (
-                                <TrendingUp className="w-3 h-3" />
-                              ) : measurement.change < 0 ? (
-                                <TrendingDown className="w-3 h-3" />
-                              ) : null}
-                              <span>{measurement.change > 0 ? "+" : ""}{measurement.change.toFixed(1)}</span>
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-lg font-bold">{measurement.value} cm</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {[
+                { label: "Neck", value: latestMeasurements.current.neck, change: latestMeasurements.changes?.neck },
+                { label: "Shoulders", value: latestMeasurements.current.shoulders, change: latestMeasurements.changes?.shoulders },
+                { label: "Chest", value: latestMeasurements.current.chest, change: latestMeasurements.changes?.chest },
+                { label: "Arms", value: latestMeasurements.current.arms, change: latestMeasurements.changes?.arms },
+                { label: "Forearms", value: latestMeasurements.current.forearms, change: latestMeasurements.changes?.forearms },
+                { label: "Waist", value: latestMeasurements.current.waist, change: latestMeasurements.changes?.waist },
+                { label: "Hips", value: latestMeasurements.current.hips, change: latestMeasurements.changes?.hips },
+                { label: "Glutes", value: latestMeasurements.current.glutes, change: latestMeasurements.changes?.glutes },
+                { label: "Thighs", value: latestMeasurements.current.legs, change: latestMeasurements.changes?.legs },
+                { label: "Calves", value: latestMeasurements.current.calves, change: latestMeasurements.changes?.calves },
+              ]
+                .filter((m) => m.value)
+                .map((measurement) => (
+                  <div
+                    key={measurement.label}
+                    className="p-4 rounded-xl bg-background/50 border border-border/50"
+                  >
+                    <span className="text-xs text-muted-foreground">{measurement.label}</span>
+                    <p className="text-xl font-bold mt-1">{measurement.value} cm</p>
+                    {measurement.change !== null && measurement.change !== undefined && (
+                      <div className={`flex items-center gap-1 text-xs mt-1 ${
+                        measurement.label === "Waist"
+                          ? (measurement.change < 0 ? "text-green-500" : "text-red-500")
+                          : (measurement.change > 0 ? "text-green-500" : "text-red-500")
+                      }`}>
+                        {measurement.change > 0 ? (
+                          <TrendingUp className="w-3 h-3" />
+                        ) : measurement.change < 0 ? (
+                          <TrendingDown className="w-3 h-3" />
+                        ) : null}
+                        <span>{measurement.change > 0 ? "+" : ""}{measurement.change.toFixed(1)} cm</span>
                       </div>
-                    ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Ruler className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                <p className="text-muted-foreground">No measurements recorded yet</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Client can add measurements from their app
-                </p>
-              </div>
-            )}
+                    )}
+                  </div>
+                ))}
+            </div>
 
             {/* Measurement History */}
             {allMeasurements && allMeasurements.length > 1 && (
@@ -222,7 +195,15 @@ export const ClientProgressTab = ({ clientId }: ClientProgressTabProps) => {
               </div>
             )}
           </div>
-        </div>
+        ) : (
+          <div className="text-center py-12">
+            <Ruler className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground">No measurements recorded yet</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Client can add measurements from their app
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Progress Photos */}
