@@ -144,9 +144,9 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
     return (
       <div className="glass rounded-2xl p-8 text-center">
         <Sparkles className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-        <h3 className="text-xl font-bold mb-2">Keine Insights verfügbar</h3>
+        <h3 className="text-xl font-bold mb-2">No Insights Available</h3>
         <p className="text-muted-foreground">
-          Mehr Trainingsdaten werden benötigt, um Insights zu generieren.
+          More training data is needed to generate insights.
         </p>
       </div>
     );
@@ -165,18 +165,18 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
   };
 
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return "Exzellent";
-    if (score >= 60) return "Gut";
-    if (score >= 40) return "Verbesserungspotenzial";
-    return "Kritisch";
+    if (score >= 80) return "Excellent";
+    if (score >= 60) return "Good";
+    if (score >= 40) return "Needs Improvement";
+    return "Critical";
   };
 
   // Radar chart data for category scores
   const radarData = [
     { subject: "Training", value: summary.trainingScore, fullMark: 100 },
-    { subject: "Konsistenz", value: summary.consistencyScore, fullMark: 100 },
-    { subject: "Fortschritt", value: summary.progressScore, fullMark: 100 },
-    { subject: "Ernährung", value: summary.nutritionScore, fullMark: 100 },
+    { subject: "Consistency", value: summary.consistencyScore, fullMark: 100 },
+    { subject: "Progress", value: summary.progressScore, fullMark: 100 },
+    { subject: "Nutrition", value: summary.nutritionScore, fullMark: 100 },
   ];
 
   // Filter insights by category
@@ -185,12 +185,12 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
     : insights.filter(i => i.category === categoryFilter);
 
   const categories: { value: InsightCategory | "all"; label: string }[] = [
-    { value: "all", label: "Alle" },
+    { value: "all", label: "All" },
     { value: "training", label: "Training" },
-    { value: "behavior", label: "Verhalten" },
-    { value: "recovery", label: "Erholung" },
-    { value: "progress", label: "Fortschritt" },
-    { value: "nutrition", label: "Ernährung" },
+    { value: "behavior", label: "Behavior" },
+    { value: "recovery", label: "Recovery" },
+    { value: "progress", label: "Progress" },
+    { value: "nutrition", label: "Nutrition" },
   ];
 
   return (
@@ -203,22 +203,22 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
             <span className="text-xs text-muted-foreground">Workouts</span>
           </div>
           <p className="text-2xl font-bold">{summary.quickStats.totalWorkouts}</p>
-          <p className="text-xs text-muted-foreground">letzte 8 Wochen</p>
+          <p className="text-xs text-muted-foreground">last 8 weeks</p>
         </div>
 
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Calendar className="w-4 h-4 text-blue-500" />
-            <span className="text-xs text-muted-foreground">Pro Woche</span>
+            <span className="text-xs text-muted-foreground">Per Week</span>
           </div>
           <p className="text-2xl font-bold">{summary.quickStats.avgPerWeek.toFixed(1)}</p>
-          <p className="text-xs text-muted-foreground">Durchschnitt</p>
+          <p className="text-xs text-muted-foreground">average</p>
         </div>
 
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <BarChart3 className="w-4 h-4 text-green-500" />
-            <span className="text-xs text-muted-foreground">Volumen</span>
+            <span className="text-xs text-muted-foreground">Volume</span>
           </div>
           <p className="text-2xl font-bold">
             {summary.quickStats.totalVolume >= 1000
@@ -234,7 +234,7 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
             <span className="text-xs text-muted-foreground">PRs</span>
           </div>
           <p className="text-2xl font-bold">{summary.quickStats.prsThisMonth}</p>
-          <p className="text-xs text-muted-foreground">diesen Monat</p>
+          <p className="text-xs text-muted-foreground">this month</p>
         </div>
 
         <div className="glass rounded-xl p-4">
@@ -243,16 +243,16 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
             <span className="text-xs text-muted-foreground">Streak</span>
           </div>
           <p className="text-2xl font-bold">{summary.quickStats.currentStreak}</p>
-          <p className="text-xs text-muted-foreground">aktuell</p>
+          <p className="text-xs text-muted-foreground">current</p>
         </div>
 
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Award className="w-4 h-4 text-purple-500" />
-            <span className="text-xs text-muted-foreground">Bester Streak</span>
+            <span className="text-xs text-muted-foreground">Best Streak</span>
           </div>
           <p className="text-2xl font-bold">{summary.quickStats.longestStreak}</p>
-          <p className="text-xs text-muted-foreground">Workouts</p>
+          <p className="text-xs text-muted-foreground">workouts</p>
         </div>
       </div>
 
@@ -265,8 +265,8 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold">Gesamt-Score</h3>
-              <p className="text-xs text-muted-foreground">Performance-Bewertung</p>
+              <h3 className="font-bold">Overall Score</h3>
+              <p className="text-xs text-muted-foreground">Performance Rating</p>
             </div>
           </div>
 
@@ -289,19 +289,19 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
             <Progress value={summary.trainingScore} className="h-1.5" />
 
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Konsistenz</span>
+              <span className="text-muted-foreground">Consistency</span>
               <span className="font-semibold">{summary.consistencyScore}</span>
             </div>
             <Progress value={summary.consistencyScore} className="h-1.5" />
 
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Fortschritt</span>
+              <span className="text-muted-foreground">Progress</span>
               <span className="font-semibold">{summary.progressScore}</span>
             </div>
             <Progress value={summary.progressScore} className="h-1.5" />
 
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Ernährung</span>
+              <span className="text-muted-foreground">Nutrition</span>
               <span className="font-semibold">{summary.nutritionScore}</span>
             </div>
             <Progress value={summary.nutritionScore} className="h-1.5" />
@@ -341,7 +341,7 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
           <div className="glass rounded-xl p-4 bg-green-500/5 border border-green-500/20">
             <h4 className="font-semibold text-green-600 dark:text-green-400 mb-3 flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              Stärken
+              Strengths
             </h4>
             {summary.strengths.length > 0 ? (
               <ul className="text-sm space-y-2">
@@ -353,7 +353,7 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">Mehr Daten benötigt</p>
+              <p className="text-sm text-muted-foreground">More data needed</p>
             )}
           </div>
 
@@ -361,7 +361,7 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
           <div className="glass rounded-xl p-4 bg-yellow-500/5 border border-yellow-500/20">
             <h4 className="font-semibold text-yellow-600 dark:text-yellow-400 mb-3 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" />
-              Fokus-Bereiche
+              Focus Areas
             </h4>
             {summary.areasToImprove.length > 0 ? (
               <ul className="text-sm space-y-2">
@@ -373,7 +373,7 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">Alles sieht gut aus!</p>
+              <p className="text-sm text-muted-foreground">Everything looks good!</p>
             )}
           </div>
         </div>
@@ -387,8 +387,8 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold">Wochen-Trend</h3>
-              <p className="text-sm text-muted-foreground">Sessions & Volumen der letzten 8 Wochen</p>
+              <h3 className="font-bold">Weekly Trend</h3>
+              <p className="text-sm text-muted-foreground">Sessions & volume over the last 8 weeks</p>
             </div>
           </div>
 
@@ -419,7 +419,7 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
                   borderRadius: "8px",
                 }}
                 formatter={(value: number, name: string) => {
-                  if (name === "volume") return [`${value.toLocaleString()} kg`, "Volumen"];
+                  if (name === "volume") return [`${value.toLocaleString()} kg`, "Volume"];
                   if (name === "sessions") return [value, "Sessions"];
                   if (name === "prs") return [value, "PRs"];
                   return [value, name];
@@ -453,21 +453,21 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold">Training-Muster</h3>
-              <p className="text-sm text-muted-foreground">Erkannte Trainingsgewohnheiten</p>
+              <h3 className="font-bold">Training Pattern</h3>
+              <p className="text-sm text-muted-foreground">Detected training habits</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-background/50 border border-border/50">
-              <p className="text-sm text-muted-foreground mb-1">Bevorzugte Tage</p>
+              <p className="text-sm text-muted-foreground mb-1">Preferred Days</p>
               <p className="font-semibold">
                 {summary.trainingPattern.preferredDays.slice(0, 2).join(", ")}
               </p>
             </div>
 
             <div className="p-4 rounded-xl bg-background/50 border border-border/50">
-              <p className="text-sm text-muted-foreground mb-1">Ø Session-Dauer</p>
+              <p className="text-sm text-muted-foreground mb-1">Avg Session Duration</p>
               <p className="font-semibold flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 {summary.trainingPattern.avgSessionDuration} min
@@ -475,12 +475,12 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
             </div>
 
             <div className="p-4 rounded-xl bg-background/50 border border-border/50">
-              <p className="text-sm text-muted-foreground mb-1">Ø Ruhetage</p>
-              <p className="font-semibold">{summary.trainingPattern.avgRestDays} Tage</p>
+              <p className="text-sm text-muted-foreground mb-1">Avg Rest Days</p>
+              <p className="font-semibold">{summary.trainingPattern.avgRestDays} days</p>
             </div>
 
             <div className="p-4 rounded-xl bg-background/50 border border-border/50">
-              <p className="text-sm text-muted-foreground mb-1">Fokus-Muskeln</p>
+              <p className="text-sm text-muted-foreground mb-1">Focus Muscles</p>
               <p className="font-semibold text-sm">
                 {summary.trainingPattern.mostTrainedMuscles.slice(0, 2).map(m => m.muscle).join(", ") || "N/A"}
               </p>
@@ -538,7 +538,7 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
                       : "bg-green-500/10 text-green-500 border-green-500/50"
                   }
                 >
-                  {summary.topInsight.priority === "high" ? "Hoch" : summary.topInsight.priority === "medium" ? "Mittel" : "Niedrig"}
+                  {summary.topInsight.priority === "high" ? "High" : summary.topInsight.priority === "medium" ? "Medium" : "Low"}
                 </Badge>
               </div>
               <p className="text-muted-foreground">{summary.topInsight.description}</p>
@@ -551,7 +551,7 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
               {summary.topInsight.actionable && (
                 <div className="mt-3 p-3 rounded-lg bg-background/50">
                   <p className="text-sm">
-                    <span className="font-medium">💡 Empfehlung:</span>{" "}
+                    <span className="font-medium">💡 Recommendation:</span>{" "}
                     {summary.topInsight.actionable}
                   </p>
                 </div>
@@ -569,9 +569,9 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
               <Lightbulb className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold">Alle Insights</h3>
+              <h3 className="font-bold">All Insights</h3>
               <p className="text-sm text-muted-foreground">
-                {filteredInsights.length} von {insights.length} Insights
+                {filteredInsights.length} of {insights.length} insights
               </p>
             </div>
           </div>
@@ -655,7 +655,7 @@ export const ClientInsightsTab = ({ clientId }: ClientInsightsTabProps) => {
 
           {filteredInsights.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              Keine Insights in dieser Kategorie
+              No insights in this category
             </div>
           )}
         </div>

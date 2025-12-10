@@ -334,9 +334,9 @@ export const useClientInsights = (clientId: string) => {
           type: "consistency",
           category: "behavior",
           priority: "medium",
-          title: "Ausgezeichnete Trainings-Konsistenz",
-          description: `Trainiert ${recentWeeklyAvg.toFixed(1)}x pro Woche. Weiter so!`,
-          metric: `${last2WeeksSessions.length} Sessions in 2 Wochen`,
+          title: "Excellent Training Consistency",
+          description: `Training ${recentWeeklyAvg.toFixed(1)}x per week. Keep it up!`,
+          metric: `${last2WeeksSessions.length} sessions in 2 weeks`,
           trend: "up",
         });
       } else if (last2WeeksSessions.length < 2 && prev2WeeksSessions.length >= 4) {
@@ -345,11 +345,11 @@ export const useClientInsights = (clientId: string) => {
           type: "warning",
           category: "behavior",
           priority: "high",
-          title: "Trainingsfrequenz sinkt",
-          description: "Die Trainingshäufigkeit ist in den letzten 2 Wochen deutlich gesunken.",
-          metric: `${last2WeeksSessions.length} vs ${prev2WeeksSessions.length} Sessions`,
+          title: "Training Frequency Dropping",
+          description: "Training frequency has dropped significantly in the last 2 weeks.",
+          metric: `${last2WeeksSessions.length} vs ${prev2WeeksSessions.length} sessions`,
           trend: "down",
-          actionable: "Check-in mit dem Klienten - gibt es Hindernisse?",
+          actionable: "Check in with client - are there any obstacles?",
         });
       } else if (last2WeeksSessions.length === 0 && completedSessions.length > 0) {
         const lastSession = sortedSessions[0];
@@ -359,9 +359,9 @@ export const useClientInsights = (clientId: string) => {
           type: "warning",
           category: "behavior",
           priority: "high",
-          title: "Kein aktuelles Training",
-          description: `${daysSinceLast} Tage seit dem letzten Workout.`,
-          actionable: "Kontaktieren und motivieren, wieder zu trainieren.",
+          title: "No Recent Training",
+          description: `${daysSinceLast} days since last workout.`,
+          actionable: "Reach out and motivate to resume training.",
         });
       }
 
@@ -391,11 +391,11 @@ export const useClientInsights = (clientId: string) => {
             type: "volume",
             category: "training",
             priority: "medium",
-            title: "Trainingsvolumen steigt stark",
-            description: "Das Gesamtvolumen ist um mehr als 15% gestiegen - achte auf ausreichende Erholung.",
+            title: "Training Volume Increasing Significantly",
+            description: "Total volume increased by more than 15% - ensure adequate recovery.",
             metric: `+${Math.round(volumeChange)}%`,
             trend: "up",
-            actionable: volumeChange > 30 ? "Evtl. Volumen reduzieren um Übertraining zu vermeiden." : undefined,
+            actionable: volumeChange > 30 ? "Consider reducing volume to prevent overtraining." : undefined,
           });
         } else if (volumeChange < -25) {
           insights.push({
@@ -403,11 +403,11 @@ export const useClientInsights = (clientId: string) => {
             type: "warning",
             category: "training",
             priority: "medium",
-            title: "Trainingsvolumen gesunken",
-            description: "Deutlicher Volumenrückgang - ist das geplant (Deload)?",
+            title: "Training Volume Decreased",
+            description: "Significant volume drop - is this a planned deload?",
             metric: `${Math.round(volumeChange)}%`,
             trend: "down",
-            actionable: "Prüfen ob Deload geplant war oder Anpassungen nötig sind.",
+            actionable: "Check if deload was planned or adjustments are needed.",
           });
         }
       }
@@ -425,8 +425,8 @@ export const useClientInsights = (clientId: string) => {
             type: "celebration",
             category: "progress",
             priority: "low",
-            title: "PR-Woche!",
-            description: `${thisWeekPRs.length} neue persönliche Rekorde diese Woche!`,
+            title: "PR Week!",
+            description: `${thisWeekPRs.length} new personal records this week!`,
             metric: `${thisWeekPRs.length} PRs`,
             trend: "up",
           });
@@ -436,8 +436,8 @@ export const useClientInsights = (clientId: string) => {
             type: "pr",
             category: "progress",
             priority: "medium",
-            title: "Neue PRs erreicht",
-            description: `${thisWeekPRs.length} neue persönliche Rekorde in den letzten 7 Tagen.`,
+            title: "New PRs Achieved",
+            description: `${thisWeekPRs.length} new personal records in the last 7 days.`,
             metric: `${thisWeekPRs.length} PRs`,
             trend: "up",
           });
@@ -451,9 +451,9 @@ export const useClientInsights = (clientId: string) => {
             type: "recommendation",
             category: "progress",
             priority: "medium",
-            title: "Plateau erkannt",
-            description: `Seit ${daysSinceLastPR} Tagen kein neuer PR - Zeit für Variation?`,
-            actionable: "Progressive Overload prüfen oder Trainingsplan variieren.",
+            title: "Plateau Detected",
+            description: `No new PR in ${daysSinceLastPR} days - time for variation?`,
+            actionable: "Review progressive overload or vary training program.",
           });
         }
       }
@@ -472,11 +472,11 @@ export const useClientInsights = (clientId: string) => {
             type: "recovery",
             category: "recovery",
             priority: "high",
-            title: "Hohe Ermüdung erkannt",
-            description: `Durchschnittlicher Velocity Loss von ${avgVelocityLoss.toFixed(0)}% zeigt hohe Ermüdung an.`,
+            title: "High Fatigue Detected",
+            description: `Average velocity loss of ${avgVelocityLoss.toFixed(0)}% indicates high fatigue.`,
             metric: `${avgVelocityLoss.toFixed(0)}% avg`,
             trend: "down",
-            actionable: "Volumen/Intensität reduzieren oder mehr Erholung einplanen.",
+            actionable: "Reduce volume/intensity or plan more recovery.",
           });
         } else if (avgVelocityLoss < 15) {
           insights.push({
@@ -484,8 +484,8 @@ export const useClientInsights = (clientId: string) => {
             type: "velocity",
             category: "training",
             priority: "low",
-            title: "Optimale Trainingsintensität",
-            description: "Velocity Loss im optimalen Bereich für Kraftzuwachs.",
+            title: "Optimal Training Intensity",
+            description: "Velocity loss in optimal range for strength gains.",
             metric: `${avgVelocityLoss.toFixed(0)}% avg`,
             trend: "stable",
           });
@@ -517,11 +517,11 @@ export const useClientInsights = (clientId: string) => {
               type: "warning",
               category: "recovery",
               priority: "high",
-              title: "Velocity sinkt",
-              description: "Die durchschnittliche Bewegungsgeschwindigkeit ist rückläufig - mögliches Übertraining.",
-              metric: `${((1 - recentAvgVelocity / olderAvgVelocity) * 100).toFixed(0)}% langsamer`,
+              title: "Velocity Declining",
+              description: "Average movement velocity is decreasing - possible overtraining.",
+              metric: `${((1 - recentAvgVelocity / olderAvgVelocity) * 100).toFixed(0)}% slower`,
               trend: "down",
-              actionable: "Deload-Woche oder reduzierte Intensität empfohlen.",
+              actionable: "Deload week or reduced intensity recommended.",
             });
           }
         }
@@ -546,10 +546,10 @@ export const useClientInsights = (clientId: string) => {
               type: "recovery",
               category: "recovery",
               priority: "high",
-              title: "Training am Limit",
-              description: "Durchschnittliches RPE sehr hoch - Burnout-Risiko.",
+              title: "Training at Maximum Effort",
+              description: "Average RPE very high - risk of burnout.",
               metric: `Avg RPE: ${recentAvgRpe.toFixed(1)}`,
-              actionable: "Deload-Wochen einplanen, Intensität über die Woche variieren.",
+              actionable: "Plan deload weeks, vary intensity throughout the week.",
             });
           } else if (recentAvgRpe < 6 && recentVolume > 0) {
             insights.push({
@@ -557,10 +557,10 @@ export const useClientInsights = (clientId: string) => {
               type: "recommendation",
               category: "training",
               priority: "medium",
-              title: "Potenzial für mehr",
-              description: "RPE zeigt: hier ist noch Luft nach oben.",
+              title: "Room for Growth",
+              description: "RPE indicates there's potential for more intensity.",
               metric: `Avg RPE: ${recentAvgRpe.toFixed(1)}`,
-              actionable: "Progressive Overload - Gewicht oder Wiederholungen steigern.",
+              actionable: "Progressive overload - increase weight or reps.",
             });
           }
         }
@@ -578,8 +578,8 @@ export const useClientInsights = (clientId: string) => {
             type: "pattern",
             category: "behavior",
             priority: "low",
-            title: "Training konzentriert",
-            description: `Die meisten Workouts sind ${preferredDays[0]}s - Variation könnte helfen.`,
+            title: "Training Concentrated",
+            description: `Most workouts are on ${preferredDays[0]}s - variation could help.`,
             data: { preferredDays, dayCount },
           });
         }
@@ -591,10 +591,10 @@ export const useClientInsights = (clientId: string) => {
             type: "warning",
             category: "recovery",
             priority: "high",
-            title: "Zu wenig Erholung",
-            description: "Durchschnittlich weniger als 1 Ruhetag zwischen Sessions.",
-            metric: `${avgRestDays.toFixed(1)} Tage Pause`,
-            actionable: "Mindestens 1-2 Ruhetage pro Woche einplanen.",
+            title: "Insufficient Recovery",
+            description: "Less than 1 rest day on average between sessions.",
+            metric: `${avgRestDays.toFixed(1)} days rest`,
+            actionable: "Plan at least 1-2 rest days per week.",
           });
         } else if (avgRestDays > 4) {
           insights.push({
@@ -602,10 +602,10 @@ export const useClientInsights = (clientId: string) => {
             type: "recommendation",
             category: "behavior",
             priority: "medium",
-            title: "Lange Pausen zwischen Training",
-            description: "Durchschnittlich über 4 Tage zwischen den Workouts.",
-            metric: `${avgRestDays.toFixed(1)} Tage Pause`,
-            actionable: "Trainingsfrequenz erhöhen für bessere Resultate.",
+            title: "Long Gaps Between Training",
+            description: "More than 4 days on average between workouts.",
+            metric: `${avgRestDays.toFixed(1)} days rest`,
+            actionable: "Increase training frequency for better results.",
           });
         }
       }
@@ -622,9 +622,9 @@ export const useClientInsights = (clientId: string) => {
             type: "nutrition",
             category: "nutrition",
             priority: "low",
-            title: "Starkes Nutrition Tracking",
-            description: `${Math.round(adherence)}% Logging-Adherence zeigt exzellentes Commitment.`,
-            metric: `${daysWithLogs}/${expectedDays} Tage geloggt`,
+            title: "Strong Nutrition Tracking",
+            description: `${Math.round(adherence)}% logging adherence shows excellent commitment.`,
+            metric: `${daysWithLogs}/${expectedDays} days logged`,
             trend: "up",
           });
         } else if (adherence < 50) {
@@ -633,10 +633,10 @@ export const useClientInsights = (clientId: string) => {
             type: "warning",
             category: "nutrition",
             priority: "medium",
-            title: "Nutrition Tracking verbessern",
-            description: "Unregelmäßiges Tracking erschwert die Optimierung.",
-            metric: `Nur ${Math.round(adherence)}% Tage geloggt`,
-            actionable: "Tägliches Meal-Logging ermutigen, auch Schätzungen helfen.",
+            title: "Improve Nutrition Tracking",
+            description: "Inconsistent tracking makes optimization difficult.",
+            metric: `Only ${Math.round(adherence)}% days logged`,
+            actionable: "Encourage daily meal logging, even estimates help.",
           });
         }
 
@@ -653,10 +653,10 @@ export const useClientInsights = (clientId: string) => {
               type: "nutrition",
               category: "nutrition",
               priority: "high",
-              title: "Proteinzufuhr möglicherweise zu niedrig",
-              description: "Durchschnittliches tägliches Protein könnte für optimalen Muskelaufbau zu gering sein.",
-              metric: `~${Math.round(avgDailyProtein)}g/Tag`,
-              actionable: "Ziel: 1.6-2.2g Protein pro kg Körpergewicht.",
+              title: "Protein Intake May Be Low",
+              description: "Average daily protein may be insufficient for optimal muscle building.",
+              metric: `~${Math.round(avgDailyProtein)}g/day`,
+              actionable: "Target: 1.6-2.2g protein per kg body weight.",
             });
           } else if (avgDailyProtein >= 150) {
             insights.push({
@@ -664,9 +664,9 @@ export const useClientInsights = (clientId: string) => {
               type: "nutrition",
               category: "nutrition",
               priority: "low",
-              title: "Gute Proteinzufuhr",
-              description: "Proteinaufnahme im optimalen Bereich für Muskelaufbau.",
-              metric: `~${Math.round(avgDailyProtein)}g/Tag`,
+              title: "Good Protein Intake",
+              description: "Protein intake in optimal range for muscle building.",
+              metric: `~${Math.round(avgDailyProtein)}g/day`,
               trend: "stable",
             });
           }
@@ -677,9 +677,9 @@ export const useClientInsights = (clientId: string) => {
           type: "recommendation",
           category: "nutrition",
           priority: "medium",
-          title: "Kein Nutrition Tracking",
-          description: "Ernährungsdaten würden bessere Insights ermöglichen.",
-          actionable: "Klienten ermutigen, Mahlzeiten zu tracken.",
+          title: "No Nutrition Tracking",
+          description: "Nutrition data would enable better insights.",
+          actionable: "Encourage client to track meals.",
         });
       }
 
@@ -691,7 +691,7 @@ export const useClientInsights = (clientId: string) => {
           category: "behavior",
           priority: "low",
           title: `${currentStreak}-Workout Streak!`,
-          description: "Konstantes Training zahlt sich aus!",
+          description: "Consistent training is paying off!",
         });
       }
 
@@ -701,8 +701,8 @@ export const useClientInsights = (clientId: string) => {
           type: "celebration",
           category: "progress",
           priority: "low",
-          title: "Training-Meilenstein!",
-          description: `${completedSessions.length} Workouts in den letzten 8 Wochen absolviert!`,
+          title: "Training Milestone!",
+          description: `${completedSessions.length} workouts completed in the last 8 weeks!`,
         });
       }
 
@@ -712,8 +712,8 @@ export const useClientInsights = (clientId: string) => {
           type: "celebration",
           category: "progress",
           priority: "low",
-          title: "Starker Monat!",
-          description: `${quickStats.prsThisMonth} PRs in den letzten 4 Wochen - tolle Fortschritte!`,
+          title: "Strong Month!",
+          description: `${quickStats.prsThisMonth} PRs in the last 4 weeks - great progress!`,
         });
       }
 
