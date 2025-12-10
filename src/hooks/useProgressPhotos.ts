@@ -30,6 +30,25 @@ export function useProgressPhotos() {
   });
 }
 
+export function useClientProgressPhotos(clientId: string) {
+  return useQuery({
+    queryKey: ["clientProgressPhotos", clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+
+      const { data, error } = await supabase
+        .from("progress_photos")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
+}
+
 export function useUploadProgressPhoto() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
